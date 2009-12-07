@@ -1,3 +1,8 @@
+2009-12-07  Richard Hartmann  <richih.mailinglist@gmail.com>
+
+	* stage2/builtins.c (builtin_halt): Fix typo.
+	(builtin_password): Likewise.
+
 2009-07-02  Pavel Roskin  <proski@gnu.org>
 
 	* docs/boot.S: Fix missing newline at the end.
