@@ -479,7 +479,8 @@ All of the graphics fields are enabled by flag bit 2. They specify the
 preferred graphics mode. Note that that is only a @emph{recommended}
 mode by the OS image. If the mode exists, the boot loader should set
 it, when the user doesn't specify a mode explicitly. Otherwise, the
-boot loader should fall back to a similar mode, if available.
+boot loader should fall back to a similar mode, if available. Boot loader
+may also choose another mode if it sees fit.
 
 The meaning of each is as follows:
 
@@ -488,7 +489,9 @@ The meaning of each is as follows:
 Contains @samp{0} for linear graphics mode or @samp{1} for
 EGA-standard text mode. Everything else is reserved for future
 expansion. Note that the boot loader may set a text mode, even if this
-field contains @samp{0}.
+field contains @samp{0}. If video adapter doesn't support EGA text mode or
+bootloader doesn't know how to initialise this mode it may set video
+mode even if field contains @samp{1}
 
 @item width
 Contains the number of the columns. This is specified in pixels in a
@@ -917,16 +920,62 @@ bytes, and the others are 2 bytes. See
 Management (APM) BIOS Interface Specification}, for more information.
 
 If bit 11 in the @samp{flags} is set, the graphics table is available.
-This must only be done if the kernel has indicated in the
-@samp{Multiboot Header} that it accepts a graphics mode.
 
 The fields @samp{vbe_control_info} and @samp{vbe_mode_info} contain
 the physical addresses of @sc{vbe} control information returned by the
 @sc{vbe} Function 00h and @sc{vbe} mode information returned by the
-@sc{vbe} Function 01h, respectively.
+@sc{vbe} Function 01h, respectively. In case of non-@sc{vbe} video driver
+@samp{vbe_control_info} contains zero and @samp{vbe_mode_info} points to the
+following 256-byte structure:
+
+@example
+@group
+        +----------------------+
+0       | flags                |
+2       | zeros                |
+16      | pitch                |
+18      | width                |
+20      | height               |
+22      | zeros                |
+25      | bits per pixel       |
+26      | zeros                |
+27      | memory model         |
+28      | zeros                |
+31      | red mask size        |
+32      | red field position   |
+33      | green mask size      |
+34      | green field position |
+35      | blue mask size       |
+36      | blue field position  |
+37      | alpha mask size      |
+38      | alpha field position |
+39      | zero                 |
+40      | framebuffer address  |
+44      | zero                 |
+50      | pitch                |
+52      | zero                 |
+54      | red mask size        |
+55      | red field position   |
+56      | green mask size      |
+57      | green field position |
+58      | blue mask size       |
+59      | blue field position  |
+60      | alpha mask size      |
+61      | alpha field position |
+62      | zeros                |
+        +----------------------+
+@end group
+@end example
+
+All fields have the same meaning as the corresponding VBE mode info
+structure except fields marked as zeros which are zero-filled.
+
+If video is a linear framebuffer boot loader has to ensure that
+displayed region starts at offset @samp{0} of linear framebuffer. 
 
 The field @samp{vbe_mode} indicates current video mode in the format
-specified in @sc{vbe} 3.0.
+specified in @sc{vbe} 3.0. In case of non-@sc{vbe} video driver
+@samp{vbe_mode} contains 0xffff.
 
 The rest fields @samp{vbe_interface_seg}, @samp{vbe_interface_off}, and
 @samp{vbe_interface_len} contain the table of a protected mode interface
