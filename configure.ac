@@ -14,7 +14,7 @@ dnl USE OF THIS SOFTWARE.
 
 AC_PREREQ(2.57)
 AC_INIT([Multiboot], [0.6.96], [bug-grub@gnu.org])
-AC_CONFIG_SRCDIR([docs/multiboot.texi])
+AC_CONFIG_SRCDIR([doc/multiboot.texi])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
 
@@ -45,5 +45,5 @@ AC_SUBST(CCASFLAGS)
 CFLAGS="-m32 -nostdlib $CFLAGS"
 
 dnl Output.
-AC_CONFIG_FILES([Makefile docs/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile])
 AC_OUTPUT

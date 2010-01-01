@@ -1075,7 +1075,7 @@ included. The kernel just prints out the Multiboot information structure
 on the screen, so you can make use of the kernel to test a
 Multiboot-compliant boot loader and for reference to how to implement a
 Multiboot kernel. The source files can be found under the directory
-@file{docs} in the GRUB distribution.
+@file{doc} in the Multiboot source distribution.
 
 The kernel @file{kernel} consists of only three files: @file{boot.S},
 @file{kernel.c} and @file{multiboot.h}. The assembly source

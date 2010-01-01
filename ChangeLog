@@ -1,5 +1,15 @@
 2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
 
+	Use more standard `doc' directory.
+
+	* docs: Rename to ...
+	* doc: ... this.  Update all users.
+
+	* doc/multiboot.texi: Fix an obsolete reference to `docs' directory
+	in GRUB distribution.
+
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
 	Make ia32 libc unnecessary on amd64.
 
 	* configure.ac (CFLAGS): Move down after the basic gcc tests are
