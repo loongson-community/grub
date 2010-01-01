@@ -1,3 +1,10 @@
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
+	Make ia32 libc unnecessary on amd64.
+
+	* configure.ac (CFLAGS): Move down after the basic gcc tests are
+	done.  Add `-nostdlib'.
+
 2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
 
 	* configure.ac: Bump version to 0.6.96.

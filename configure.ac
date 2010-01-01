@@ -1,5 +1,5 @@
 dnl Configure script for GRUB.
-dnl Copyright 1999,2000,2001,2002,2003,2004,2005,2008,2009 Free Software Foundation, Inc.
+dnl Copyright 1999,2000,2001,2002,2003,2004,2005,2008,2009,2010 Free Software Foundation, Inc.
 
 dnl Permission to use, copy, modify and distribute this software and its
 dnl documentation is hereby granted, provided that both the copyright
@@ -17,8 +17,6 @@ AC_INIT([Multiboot], [0.6.96], [bug-grub@gnu.org])
 AC_CONFIG_SRCDIR([docs/multiboot.texi])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
-
-CFLAGS="-m32 $CFLAGS"
 
 #
 # Programs
@@ -44,6 +42,7 @@ dnl Because recent automake complains about CCASFLAGS, set it here.
 CCASFLAGS='$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)'
 AC_SUBST(CCASFLAGS)
 
+CFLAGS="-m32 -nostdlib $CFLAGS"
 
 dnl Output.
 AC_CONFIG_FILES([Makefile docs/Makefile])
