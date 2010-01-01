@@ -1,5 +1,12 @@
 2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
 
+	* autogen.sh: Use `gnulib-tool' to install gendocs.sh.
+	* Makefile.am (web-manual): New target.  Builds a web manual using
+	gendocs.sh.
+	* configure.ac (AC_PREREQ): Require Autoconf 2.59 or later.
+
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
 	Use more standard `doc' directory.
 
 	* docs: Rename to ...

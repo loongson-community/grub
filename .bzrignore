@@ -1,3 +1,6 @@
+gendocs.sh
+lib
+m4
 .deps
 Makefile
 autom4te.cache
@@ -10,6 +13,8 @@ stamp-h1
 doc/Makefile
 doc/*.info*
 doc/.deps
+doc/gendocs_template
+doc/mdate-sh
 doc/Makefile.in
 doc/boot.S.texi
 doc/kernel

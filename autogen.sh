@@ -2,6 +2,7 @@
 
 set -ex
 
+gnulib-tool --import gendocs
 aclocal
 autoheader
 
