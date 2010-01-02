@@ -1,3 +1,6 @@
+gendocs.sh
+lib
+m4
 .deps
 Makefile
 autom4te.cache
@@ -7,9 +10,17 @@ config.log
 config.status
 stamp-h
 stamp-h1
-docs/Makefile
-docs/*.info*
-docs/.deps
+doc/Makefile
+doc/*.info*
+doc/.deps
+doc/gendocs_template
+doc/mdate-sh
+doc/Makefile.in
+doc/boot.S.texi
+doc/kernel
+doc/kernel.c.texi
+doc/multiboot.h.texi
+doc/texinfo.tex
 Makefile.in
 aclocal.m4
 config.h.in
@@ -17,9 +28,3 @@ configure
 depcomp
 install-sh
 missing
-docs/Makefile.in
-docs/boot.S.texi
-docs/kernel
-docs/kernel.c.texi
-docs/multiboot.h.texi
-docs/texinfo.tex

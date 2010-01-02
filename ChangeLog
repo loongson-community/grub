@@ -1,3 +1,94 @@
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* autogen.sh: Use `gnulib-tool' to install gendocs.sh.
+	* Makefile.am (web-manual): New target.  Builds a web manual using
+	gendocs.sh.
+	* configure.ac (AC_PREREQ): Require Autoconf 2.59 or later.
+
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
+	Use more standard `doc' directory.
+
+	* docs: Rename to ...
+	* doc: ... this.  Update all users.
+
+	* doc/multiboot.texi: Fix an obsolete reference to `docs' directory
+	in GRUB distribution.
+
+2010-01-01  Robert Millan  <rmh.grub@aybabtu.com>
+
+	Make ia32 libc unnecessary on amd64.
+
+	* configure.ac (CFLAGS): Move down after the basic gcc tests are
+	done.  Add `-nostdlib'.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* configure.ac: Bump version to 0.6.96.
+	* docs/multiboot.texi: Include `version.texi' instead of hardcoding
+	version number.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/Makefile.am (EXTRA_DIST): Remove `menu.lst'.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* autogen.sh: Workaround Automake requirement for NEWS and README.
+	We really should have them, but in practice we never had.  This
+	ought not be considered a regression.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* BUGS: Remove.
+	* INSTALL: Remove.
+	* NEWS: Remove.
+	* README: Remove.
+	* autogen.sh: Adjust automake flags to add generic files such
+	as `INSTALL', `depcomp', `install-sh' and `missing'.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/multiboot.texi: Bump version number to 0.6.96.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/multiboot.texi: Misc editorial changes:
+
+	Avoid using `commercial' as a synonym for `non-free'
+	(see http://www.gnu.org/philosophy/words-to-avoid.html#Commercial).
+
+	Make a clear distinction between kernels and Operating Systems
+	(Linux is a kernel, FreeBSD and NetBSD are Operating Systems, Mach
+	is a microkernel, VSTa is something in-between).
+
+	Use 64-bit types to describe 64-bit datum (instead of splitting in
+	two 32-bit fields).  Little endianess assumption applies (as per
+	Terminology section).
+
+	Update status of GNU GRUB relative to version 2.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/multiboot.h: Replace with include/multiboot.h from GRUB 2 Bazaar
+	trunk.
+	* docs/kernel.c (cmain): Update name references for new multiboot.h
+	header.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/multiboot.h (MULTIBOOT_HEADER_FLAGS): Moved from here ...
+	* docs/boot.S (MULTIBOOT_HEADER_FLAGS): ... to here.
+
+2009-12-24  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* docs/boot.S (ASM): Rename to ...
+	(ASM_FILE): ... this.
+	* docs/multiboot.h: Check for `ASM_FILE' instead of `ASM'.
+
+	* docs/multiboot.h (EXT_C, STACK_SIZE): Moved from here ...
+	* docs/boot.S (EXT_C, STACK_SIZE): ... to here.
+
 2009-12-13  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* docs/fdl.texi: Remove. It's not used.
