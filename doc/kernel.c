@@ -144,10 +144,10 @@ cmain (unsigned long magic, unsigned long addr)
 	printf (" size = 0x%x, base_addr = 0x%x%x,"
 		" length = 0x%x%x, type = 0x%x\n",
 		(unsigned) mmap->size,
-		mmap->addr >> 32,
-		mmap->addr & 0xffffffff,
-		mmap->len >> 32,
-		mmap->len & 0xffffffff,
+		(unsigned) (mmap->addr >> 32),
+		(unsigned) (mmap->addr & 0xffffffff),
+		(unsigned) (mmap->len >> 32),
+		(unsigned) (mmap->len & 0xffffffff),
 		(unsigned) mmap->type);
     }
 }    
