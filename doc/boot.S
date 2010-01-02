@@ -30,9 +30,9 @@
 
 /* The flags for the Multiboot header.  */
 #ifdef __ELF__
-# define MULTIBOOT_HEADER_FLAGS		0x00000007
+# define MULTIBOOT_HEADER_FLAGS		0x0000000f
 #else
-# define MULTIBOOT_HEADER_FLAGS		0x00010007
+# define MULTIBOOT_HEADER_FLAGS		0x0001000f
 #endif
 	
 	.text
