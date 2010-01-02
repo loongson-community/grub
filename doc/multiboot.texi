@@ -638,6 +638,15 @@ follows:
 84      | vbe_interface_off |
 86      | vbe_interface_len |
         +-------------------+
+88      | framebuffer_addr  |    (present if flags[12] is set)
+96      | framebuffer_pitch |
+100     | framebuffer_width |
+104     | framebuffer_height|
+108     | framebuffer_bpp   |
+109     | framebuffer_type  |
+110-115 | color_info        |
+        +-------------------+
+
 @end group
 @end example
 
@@ -914,63 +923,15 @@ bytes, and the others are 2 bytes. See
 @uref{http://www.microsoft.com/hwdev/busbios/amp_12.htm, Advanced Power
 Management (APM) BIOS Interface Specification}, for more information.
 
-If bit 11 in the @samp{flags} is set, the graphics table is available.
+If bit 11 in the @samp{flags} is set, the @sc{vbe} table is available.
 
 The fields @samp{vbe_control_info} and @samp{vbe_mode_info} contain
 the physical addresses of @sc{vbe} control information returned by the
 @sc{vbe} Function 00h and @sc{vbe} mode information returned by the
-@sc{vbe} Function 01h, respectively. In case of non-@sc{vbe} video driver
-@samp{vbe_control_info} contains zero and @samp{vbe_mode_info} points to the
-following 256-byte structure:
-
-@example
-@group
-        +----------------------+
-0       | flags                |
-2       | zeros                |
-16      | pitch                |
-18      | width                |
-20      | height               |
-22      | zeros                |
-25      | bits per pixel       |
-26      | zeros                |
-27      | memory model         |
-28      | zeros                |
-31      | red mask size        |
-32      | red field position   |
-33      | green mask size      |
-34      | green field position |
-35      | blue mask size       |
-36      | blue field position  |
-37      | alpha mask size      |
-38      | alpha field position |
-39      | zero                 |
-40      | framebuffer address  |
-44      | zero                 |
-50      | pitch                |
-52      | zero                 |
-54      | red mask size        |
-55      | red field position   |
-56      | green mask size      |
-57      | green field position |
-58      | blue mask size       |
-59      | blue field position  |
-60      | alpha mask size      |
-61      | alpha field position |
-62      | zeros                |
-        +----------------------+
-@end group
-@end example
-
-All fields have the same meaning as the corresponding VBE mode info
-structure except fields marked as zeros which are zero-filled.
-
-If video is a linear framebuffer boot loader has to ensure that
-displayed region starts at offset @samp{0} of linear framebuffer. 
+@sc{vbe} Function 01h, respectively.
 
 The field @samp{vbe_mode} indicates current video mode in the format
-specified in @sc{vbe} 3.0. In case of non-@sc{vbe} video driver
-@samp{vbe_mode} contains 0xffff.
+specified in @sc{vbe} 3.0.
 
 The rest fields @samp{vbe_interface_seg}, @samp{vbe_interface_off}, and
 @samp{vbe_interface_len} contain the table of a protected mode interface
@@ -984,6 +945,42 @@ The fields for the graphics table are designed for @sc{vbe}, but
 Multiboot boot loaders may simulate @sc{vbe} on non-@sc{vbe} modes, as
 if they were @sc{vbe} modes.
 
+If bit 12 in the @samp{flags} is set, the @sc{Framebuffer} table is available.
+
+The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as following:
+@example
+@group
+        +----------------------------------+
+110     | framebuffer_palette_addr         |
+114     | framebuffer_palette_num_colors   |
+        +----------------------------------+
+@end group
+@end example
+@samp{framebuffer_palette_addr} contains address of array of @samp{framebuffer_palette_num_colors} following structures:
+@example
+@group
+        +-------------+
+0       | red_value   |
+1       | green_value |
+2       | blue_value  |
+        +-------------+
+@end group
+@end example
+If @samp{framebuffer_type} is set to 1 it direct RGB color. Then color_type is defined as following:
+
+@example
+@group
+        +----------------------------------+
+110     | framebuffer_red_field_position   |
+111     | framebuffer_red_mask_size        |
+112     | framebuffer_green_field_position |
+113     | framebuffer_green_mask_size      |
+114     | framebuffer_blue_field_position  |
+115     | framebuffer_blue_mask_size       |
+        +----------------------------------+
+@end group
+@end example
+All further values of @samp{framebuffer_type} are reserved for future expansion
 
 @node Examples
 @chapter Examples

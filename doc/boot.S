@@ -30,9 +30,9 @@
 
 /* The flags for the Multiboot header.  */
 #ifdef __ELF__
-# define MULTIBOOT_HEADER_FLAGS		0x00000003
+# define MULTIBOOT_HEADER_FLAGS		0x00000007
 #else
-# define MULTIBOOT_HEADER_FLAGS		0x00010003
+# define MULTIBOOT_HEADER_FLAGS		0x00010007
 #endif
 	
 	.text
@@ -64,7 +64,17 @@ multiboot_header:
 	.long	_end
 	/* entry_addr */
 	.long	multiboot_entry
-#endif /* ! __ELF__ */
+#else /* ! __ELF__ */
+	.long	0
+	.long	0
+	.long	0
+	.long	0
+	.long	0	
+#endif /* __ELF__ */
+	.long 0
+	.long 1024
+	.long 768
+	.long 32
 
 multiboot_entry:
 	/* Initialize the stack pointer.  */
