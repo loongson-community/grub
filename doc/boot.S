@@ -30,10 +30,11 @@
 
 /* The flags for the Multiboot header.  */
 #ifdef __ELF__
-# define MULTIBOOT_HEADER_FLAGS		0x00000003
+# define AOUT_KLUDGE 0
 #else
-# define MULTIBOOT_HEADER_FLAGS		0x00010003
+# define AOUT_KLUDGE MULTIBOOT_AOUT_KLUDGE
 #endif
+#define MULTIBOOT_HEADER_FLAGS			MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | AOUT_KLUDGE
 	
 	.text
 
