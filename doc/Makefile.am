@@ -4,6 +4,7 @@ multiboot_TEXINFOS = boot.S.texi kernel.c.texi multiboot.h.texi
 SRC2TEXI = src2texi
 noinst_SCRIPTS = $(SRC2TEXI)
 EXTRA_PROGRAMS = kernel
+pkginclude_HEADERS = multiboot.h
 
 # The example kernel is built if you specify --enable-example-kernel.
 if BUILD_EXAMPLE_KERNEL

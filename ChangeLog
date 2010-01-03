@@ -1,5 +1,11 @@
 2010-01-03  Robert Millan  <rmh.grub@aybabtu.com>
 
+	Install multiboot.h system-wide.
+
+	* doc/Makefile.am (pkginclude_HEADERS): New variable.
+
+2010-01-03  Robert Millan  <rmh.grub@aybabtu.com>
+
 	* doc/boot.S (MULTIBOOT_HEADER_FLAGS): Redefine using macros.
 
 2010-01-03  Robert Millan  <rmh.grub@aybabtu.com>
