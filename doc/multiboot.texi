@@ -477,10 +477,7 @@ start running the operating system.
 
 All of the graphics fields are enabled by flag bit 2. They specify the
 preferred graphics mode. Note that that is only a @emph{recommended}
-mode by the OS image. If the mode exists, the boot loader should set
-it, when the user doesn't specify a mode explicitly. Otherwise, the
-boot loader should fall back to a similar mode, if available. Boot loader
-may also choose another mode if it sees fit.
+mode by the OS image. Boot loader may also choose another mode if it sees fit.
 
 The meaning of each is as follows:
 
@@ -947,7 +944,7 @@ if they were @sc{vbe} modes.
 
 If bit 12 in the @samp{flags} is set, the @sc{Framebuffer} table is available.
 
-The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as following:
+The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as follows:
 @example
 @group
         +----------------------------------+
@@ -956,7 +953,7 @@ The field @samp{framebuffer_addr} contains framebuffer physical address. This fi
         +----------------------------------+
 @end group
 @end example
-@samp{framebuffer_palette_addr} contains address of array of @samp{framebuffer_palette_num_colors} following structures:
+@samp{framebuffer_palette_addr} contains address of palette. Palette is an array of colour descriptors. Each colour descriptor has following structure:
 @example
 @group
         +-------------+
@@ -966,7 +963,7 @@ The field @samp{framebuffer_addr} contains framebuffer physical address. This fi
         +-------------+
 @end group
 @end example
-If @samp{framebuffer_type} is set to 1 it direct RGB color. Then color_type is defined as following:
+If @samp{framebuffer_type} is set to 1 it means direct RGB color. Then color_type is defined as follows:
 
 @example
 @group
@@ -980,6 +977,8 @@ If @samp{framebuffer_type} is set to 1 it direct RGB color. Then color_type is d
         +----------------------------------+
 @end group
 @end example
+
+If @samp{framebuffer_type} is set to 2 it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
 All further values of @samp{framebuffer_type} are reserved for future expansion
 
 @node Examples
