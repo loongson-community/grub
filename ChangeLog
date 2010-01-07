@@ -1,3 +1,8 @@
+2010-01-07  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* doc/multiboot.h (MULTIBOOT_UNSUPPORTED): Remove macro (moved to
+	GRUB).
+
 2010-01-03  Robert Millan  <rmh.grub@aybabtu.com>
 
 	Install multiboot.h system-wide.
