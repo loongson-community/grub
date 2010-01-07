@@ -1,5 +1,17 @@
 2010-01-07  Robert Millan  <rmh.grub@aybabtu.com>
 
+	Kick out Multiboot 2 draft as a branch.  Initially it is
+	identical to Multiboot 1, except for the magic numbers.
+
+	* doc/multiboot.h: Rename to ...
+	* doc/multiboot2.h: ... this.  Update all users.
+	(MULTIBOOT_HEADER_MAGIC): Replace with ...
+	(MULTIBOOT2_HEADER_MAGIC): ... this.  Update all users.
+	(MULTIBOOT_BOOTLOADER_MAGIC): Replace with ...
+	(MULTIBOOT2_BOOTLOADER_MAGIC): ... this.  Update all users.
+
+2010-01-07  Robert Millan  <rmh.grub@aybabtu.com>
+
 	* doc/multiboot.h (MULTIBOOT_UNSUPPORTED): Remove macro (moved to
 	GRUB).
 

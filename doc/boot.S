@@ -16,7 +16,7 @@
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 #define ASM_FILE	1
-#include <multiboot.h>
+#include <multiboot2.h>
 
 /* C symbol format. HAVE_ASM_USCORE is defined by configure.  */
 #ifdef HAVE_ASM_USCORE
@@ -49,11 +49,11 @@ _start:
 	/* Multiboot header.  */
 multiboot_header:
 	/* magic */
-	.long	MULTIBOOT_HEADER_MAGIC
+	.long	MULTIBOOT2_HEADER_MAGIC
 	/* flags */
 	.long	MULTIBOOT_HEADER_FLAGS
 	/* checksum */
-	.long	-(MULTIBOOT_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
+	.long	-(MULTIBOOT2_HEADER_MAGIC + MULTIBOOT_HEADER_FLAGS)
 #ifndef __ELF__
 	/* header_addr */
 	.long	multiboot_header

@@ -1,5 +1,5 @@
-/*  multiboot.h - Multiboot header file.  */
-/*  Copyright (C) 1999,2003,2007,2008,2009  Free Software Foundation, Inc.
+/*  multiboot2.h - Multiboot 2 header file.  */
+/*  Copyright (C) 1999,2003,2007,2008,2009,2010  Free Software Foundation, Inc.
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
@@ -26,10 +26,10 @@
 #define MULTIBOOT_SEARCH			8192
 
 /* The magic field should contain this.  */
-#define MULTIBOOT_HEADER_MAGIC			0x1BADB002
+#define MULTIBOOT2_HEADER_MAGIC			0xe85250d6
 
 /* This should be in %eax.  */
-#define MULTIBOOT_BOOTLOADER_MAGIC		0x2BADB002
+#define MULTIBOOT2_BOOTLOADER_MAGIC		0x36d76289
 
 /* Alignment of multiboot modules.  */
 #define MULTIBOOT_MOD_ALIGN			0x00001000

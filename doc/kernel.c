@@ -15,7 +15,7 @@
    along with this program; if not, write to the Free Software
    Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
-#include <multiboot.h>
+#include <multiboot2.h>
 
 /* Macros.  */
 
@@ -58,7 +58,7 @@ cmain (unsigned long magic, unsigned long addr)
   cls ();
 
   /* Am I booted by a Multiboot-compliant boot loader?  */
-  if (magic != MULTIBOOT_BOOTLOADER_MAGIC)
+  if (magic != MULTIBOOT2_BOOTLOADER_MAGIC)
     {
       printf ("Invalid magic number: 0x%x\n", (unsigned) magic);
       return;

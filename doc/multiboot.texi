@@ -1078,7 +1078,7 @@ Multiboot kernel. The source files can be found under the directory
 @file{doc} in the Multiboot source distribution.
 
 The kernel @file{kernel} consists of only three files: @file{boot.S},
-@file{kernel.c} and @file{multiboot.h}. The assembly source
+@file{kernel.c} and @file{multiboot2.h}. The assembly source
 @file{boot.S} is written in GAS (@pxref{Top, , GNU assembler, as.info,
 The GNU assembler}), and contains the Multiboot information structure to
 comply with the specification. When a Multiboot-compliant boot loader
@@ -1089,25 +1089,25 @@ the user of the halt state and stops forever until you push the reset
 key. The file @file{kernel.c} contains the function @code{cmain},
 which checks if the magic number passed by the boot loader is valid and
 so on, and some functions to print messages on the screen. The file
-@file{multiboot.h} defines some macros, such as the magic number for the
+@file{multiboot2.h} defines some macros, such as the magic number for the
 Multiboot header, the Multiboot header structure and the Multiboot
 information structure.
 
 @menu
-* multiboot.h::                 
+* multiboot2.h::                 
 * boot.S::                      
 * kernel.c::                    
 * Other Multiboot kernels::     
 @end menu
 
 
-@node multiboot.h
-@subsection multiboot.h
+@node multiboot2.h
+@subsection multiboot2.h
 
-This is the source code in the file @file{multiboot.h}:
+This is the source code in the file @file{multiboot2.h}:
 
 @example
-@include multiboot.h.texi
+@include multiboot2.h.texi
 @end example
 
 
