@@ -20,7 +20,7 @@ Copyright @copyright{} 1995,96 Bryan Ford <baford@@cs.utah.edu>
 
 Copyright @copyright{} 1995,96 Erich Stefan Boleyn <erich@@uruk.org>
 
-Copyright @copyright{} 1999,2000,2001,2002,2005,2006,2009 Free Software Foundation, Inc.
+Copyright @copyright{} 1999,2000,2001,2002,2005,2006,2009,2010 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to make and distribute verbatim copies of
@@ -477,9 +477,7 @@ start running the operating system.
 
 All of the graphics fields are enabled by flag bit 2. They specify the
 preferred graphics mode. Note that that is only a @emph{recommended}
-mode by the OS image. If the mode exists, the boot loader should set
-it, when the user doesn't specify a mode explicitly. Otherwise, the
-boot loader should fall back to a similar mode, if available.
+mode by the OS image. Boot loader may choose a different mode if it sees fit.
 
 The meaning of each is as follows:
 
@@ -487,8 +485,9 @@ The meaning of each is as follows:
 @item mode_type
 Contains @samp{0} for linear graphics mode or @samp{1} for
 EGA-standard text mode. Everything else is reserved for future
-expansion. Note that the boot loader may set a text mode, even if this
-field contains @samp{0}.
+expansion. Note that the boot loader may set a text mode even if this
+field contains @samp{0}, or set a video mode even if this field contains
+@samp{1}.
 
 @item width
 Contains the number of the columns. This is specified in pixels in a
@@ -635,6 +634,15 @@ follows:
 84      | vbe_interface_off |
 86      | vbe_interface_len |
         +-------------------+
+88      | framebuffer_addr  |    (present if flags[12] is set)
+96      | framebuffer_pitch |
+100     | framebuffer_width |
+104     | framebuffer_height|
+108     | framebuffer_bpp   |
+109     | framebuffer_type  |
+110-115 | color_info        |
+        +-------------------+
+
 @end group
 @end example
 
@@ -911,9 +919,7 @@ bytes, and the others are 2 bytes. See
 @uref{http://www.microsoft.com/hwdev/busbios/amp_12.htm, Advanced Power
 Management (APM) BIOS Interface Specification}, for more information.
 
-If bit 11 in the @samp{flags} is set, the graphics table is available.
-This must only be done if the kernel has indicated in the
-@samp{Multiboot Header} that it accepts a graphics mode.
+If bit 11 in the @samp{flags} is set, the @sc{vbe} table is available.
 
 The fields @samp{vbe_control_info} and @samp{vbe_mode_info} contain
 the physical addresses of @sc{vbe} control information returned by the
@@ -935,6 +941,58 @@ The fields for the graphics table are designed for @sc{vbe}, but
 Multiboot boot loaders may simulate @sc{vbe} on non-@sc{vbe} modes, as
 if they were @sc{vbe} modes.
 
+If bit 12 in the @samp{flags} is set, the @sc{Framebuffer} table is available.
+
+The field @samp{framebuffer_addr} contains framebuffer physical address. This
+field is 64-bit wide but bootloader @dfn{should} set it under 4 GiB if possible
+for compatibility with kernels which aren't aware of PAE or AMD64. The field
+@samp{framebuffer_pitch} contains the framebuffer pitch in bytes. The fields
+@samp{framebuffer_width}, @samp{framebuffer_height} contain the framebuffer
+dimensions in pixels. The field @samp{framebuffer_bpp} contains the number of
+bits per pixel. If @samp{framebuffer_type} is set to @samp{0} it means
+indexed color will be used. In this case color_info is defined as follows:
+@example
+@group
+        +----------------------------------+
+110     | framebuffer_palette_addr         |
+114     | framebuffer_palette_num_colors   |
+        +----------------------------------+
+@end group
+@end example
+@samp{framebuffer_palette_addr} contains the address of the color palette,
+which is an array of color descriptors. Each color descriptor has the
+following structure:
+@example
+@group
+        +-------------+
+0       | red_value   |
+1       | green_value |
+2       | blue_value  |
+        +-------------+
+@end group
+@end example
+If @samp{framebuffer_type} is set to @samp{1} it means direct RGB color will
+be used. Then color_type is defined as follows:
+
+@example
+@group
+        +----------------------------------+
+110     | framebuffer_red_field_position   |
+111     | framebuffer_red_mask_size        |
+112     | framebuffer_green_field_position |
+113     | framebuffer_green_mask_size      |
+114     | framebuffer_blue_field_position  |
+115     | framebuffer_blue_mask_size       |
+        +----------------------------------+
+@end group
+@end example
+
+If @samp{framebuffer_type} is set to @samp{2} it means EGA-standard text mode
+will be used. In this case @samp{framebuffer_width} and
+@samp{framebuffer_height} are expressed in characters instead of pixels.
+@samp{framebuffer_bpp} is equal to 16 (bits per character) and
+@samp{framebuffer_pitch} is expressed in bytes per text line.
+All further values of @samp{framebuffer_type} are reserved for future expansion.
 
 @node Examples
 @chapter Examples

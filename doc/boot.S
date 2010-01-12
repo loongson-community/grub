@@ -1,5 +1,5 @@
 /* boot.S - bootstrap the kernel */
-/* Copyright (C) 1999, 2001  Free Software Foundation, Inc.
+/* Copyright (C) 1999, 2001, 2010  Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -34,7 +34,7 @@
 #else
 # define AOUT_KLUDGE MULTIBOOT_AOUT_KLUDGE
 #endif
-#define MULTIBOOT_HEADER_FLAGS			MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | AOUT_KLUDGE
+#define MULTIBOOT_HEADER_FLAGS			MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE | AOUT_KLUDGE
 	
 	.text
 
@@ -65,7 +65,17 @@ multiboot_header:
 	.long	_end
 	/* entry_addr */
 	.long	multiboot_entry
-#endif /* ! __ELF__ */
+#else /* ! __ELF__ */
+	.long	0
+	.long	0
+	.long	0
+	.long	0
+	.long	0	
+#endif /* __ELF__ */
+	.long 0
+	.long 1024
+	.long 768
+	.long 32
 
 multiboot_entry:
 	/* Initialize the stack pointer.  */
