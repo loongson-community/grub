@@ -1,3 +1,8 @@
+2010-01-15  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* doc/boot.S: Slight adjustment to make makeinfo happy.
+	* doc/kernel.c: Likewise.
+
 2010-01-15  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/kernel.c (cmain): Handle EGA text video information.
