@@ -189,6 +189,10 @@ cmain (unsigned long magic, unsigned long addr)
 	    << mbi->framebuffer_blue_field_position;
 	  break;
 
+	case MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT:
+	  color = '\\' | 0x0100;
+	  break;
+
 	default:
 	  color = 0xffffffff;
 	  break;
