@@ -1,3 +1,35 @@
+2010-01-15  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/kernel.c (cmain): Handle EGA text video information.
+	* doc/multiboot.h (MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT): New const.
+
+2010-01-14  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* COPYING: Replace with GPLv3 text.
+	* doc/boot.S: Update to GPL version 3 or later.
+	* doc/kernel.c: Likewise.
+
+2010-01-12  Vladimir Serbinenko  <phcoder@gmail.com>
+2010-01-12  Robert Millan  <rmh.grub@aybabtu.com>
+
+	Video mode amendment by Vladimir Serbinenko.  See NEWS file for
+	details.
+
+	* NEWS: Document video mode amendment.
+	* doc/multiboot.texi: Video mode ammendment.
+	* doc/multiboot.h (MULTIBOOT_INFO_VIDEO_INFO): Remove macro.
+	(MULTIBOOT_INFO_VBE_INFO, MULTIBOOT_INFO_FRAMEBUFFER_INFO): New macros.
+	(multiboot_uint8_t): New type.
+	(struct multiboot_color): New structure.
+	(struct multiboot_info): Add new video mode fields.
+	(MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED)
+	(MULTIBOOT_FRAMEBUFFER_TYPE_RGB): New macros.
+
+	* doc/boot.S (MULTIBOOT_HEADER_FLAGS): Add `MULTIBOOT_VIDEO_MODE'.
+	(multiboot_header): Include video mode information.
+	* doc/kernel.c (cmain): Draw a blue diagonal line when video mode
+	information is provided.
+
 2010-01-07  Robert Millan  <rmh.grub@aybabtu.com>
 
 	Kick out Multiboot 2 draft as a branch.  Initially it is

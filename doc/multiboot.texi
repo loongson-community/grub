@@ -20,7 +20,7 @@ Copyright @copyright{} 1995,96 Bryan Ford <baford@@cs.utah.edu>
 
 Copyright @copyright{} 1995,96 Erich Stefan Boleyn <erich@@uruk.org>
 
-Copyright @copyright{} 1999,2000,2001,2002,2005,2006,2009 Free Software Foundation, Inc.
+Copyright @copyright{} 1999,2000,2001,2002,2005,2006,2009,2010 Free Software Foundation, Inc.
 
 @quotation
 Permission is granted to make and distribute verbatim copies of
@@ -477,7 +477,7 @@ start running the operating system.
 
 All of the graphics fields are enabled by flag bit 2. They specify the
 preferred graphics mode. Note that that is only a @emph{recommended}
-mode by the OS image. Boot loader may also choose another mode if it sees fit.
+mode by the OS image. Boot loader may choose a different mode if it sees fit.
 
 The meaning of each is as follows:
 
@@ -485,10 +485,9 @@ The meaning of each is as follows:
 @item mode_type
 Contains @samp{0} for linear graphics mode or @samp{1} for
 EGA-standard text mode. Everything else is reserved for future
-expansion. Note that the boot loader may set a text mode, even if this
-field contains @samp{0}. If video adapter doesn't support EGA text mode or
-bootloader doesn't know how to initialise this mode it may set video
-mode even if field contains @samp{1}
+expansion. Note that the boot loader may set a text mode even if this
+field contains @samp{0}, or set a video mode even if this field contains
+@samp{1}.
 
 @item width
 Contains the number of the columns. This is specified in pixels in a
@@ -915,7 +914,8 @@ Each colour descriptor has following structure:
         +-------------+
 @end group
 @end example
-If @samp{framebuffer_type} is set to 1 it means direct RGB color. Then color_type is defined as follows:
+If @samp{framebuffer_type} is set to @samp{1} it means direct RGB color.
+Then color_type is defined as follows:
 
 @example
 @group
@@ -930,7 +930,7 @@ If @samp{framebuffer_type} is set to 1 it means direct RGB color. Then color_typ
 @end group
 @end example
 
-If @samp{framebuffer_type} is set to 2 it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
+If @samp{framebuffer_type} is set to @samp{2} it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
 All further values of @samp{framebuffer_type} are reserved for future expansion
 
 @node Examples
