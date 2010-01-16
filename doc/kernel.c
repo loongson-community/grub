@@ -50,7 +50,7 @@ void
 cmain (unsigned long magic, unsigned long addr)
 {  
   struct multiboot_tag *tag;
-  uint32_t size;
+  unsigned size;
 
   /* Clear the screen.  */
   cls ();
@@ -62,7 +62,7 @@ cmain (unsigned long magic, unsigned long addr)
       return;
     }
 
-  size = *(uint32_t *) addr;
+  size = *(unsigned *) addr;
   printf ("Announced mbi size 0x%x\n", size);
   for (tag = (struct multiboot_tag *) (addr + 4);
        tag->type != MULTIBOOT_TAG_TYPE_END;
@@ -204,7 +204,8 @@ cmain (unsigned long magic, unsigned long addr)
 	  }
 	}
     }
-  printf ("Total mbi size 0x%x\n", (uint32_t) tag - addr);
+  tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag + tag->size);
+  printf ("Total mbi size 0x%x\n", (unsigned) tag - addr);
 }    
 
 /* Clear the screen and initialize VIDEO, XPOS and YPOS.  */
