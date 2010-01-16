@@ -3,7 +3,7 @@ AUTOMAKE_OPTIONS = 1.7 gnu
 SUBDIRS = doc
 
 .PHONY: web-manual
-web-manual:
+web-manual: all
 	@cd '$(srcdir)/doc' ; \
 		$(SHELL) ../gendocs.sh -o '$(abs_builddir)/doc/manual' \
 		--email $(PACKAGE_BUGREPORT) $(PACKAGE) \
