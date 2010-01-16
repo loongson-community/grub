@@ -414,9 +414,6 @@ If bit 2 in the @samp{flags} word is set, information about the video
 mode table (@pxref{Boot information format}) must be available to the
 kernel.
 
-If bit 3 in the @samp{flags} word is set, the multiboot information 
-must be in tagged format.
-
 If bit 16 in the @samp{flags} word is set, then the fields at offsets
 12-28 in the Multiboot header are valid, and the boot loader should use
 them instead of the fields in the actual executable header to calculate
@@ -518,7 +515,7 @@ must have the following state:
 
 @table @samp
 @item EAX
-Must contain the magic value @samp{0x2BADB002} if Boot info is non-tagged and @samp{0x3BADB002} otherwise; the presence of this
+Must contain the magic value @samp{0x36d76289}; the presence of this
 value indicates to the operating system that it was loaded by a
 Multiboot-compliant boot loader (e.g. as opposed to another type of
 boot loader that the operating system can also be loaded from).
@@ -598,9 +595,19 @@ operating system's responsibility to avoid overwriting this memory until
 it is done using it.
 
 @subsection Basic tags structure
-Boot information can be passed in one of two formats: pointer-based
-or tag-based. Tag-based format must be used if and only it was requested
-in multiboot header. Every tag begins with following fields:
+Boot information consists of fixed part and a series of tags. Fixed part is as following:
+@example
+@group
+        +-------------------+
+0-3     | total_size        |
+        +-------------------+
+@end group
+@end example
+
+@samp{total_size} contains the total size of boot information including
+this field and terminating tag in bytes
+
+Every tag begins with following fields:
 
 @example
 @group
@@ -615,78 +622,7 @@ in multiboot header. Every tag begins with following fields:
 @samp{size} contains the size of tag including header fields.
 Tags follow one another without any gaps. Tags are terminated by a tag of type @samp{0} and size @samp{8}.
 
-@subsection Basic non-tagged structure
-The format of the Multiboot information structure (as defined so far)
-follows:
-
-@example
-@group
-        +-------------------+
-0       | flags             |    (required)
-        +-------------------+
-4       | mem_lower         |    (present if flags[0] is set)
-8       | mem_upper         |    (present if flags[0] is set)
-        +-------------------+
-12      | boot_device       |    (present if flags[1] is set)
-        +-------------------+
-16      | cmdline           |    (present if flags[2] is set)
-        +-------------------+
-20      | mods_count        |    (present if flags[3] is set)
-24      | mods_addr         |    (present if flags[3] is set)
-        +-------------------+
-28 - 40 | syms              |    (present if flags[4] or
-        |                   |                flags[5] is set)
-        +-------------------+
-44      | mmap_length       |    (present if flags[6] is set)
-48      | mmap_addr         |    (present if flags[6] is set)
-        +-------------------+
-52      | drives_length     |    (present if flags[7] is set)
-56      | drives_addr       |    (present if flags[7] is set)
-        +-------------------+
-60      | config_table      |    (present if flags[8] is set)
-        +-------------------+
-64      | boot_loader_name  |    (present if flags[9] is set)
-        +-------------------+
-68      | apm_table         |    (present if flags[10] is set)
-        +-------------------+
-72      | vbe_control_info  |    (present if flags[11] is set)
-76      | vbe_mode_info     |
-80      | vbe_mode          |
-82      | vbe_interface_seg |
-84      | vbe_interface_off |
-86      | vbe_interface_len |
-        +-------------------+
-88      | framebuffer_addr  |    (present if flags[12] is set)
-96      | framebuffer_pitch |
-100     | framebuffer_width |
-104     | framebuffer_height|
-108     | framebuffer_bpp   |
-109     | framebuffer_type  |
-110-115 | color_info        |
-        +-------------------+
-
-@end group
-@end example
-
-The first longword indicates the presence and validity of other fields
-in the Multiboot information structure. All as-yet-undefined bits must
-be set to zero by the boot loader. Any set bits that the operating
-system does not understand should be ignored. Thus, the @samp{flags}
-field also functions as a version indicator, allowing the Multiboot
-information structure to be expanded in the future without breaking
-anything.
-
 @subsection Basic memory information
-If bit 0 in the @samp{flags} word is set, then the @samp{mem_*} fields
-are valid. @samp{mem_lower} and @samp{mem_upper} indicate the amount of
-lower and upper memory, respectively, in kilobytes. Lower memory starts
-at address 0, and upper memory starts at address 1 megabyte. The maximum
-possible value for lower memory is 640 kilobytes. The value returned for
-upper memory is maximally the address of the first upper memory hole
-minus 1 megabyte. It is not guaranteed to be this value.
-
-Corresponding tag is:
-
 @example
 @group
         +-------------------+
@@ -698,50 +634,14 @@ Corresponding tag is:
 @end group
 @end example
 
+ @samp{mem_lower} and @samp{mem_upper} indicate the amount of
+lower and upper memory, respectively, in kilobytes. Lower memory starts
+at address 0, and upper memory starts at address 1 megabyte. The maximum
+possible value for lower memory is 640 kilobytes. The value returned for
+upper memory is maximally the address of the first upper memory hole
+minus 1 megabyte. It is not guaranteed to be this value.
+
 @subsection BIOS Boot device
-If bit 1 in the @samp{flags} word is set, then the @samp{boot_device}
-field is valid, and indicates which @sc{bios} disk device the boot
-loader loaded the OS image from. If the OS image was not loaded from a
-@sc{bios} disk, then this field must not be present (bit 3 must be
-clear). The operating system may use this field as a hint for
-determining its own @dfn{root} device, but is not required to. The
-@samp{boot_device} field is laid out in four one-byte subfields as
-follows:
-
-@example
-@group
-+-------+-------+-------+-------+
-| part3 | part2 | part1 | drive |
-+-------+-------+-------+-------+
-@end group
-@end example
-
-The first byte contains the @sc{bios} drive number as understood by the
-@sc{bios} INT 0x13 low-level disk interface: e.g. 0x00 for the first
-floppy disk or 0x80 for the first hard disk.
-
-The three remaining bytes specify the boot partition. @samp{part1}
-specifies the @dfn{top-level} partition number, @samp{part2} specifies a
-@dfn{sub-partition} in the top-level partition, etc. Partition numbers
-always start from zero. Unused partition bytes must be set to 0xFF. For
-example, if the disk is partitioned using a simple one-level DOS
-partitioning scheme, then @samp{part1} contains the DOS partition
-number, and @samp{part2} and @samp{part3} are both 0xFF. As another
-example, if a disk is partitioned first into DOS partitions, and then
-one of those DOS partitions is subdivided into several BSD partitions
-using BSD's @dfn{disklabel} strategy, then @samp{part1} contains the DOS
-partition number, @samp{part2} contains the BSD sub-partition within
-that DOS partition, and @samp{part3} is 0xFF.
-
-DOS extended partitions are indicated as partition numbers starting from
-4 and increasing, rather than as nested sub-partitions, even though the
-underlying disk layout of extended partitions is hierarchical in
-nature. For example, if the boot loader boots from the second extended
-partition on a disk partitioned in conventional DOS style, then
-@samp{part1} will be 5, and @samp{part2} and @samp{part3} will both be
-0xFF.
-
-Corresponding tag is:
 @example
 @group
         +-------------------+
@@ -749,18 +649,43 @@ Corresponding tag is:
 4       | size = 20         |
 8       | biosdev           |
 12      | partition         |
-16-19   | sub-parition      |
+16-19   | sub_parition      |
         +-------------------+
 @end group
 @end example
 
-@subsection Boot command line
-If bit 2 of the @samp{flags} longword is set, the @samp{cmdline} field
-is valid, and contains the physical address of the command line to
-be passed to the kernel. The command line is a normal C-style
-UTF-8 zero-terminated string.
+This tag indicates which @sc{bios} disk device the boot
+loader loaded the OS image from. If the OS image was not loaded from a
+@sc{bios} disk, then this tag must not be present. The operating system may
+use this field as a hint for determining its own @dfn{root} device,
+but is not required to.
 
-Corresponding tag is:
+The @samp{biosdev} contains the @sc{bios} drive number as understood by the
+@sc{bios} INT 0x13 low-level disk interface: e.g. 0x00 for the first
+floppy disk or 0x80 for the first hard disk.
+
+The three remaining bytes specify the boot partition. @samp{partition}
+specifies the @dfn{top-level} partition number, @samp{sub_partition} specifies a
+@dfn{sub-partition} in the top-level partition, etc. Partition numbers
+always start from zero. Unused partition bytes must be set to 0xFFFFFFFF. For
+example, if the disk is partitioned using a simple one-level DOS
+partitioning scheme, then @samp{partition} contains the DOS partition
+number, and @samp{sub_partition} if 0xFFFFFF. As another
+example, if a disk is partitioned first into DOS partitions, and then
+one of those DOS partitions is subdivided into several BSD partitions
+using BSD's @dfn{disklabel} strategy, then @samp{partition} contains the DOS
+partition number and @samp{sub_partition} contains the BSD sub-partition within
+that DOS partition.
+
+DOS extended partitions are indicated as partition numbers starting from
+4 and increasing, rather than as nested sub-partitions, even though the
+underlying disk layout of extended partitions is hierarchical in
+nature. For example, if the boot loader boots from the second extended
+partition on a disk partitioned in conventional DOS style, then
+@samp{partition} will be 5, and @samp{sub_partiton} will be 0xFFFFFFFF.
+
+
+@subsection Boot command line
 @example
 @group
         +-------------------+
@@ -771,43 +696,10 @@ Corresponding tag is:
 @end group
 @end example
 
-@samp{string} contains zero-terminated UTF-8 string padded to have length divisible by 4.
+@samp{string} contains command line. The command line is a normal C-styl 
+zero-terminated UTF-8 string padded to have length divisible by 4.
 
 @subsection Modules
-If bit 3 of the @samp{flags} is set, then the @samp{mods} fields
-indicate to the kernel what boot modules were loaded along with the
-kernel image, and where they can be found. @samp{mods_count} contains
-the number of modules loaded; @samp{mods_addr} contains the physical
-address of the first module structure. @samp{mods_count} may be zero,
-indicating no boot modules were loaded, even if bit 1 of @samp{flags} is
-set. Each module structure is formatted as follows:
-
-@example
-@group
-        +-------------------+
-0       | mod_start         |
-4       | mod_end           |
-        +-------------------+
-8       | string            |
-        +-------------------+
-12      | reserved (0)      |
-        +-------------------+
-@end group
-@end example
-
-The first two fields contain the start and end addresses of the boot
-module itself. The @samp{string} field provides an arbitrary string to
-be associated with that particular boot module; it is a zero-terminated
-UTF-8 string, just like the kernel command line. The @samp{string} field
-may be 0 if there is no string associated with the module. Typically the
-string might be a command line (e.g. if the operating system treats boot
-modules as executable programs), or a pathname (e.g. if the operating
-system treats boot modules as files in a file system), but its exact use
-is specific to the operating system. The @samp{reserved} field must be
-set to 0 by the boot loader and ignored by the operating system.
-
-Corresponding tag is:
-
 @example
 @group
         +-------------------+
@@ -820,63 +712,47 @@ Corresponding tag is:
 @end group
 @end example
 
+This tag indicates to the kernel what boot module was loaded along with the
+kernel image, and where it can be found.
+
+The @samp{mod_start} and @samp{mod_end} contain the start and end addresses of the boot
+module itself. The @samp{string} field provides an arbitrary string to
+be associated with that particular boot module; it is a zero-terminated
+UTF-8 string, just like the kernel command line. Typically the
+string might be a command line (e.g. if the operating system treats boot
+modules as executable programs), or a pathname (e.g. if the operating
+system treats boot modules as files in a file system), but its exact use
+is specific to the operating system. 
+
 Tag is padded in the way to have size divisible by 4.
 
-One tag appears per module.
+One tag appears per module. This tag type may appear multiple times.
 
-@subsection Symbols
-@strong{Caution:} Bits 4 & 5 are mutually exclusive.
-
-If bit 4 in the @samp{flags} word is set, then the following fields in
-the Multiboot information structure starting at byte 28 are valid:
-
-@example
-@group
-        +-------------------+
-28      | tabsize           |
-32      | strsize           |
-36      | addr              |
-40      | reserved (0)      |
-        +-------------------+
-@end group
-@end example
-
-These indicate where the symbol table from an a.out kernel image can be
-found. @samp{addr} is the physical address of the size (4-byte unsigned
-long) of an array of a.out format @dfn{nlist} structures, followed
-immediately by the array itself, then the size (4-byte unsigned long) of
-a set of zero-terminated @sc{ascii} strings (plus sizeof(unsigned long) in
-this case), and finally the set of strings itself. @samp{tabsize} is
-equal to its size parameter (found at the beginning of the symbol
-section), and @samp{strsize} is equal to its size parameter (found at
-the beginning of the string section) of the following string table to
-which the symbol table refers. Note that @samp{tabsize} may be 0,
-indicating no symbols, even if bit 4 in the @samp{flags} word is set.
-
+@subsection ELF-Symbols
 If bit 5 in the @samp{flags} word is set, then the following fields in
 the Multiboot information structure starting at byte 28 are valid:
 
 @example
 @group
         +-------------------+
-28      | num               |
-32      | size              |
-36      | addr              |
-40      | shndx             |
+0       | type = 9          |
+4       | size              |
+8       | num               |
+12      | entsize           |
+16      | shndx             |
+20-xx   | section headers   |
         +-------------------+
 @end group
 @end example
 
-These indicate where the section header table from an ELF kernel is, the
+This tag contains section header table from an ELF kernel, the
 size of each entry, number of entries, and the string table used as the
 index of names. They correspond to the @samp{shdr_*} entries
 (@samp{shdr_num}, etc.) in the Executable and Linkable Format (@sc{elf})
 specification in the program header. All sections are loaded, and the
 physical address fields of the @sc{elf} section header then refer to where
 the sections are in memory (refer to the i386 @sc{elf} documentation for
-details as to how to read the section header(s)). Note that
-@samp{shdr_num} may be 0, indicating no symbols, even if bit 5 in the
-@samp{flags} word is set.
+details as to how to read the section header(s)).
 
 @subsection Memory map
 If bit 6 in the @samp{flags} word is set, then the @samp{mmap_*} fields
@@ -919,67 +795,6 @@ The corresponding tag is
 @end group
 @end example
 
-@subsection Drives table
-If bit 7 in the @samp{flags} is set, then the @samp{drives_*} fields
-are valid, and indicate the address of the physical address of the first
-drive structure and the size of drive structures. @samp{drives_addr}
-is the address, and @samp{drives_length} is the total size of drive
-structures. Note that @samp{drives_length} may be zero. Each drive
-structure is formatted as follows:
-
-@example
-@group
-        +-------------------+
-0       | size              |
-        +-------------------+
-4       | drive_number      |
-        +-------------------+
-5       | drive_mode        |
-        +-------------------+
-6       | drive_cylinders   |
-8       | drive_heads       |
-9       | drive_sectors     |
-        +-------------------+
-10 - xx | drive_ports       |
-        +-------------------+
-@end group
-@end example
-
-The @samp{size} field specifies the size of this structure. The size
-varies, depending on the number of ports. Note that the size may not be
-equal to (10 + 2 * the number of ports), because of an alignment.
-
-The @samp{drive_number} field contains the BIOS drive number. The
-@samp{drive_mode} field represents the access mode used by the boot
-loader. Currently, the following modes are defined:
-
-@table @samp
-@item 0
-CHS mode (traditional cylinder/head/sector addressing mode).
-
-@item 1
-LBA mode (Logical Block Addressing mode).
-@end table
-
-The three fields, @samp{drive_cylinders}, @samp{drive_heads} and
-@samp{drive_sectors}, indicate the geometry of the drive detected by the
-@sc{bios}. @samp{drive_cylinders} contains the number of the
-cylinders. @samp{drive_heads} contains the number of the
-heads. @samp{drive_sectors} contains the number of the sectors per
-track.
-
-The @samp{drive_ports} field contains the array of the I/O ports used
-for the drive in the @sc{bios} code. The array consists of zero or more
-unsigned two-bytes integers, and is terminated with zero. Note that the
-array may contain any number of I/O ports that are not related to the
-drive actually (such as @sc{dma} controller's ports).
-
-@subsection Configuration table
-If bit 8 in the @samp{flags} is set, then the @samp{config_table} field
-is valid, and indicates the address of the @sc{rom} configuration table
-returned by the @dfn{GET CONFIGURATION} @sc{bios} call. If the @sc{bios}
-call fails, then the size of the table must be @emph{zero}.
-
 @subsection Boot loader name
 If bit 9 in the @samp{flags} is set, the @samp{boot_loader_name} field
 is valid, and contains the physical address of the name of a boot
@@ -1000,22 +815,21 @@ Corresponding tag is:
 @samp{string} contains zero-terminated UTF-8 string padded to have length divisible by 4.
 
 @subsection APM table
-If bit 10 in the @samp{flags} is set, the @samp{apm_table} field is
-valid, and contains the physical address of an @sc{apm} table defined as
-below:
-
+The tag type 10 contains @sc{apm} table
 @example
 @group
         +----------------------+
-0       | version              |
-2       | cseg                 |
-4       | offset               |
-8       | cseg_16              |
-10      | dseg                 |
-12      | flags                |
-14      | cseg_len             |
-16      | cseg_16_len          |
-18      | dseg_len             |
+0       | type = 10            |
+4       | size                 |
+8       | version              |
+10      | cseg                 |
+12      | offset               |
+16      | cseg_16              |
+18      | dseg                 |
+20      | flags                |
+22      | cseg_len             |
+24      | cseg_16_len          |
+26-27   | dseg_len             |
         +----------------------+
 @end group
 @end example
@@ -1033,29 +847,6 @@ bytes, and the others are 2 bytes. See
 Management (APM) BIOS Interface Specification}, for more information.
 
 @subsection VBE info
-If bit 11 in the @samp{flags} is set, the @sc{vbe} table is available.
-
-The fields @samp{vbe_control_info} and @samp{vbe_mode_info} contain
-the physical addresses of @sc{vbe} control information returned by the
-@sc{vbe} Function 00h and @sc{vbe} mode information returned by the
-@sc{vbe} Function 01h, respectively.
-
-The field @samp{vbe_mode} indicates current video mode in the format
-specified in @sc{vbe} 3.0.
-
-The rest fields @samp{vbe_interface_seg}, @samp{vbe_interface_off}, and
-@samp{vbe_interface_len} contain the table of a protected mode interface
-defined in @sc{vbe} 2.0+. If this information is not available, those
-fields contain zero. Note that @sc{vbe} 3.0 defines another protected
-mode interface which is incompatible with the old one. If you want to
-use the new protected mode interface, you will have to find the table
-yourself.
-
-The fields for the graphics table are designed for @sc{vbe}, but
-Multiboot boot loaders may simulate @sc{vbe} on non-@sc{vbe} modes, as
-if they were @sc{vbe} modes.
-
-Corresponding tag is:
 @example
 @group
         +-------------------+
@@ -1071,49 +862,23 @@ Corresponding tag is:
 @end group
 @end example
 
-Notice that the tag contains VBE control and mode information structures directly rather than a pointer to them
+The fields @samp{vbe_control_info} and @samp{vbe_mode_info} contain
+@sc{vbe} control information returned by the
+@sc{vbe} Function 00h and @sc{vbe} mode information returned by the
+@sc{vbe} Function 01h, respectively.
+
+The field @samp{vbe_mode} indicates current video mode in the format
+specified in @sc{vbe} 3.0.
+
+The rest fields @samp{vbe_interface_seg}, @samp{vbe_interface_off}, and
+@samp{vbe_interface_len} contain the table of a protected mode interface
+defined in @sc{vbe} 2.0+. If this information is not available, those
+fields contain zero. Note that @sc{vbe} 3.0 defines another protected
+mode interface which is incompatible with the old one. If you want to
+use the new protected mode interface, you will have to find the table
+yourself.
 
 @subsection Framebuffer info
-If bit 12 in the @samp{flags} is set, the @sc{Framebuffer} table is available.
-
-The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as follows:
-@example
-@group
-        +----------------------------------+
-110     | framebuffer_palette_addr         |
-114     | framebuffer_palette_num_colors   |
-        +----------------------------------+
-@end group
-@end example
-@samp{framebuffer_palette_addr} contains address of palette. Palette is an array of colour descriptors. Each colour descriptor has following structure:
-@example
-@group
-        +-------------+
-0       | red_value   |
-1       | green_value |
-2-2     | blue_value  |
-        +-------------+
-@end group
-@end example
-If @samp{framebuffer_type} is set to 1 it means direct RGB color. Then color_type is defined as follows:
-
-@example
-@group
-        +----------------------------------+
-110     | framebuffer_red_field_position   |
-111     | framebuffer_red_mask_size        |
-112     | framebuffer_green_field_position |
-113     | framebuffer_green_mask_size      |
-114     | framebuffer_blue_field_position  |
-115     | framebuffer_blue_mask_size       |
-        +----------------------------------+
-@end group
-@end example
-
-If @samp{framebuffer_type} is set to 2 it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
-All further values of @samp{framebuffer_type} are reserved for future expansion
-
-Corresponding tag is:
 @example
 @group
         +--------------------+
@@ -1130,22 +895,43 @@ Corresponding tag is:
 @end group
 @end example
 
-If @samp{framebuffer_type} is @samp{0} color_info has the following format:
+The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as follows:
+@example
+@group
+        +----------------------------------+
+30      | framebuffer_palette_num_colors   |
+34-xx   | framebuffer_palette              |
+        +----------------------------------+
+@end group
+@end example
+@samp{framebuffer_palette} is an array of colour descriptors.
+Each colour descriptor has following structure:
+@example
+@group
+        +-------------+
+0       | red_value   |
+1       | green_value |
+2-2     | blue_value  |
+        +-------------+
+@end group
+@end example
+If @samp{framebuffer_type} is set to 1 it means direct RGB color. Then color_type is defined as follows:
 
 @example
 @group
-        +---------------------------------+
-0       | framebuffer_palette_num_colors  |
-4-xx    | framebuffer_palette             |
-        +---------------------------------+
+       +----------------------------------+
+30     | framebuffer_red_field_position   |
+31     | framebuffer_red_mask_size        |
+32     | framebuffer_green_field_position |
+33     | framebuffer_green_mask_size      |
+34     | framebuffer_blue_field_position  |
+35-35  | framebuffer_blue_mask_size       |
+       +----------------------------------+
 @end group
 @end example
 
-With @samp{framebuffer_palette_num_colors} and @samp{framebuffer_palette} having the same format as in non-tagged version
-
-Note: @samp{framebuffer_palette} contains the palette and not its address.
-
-If @samp{framebuffer_type} is @samp{1} or @samp{2}  color_info has the same format as non-tagged version.
+If @samp{framebuffer_type} is set to 2 it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
+All further values of @samp{framebuffer_type} are reserved for future expansion
 
 @node Examples
 @chapter Examples

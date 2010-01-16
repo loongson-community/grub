@@ -60,6 +60,8 @@
 #define MULTIBOOT_TAG_TYPE_MMAP              6
 #define MULTIBOOT_TAG_TYPE_VBE               7
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER       8
+#define MULTIBOOT_TAG_TYPE_ELF_SECTIONS      9
+#define MULTIBOOT_TAG_TYPE_APM              10
 
 #ifndef ASM_FILE
 
@@ -218,6 +220,31 @@ struct multiboot_tag_framebuffer
       multiboot_uint8_t framebuffer_blue_mask_size;
     };
   };
+};
+
+struct multiboot_tag_elf_sections
+{
+  multiboot_uint32_t type;
+  multiboot_uint32_t size;
+  multiboot_uint32_t num;
+  multiboot_uint32_t entsize;
+  multiboot_uint32_t shndx;
+  char sections[0];
+};
+
+struct multiboot_tag_apm
+{
+  multiboot_uint32_t type;
+  multiboot_uint32_t size;
+  multiboot_uint16_t version;
+  multiboot_uint16_t cseg;
+  multiboot_uint32_t offset;
+  multiboot_uint16_t cseg_16;
+  multiboot_uint16_t dseg;
+  multiboot_uint16_t flags;
+  multiboot_uint16_t cseg_len;
+  multiboot_uint16_t cseg_16_len;
+  multiboot_uint16_t dseg_len;
 };
 
 #endif /* ! ASM_FILE */
