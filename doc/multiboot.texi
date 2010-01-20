@@ -344,8 +344,10 @@ executable header.
 @menu
 * Header layout::               The layout of Multiboot header
 * Header magic fields::         The magic fields of Multiboot header
-* Header address fields::       
-* Header graphics fields::      
+* Header tags::
+* Information request header tag::
+* Address header tag::       
+* Graphics header tags::      
 @end menu
 
 
@@ -355,27 +357,17 @@ executable header.
 The layout of the Multiboot header must be as follows:
 
 @multitable @columnfractions .1 .1 .2 .5
-@item Offset @tab Type  @tab Field Name    @tab Note
-@item 0      @tab u32 @tab magic         @tab required
-@item 4      @tab u32 @tab flags         @tab required
-@item 8      @tab u32 @tab checksum      @tab required
-@item 12     @tab u32 @tab header_addr   @tab if flags[16] is set
-@item 16     @tab u32 @tab load_addr     @tab if flags[16] is set
-@item 20     @tab u32 @tab load_end_addr @tab if flags[16] is set
-@item 24     @tab u32 @tab bss_end_addr  @tab if flags[16] is set
-@item 28     @tab u32 @tab entry_addr    @tab if flags[16] is set
-@item 32     @tab u32 @tab mode_type     @tab if flags[2] is set
-@item 36     @tab u32 @tab width         @tab if flags[2] is set
-@item 40     @tab u32 @tab height        @tab if flags[2] is set
-@item 44     @tab u32 @tab depth         @tab if flags[2] is set
+@item Offset @tab Type  @tab Field Name   @tab Note
+@item 0      @tab u32 @tab magic          @tab required
+@item 4      @tab u32 @tab architecture   @tab required
+@item 4      @tab u32 @tab header_length  @tab required
+@item 8      @tab u32 @tab checksum       @tab required
+@item 12     @tab u32 @tab tags           @tab required
 @end multitable
 
-The fields @samp{magic}, @samp{flags} and @samp{checksum} are defined in
-@ref{Header magic fields}, the fields @samp{header_addr},
-@samp{load_addr}, @samp{load_end_addr}, @samp{bss_end_addr} and
-@samp{entry_addr} are defined in @ref{Header address fields}, and the
-fields @samp{mode_type}, @samp{width}, @samp{height} and @samp{depth} are
-defined in @ref{Header graphics fields}.
+The fields @samp{magic}, @samp{architecture}, @samp{header_length} and @samp{checksum} are defined in @ref{Header magic fields}, @samp{tags}
+are defined in @ref{Header tags}. All fields are in native endianness.
+On bi-endian platforms native-endianness means the endiannes OS image starts in.
 
 
 @node Header magic fields
@@ -384,58 +376,82 @@ defined in @ref{Header graphics fields}.
 @table @samp
 @item magic
 The field @samp{magic} is the magic number identifying the header,
-which must be the hexadecimal value @code{0x1BADB002}.
+which must be the hexadecimal value @code{0xE85250D6}.
 
-@item flags
-The field @samp{flags} specifies features that the OS image requests or
-requires of an boot loader. Bits 0-15 indicate requirements; if the
-boot loader sees any of these bits set but doesn't understand the flag
-or can't fulfill the requirements it indicates for some reason, it must
-notify the user and fail to load the OS image. Bits 16-31 indicate
-optional features; if any bits in this range are set but the boot loader
-doesn't understand them, it may simply ignore them and proceed as
-usual. Naturally, all as-yet-undefined bits in the @samp{flags} word
-must be set to zero in OS images. This way, the @samp{flags} fields
-serves for version control as well as simple feature selection.
+@item architecture
+The field @samp{architecture} specifies the Central Processing Unit
+Instruction Set Architecture. Since @samp{magic} isn't a palindrome
+it already specifies the endianness ISAs differing only in endianness
+recieve the same ID. @samp{0} means 32-bit (protected) mode of i386.
 
-If bit 0 in the @samp{flags} word is set, then all boot modules loaded
-along with the operating system must be aligned on page (4KB)
-boundaries. Some operating systems expect to be able to map the pages
-containing boot modules directly into a paged address space during
-startup, and thus need the boot modules to be page-aligned.
+@item header_length
+The field @samp{header_length} specifies the Length of multiboot header
+in bytes including magic fields.
 
-If bit 1 in the @samp{flags} word is set, then information on available
-memory via at least the @samp{mem_*} fields of the Multiboot information
-structure (@pxref{Boot information format}) must be included. If the
-boot loader is capable of passing a memory map (the @samp{mmap_*} fields)
-and one exists, then it may be included as well.
-
-If bit 2 in the @samp{flags} word is set, information about the video
-mode table (@pxref{Boot information format}) must be available to the
-kernel.
-
-If bit 16 in the @samp{flags} word is set, then the fields at offsets
-12-28 in the Multiboot header are valid, and the boot loader should use
-them instead of the fields in the actual executable header to calculate
-where to load the OS image. This information does not need to be
-provided if the kernel image is in @sc{elf} format, but it @emph{must}
-be provided if the images is in a.out format or in some other
-format. Compliant boot loaders must be able to load images that either
-are in @sc{elf} format or contain the load address information embedded
-in the Multiboot header; they may also directly support other executable
-formats, such as particular a.out variants, but are not required to.
 
 @item checksum
 The field @samp{checksum} is a 32-bit unsigned value which, when added
-to the other magic fields (i.e. @samp{magic} and @samp{flags}), must
-have a 32-bit unsigned sum of zero.
+to the other magic fields (i.e. @samp{magic}, @samp{architecture} 
+and @samp{header_length}), must have a 32-bit unsigned sum of zero.
 @end table
 
 
-@node Header address fields
-@subsection The address fields of Multiboot header
+@node Header tags
+@subsection General tag structure
+Tags constitutes a buffer of structures immediately following each other.
+Every structure has following format:
 
-All of the address fields enabled by flag bit 16 are physical addresses.
+@example
+@group
+        +-------------------+
+0       | type              |
+4       | size              |
+8-11    | optional          |
+        +-------------------+
+@end group
+@end example
+
+@samp{type} contains an identifier of contents of the rest of the tag.
+@samp{size} contains the size of tag including header fields.
+@samp{optional} is set to 1 if bootloader may ignore this tag if it 
+lacks relevant support.
+Tags are terminated by a tag of type @samp{0} and size @samp{12}.
+
+@node Information request header tag
+@subsection Multiboot information request
+
+@example
+@group
+        +-------------------+
+0       | type = 1          |
+4       | size = 16         |
+8       | optional = 0      |
+12-15   | mbi_tag_type      |
+        +-------------------+
+@end group
+@end example
+
+If this tag is present and @samp{optional} is set to @samp{0} at least
+one tag of type @samp{mbi_tag_type} must be present.
+
+@node Address header tag
+@subsection The address tag of Multiboot header
+
+@example
+@group
+        +-------------------+
+0       | type = 2          |
+4       | size = 28         |
+8       | optional          |
+12      | header_addr       |
+16      | load_addr         |
+20      | load_end_addr     |
+24-27   | entry_addr        |
+        +-------------------+
+@end group
+@end example
+
+All of the address fields in this tag are physical addresses.
 The meaning of each is as follows:
 
 @table @code
@@ -472,23 +488,32 @@ start running the operating system.
 @end table
 
 
-@node Header graphics fields
-@subsection The graphics fields of Multiboot header
+@node Graphics header tags
+@subsection The framebuffer tag of Multiboot header
 
-All of the graphics fields are enabled by flag bit 2. They specify the
-preferred graphics mode. Note that that is only a @emph{recommended}
+
+@example
+@group
+        +-------------------+
+0       | type = 3          |
+4       | size = 24         |
+8       | optional = 1      |
+12      | width             |
+16      | height            |
+20-23   | depth             |
+        +-------------------+
+@end group
+@end example
+
+
+This tag specifies the preferred graphics mode. If this tag is present
+bootloader assumes that the payload has framebuffer support.
+Note that that is only a @emph{recommended}
 mode by the OS image. Boot loader may choose a different mode if it sees fit.
 
 The meaning of each is as follows:
 
 @table @code
-@item mode_type
-Contains @samp{0} for linear graphics mode or @samp{1} for
-EGA-standard text mode. Everything else is reserved for future
-expansion. Note that the boot loader may set a text mode even if this
-field contains @samp{0}, or set a video mode even if this field contains
-@samp{1}.
-
 @item width
 Contains the number of the columns. This is specified in pixels in a
 graphics mode, and in characters in a text mode. The value zero
@@ -504,6 +529,20 @@ Contains the number of bits per pixel in a graphics mode, and zero in
 a text mode. The value zero indicates that the OS image has no
 preference.
 @end table
+
+@subsection The EGA text tag of Multiboot header
+
+@example
+@group
+        +-------------------+
+0       | type = 4          |
+4       | size = 12         |
+8-11    | optional = 1      |
+        +-------------------+
+@end group
+@end example
+
+This tag indicates that the OS image has EGA text support.
 
 
 @node Machine state
