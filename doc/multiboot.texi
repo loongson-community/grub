@@ -817,7 +817,9 @@ where @samp{size} is the size of the associated structure in bytes, which
 can be greater than the minimum of 20 bytes. @samp{base_addr} is the
 starting address. @samp{length} is the size of the memory region in bytes.
 @samp{type} is the variety of address range represented, where a
-value of 1 indicates available @sc{ram}, and all other values currently
+value of 1 indicates available @sc{ram}, value of 3 indicates usable memory
+holding ACPI information, value of 4 indicates reserved memory which needs to
+be preserved on hibernation and all other values currently
 indicated a reserved area.
 
 The map provided is guaranteed to list all standard @sc{ram} that should

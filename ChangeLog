@@ -1,3 +1,9 @@
+2010-01-20  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi: Define NVS and ACPI memory types.
+	* doc/multiboot.h (MULTIBOOT_MEMORY_ACPI_RECLAIMABLE): New definition.
+	(MULTIBOOT_MEMORY_NVS): Likewise.
+
 2010-01-15  Robert Millan  <rmh.grub@aybabtu.com>
 
 	* doc/boot.S: Slight adjustment to make makeinfo happy.
