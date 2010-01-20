@@ -347,7 +347,7 @@ executable header.
 * Header tags::
 * Information request header tag::
 * Address header tag::       
-* Graphics header tags::      
+* Console header tags::      
 @end menu
 
 
@@ -425,14 +425,19 @@ Tags are terminated by a tag of type @samp{0} and size @samp{12}.
         +-------------------+
 0       | type = 1          |
 4       | size = 16         |
-8       | optional = 0      |
+8       | optional          |
 12-15   | mbi_tag_type      |
         +-------------------+
 @end group
 @end example
 
-If this tag is present and @samp{optional} is set to @samp{0} at least
-one tag of type @samp{mbi_tag_type} must be present.
+If this tag is present and @samp{optional} is set to @samp{0} information
+conveyed by tag type @samp{mbi_tag_type} must be present. 
+
+Note: it doesn't garantee that any tags of type @samp{mbi_tag_type} will
+actually be present. E.g. on a videoless system even if you requested tag
+@samp{8} no tags of type @samp{8} will be present in mbi.
+
 
 @node Address header tag
 @subsection The address tag of Multiboot header
@@ -488,16 +493,30 @@ start running the operating system.
 @end table
 
 
-@node Graphics header tags
-@subsection The framebuffer tag of Multiboot header
-
+@node Console header tags
+@subsection The interractive console request
 
 @example
 @group
         +-------------------+
 0       | type = 3          |
+4       | size = 12         |
+8-11    | optional          |
+        +-------------------+
+@end group
+@end example
+
+If this tag is present at least one of supported consoles must be present
+and information about it must be available in mbi.
+
+@subsection The framebuffer tag of Multiboot header
+
+@example
+@group
+        +-------------------+
+0       | type = 4          |
 4       | size = 24         |
-8       | optional = 1      |
+8       | optional          |
 12      | width             |
 16      | height            |
 20-23   | depth             |
@@ -535,14 +554,30 @@ preference.
 @example
 @group
         +-------------------+
-0       | type = 4          |
+0       | type = 5          |
 4       | size = 12         |
-8-11    | optional = 1      |
+8-11    | optional          |
         +-------------------+
 @end group
 @end example
 
 This tag indicates that the OS image has EGA text support.
+
+
+@node Module alignment header tag
+@subsection Module alignment tag
+
+@example
+@group
+        +-------------------+
+0       | type = 6          |
+4       | size = 12         |
+8-11    | optional          |
+        +-------------------+
+@end group
+@end example
+
+If this tag is present modules must be page aligned.
 
 
 @node Machine state
