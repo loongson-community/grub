@@ -360,9 +360,9 @@ The layout of the Multiboot header must be as follows:
 @item Offset @tab Type  @tab Field Name   @tab Note
 @item 0      @tab u32 @tab magic          @tab required
 @item 4      @tab u32 @tab architecture   @tab required
-@item 4      @tab u32 @tab header_length  @tab required
-@item 8      @tab u32 @tab checksum       @tab required
-@item 12     @tab u32 @tab tags           @tab required
+@item 8      @tab u32 @tab header_length  @tab required
+@item 12     @tab u32 @tab checksum       @tab required
+@item 16     @tab u32 @tab tags           @tab required
 @end multitable
 
 The fields @samp{magic}, @samp{architecture}, @samp{header_length} and @samp{checksum} are defined in @ref{Header magic fields}, @samp{tags}
