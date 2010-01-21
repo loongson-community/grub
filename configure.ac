@@ -56,6 +56,8 @@ fi
 
 AC_CHECK_TOOL(CC, gcc)
 AC_PROG_CC
+AM_PROG_AS
+
 # We need this for older versions of Autoconf.
 _AM_DEPENDENCIES(CC)
 

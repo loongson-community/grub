@@ -1,3 +1,7 @@
+2010-01-21  Robert Millan  <rmh@aybabtu.com>
+
+	* configure.ac: Add AM_PROG_AS (to fix automake generation).
+
 2009-12-07  Richard Hartmann  <richih.mailinglist@gmail.com>
 
 	* stage2/builtins.c (builtin_halt): Fix typo.
