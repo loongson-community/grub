@@ -1,5 +1,29 @@
 2010-01-21  Robert Millan  <rmh@aybabtu.com>
 
+	* autogen.sh: New file.
+
+	* INSTALL: Remove from version control.
+	* Makefile.in: Likewise.
+	* aclocal.m4: Likewise.
+	* config.guess: Likewise.
+	* config.sub: Likewise.
+	* configure: Likewise.
+	* depcomp: Likewise.
+	* docs/Makefile.in: Likewise.
+	* docs/mdate-sh: Likewise.
+	* docs/texinfo.tex: Likewise.
+	* grub/Makefile.in: Likewise.
+	* install-sh: Likewise.
+	* lib/Makefile.in: Likewise.
+	* missing: Likewise.
+	* mkinstalldirs: Likewise.
+	* netboot/Makefile.in: Likewise.
+	* stage1/Makefile.in: Likewise.
+	* stage2/Makefile.in: Likewise.
+	* util/Makefile.in: Likewise.
+
+2010-01-21  Robert Millan  <rmh@aybabtu.com>
+
 	* configure.ac: Add AM_PROG_AS (to fix automake generation).
 
 2009-12-07  Richard Hartmann  <richih.mailinglist@gmail.com>
