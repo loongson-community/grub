@@ -1,3 +1,19 @@
+2010-01-21  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* configure.ac: Remove `--enable-example-kernel' option.
+	* docs/Makefile.am
+	* docs/grub.texi: Remove referenced to `mbchk'.
+
+	* docs/boot.S: Remove.  Update all users.
+	* docs/boot.S.texi: Likewise.
+	* docs/kernel.c: Likewise.
+	* docs/kernel.c.texi: Likewise.
+	* docs/mbchk.1: Likewise.
+	* docs/multiboot.h: Likewise.
+	* docs/multiboot.h.texi: Likewise.
+	* docs/multiboot.texi: Likewise.
+	* util/mbchk.c: Likewise.
+
 2010-01-21  Robert Millan  <rmh@aybabtu.com>
 
 	* autogen.sh: New file.

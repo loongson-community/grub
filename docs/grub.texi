@@ -48,7 +48,6 @@ Software Foundation raise funds for GNU development.''
                                                 terminfo name
 * grub-set-default: (grub)Invoking grub-set-default.    Set a default boot
                                                         entry
-* mbchk: (grub)Invoking mbchk.  Check for the format of a Multiboot kernel
 @end direntry
 
 @setchapternewpage odd
@@ -103,7 +102,6 @@ This edition documents version @value{VERSION}.
 * Invoking grub-md5-crypt::     How to generate a cryptic password
 * Invoking grub-terminfo::      How to generate a terminfo command
 * Invoking grub-set-default::   How to set a default boot entry
-* Invoking mbchk::              How to use the Multiboot checker
 * Obtaining and Building GRUB:: How to obtain and build GRUB
 * Reporting bugs::              Where you should send a bug report
 * Future::                      Some future plans on GRUB
@@ -3802,27 +3800,6 @@ make your system quite robust. @xref{Making your system robust}, for
 more hints about how to set up a robust system.
 
 
-@node Invoking mbchk
-@chapter Invoking mbchk
-
-The program @command{mbchk} checks for the format of a Multiboot
-kernel. We recommend using this program before booting your own kernel
-by GRUB.
-
-@command{mbchk} accepts the following options:
-
-@table @option
-@item --help
-Print a summary of the command-line options and exit.
-
-@item --version
-Print the version number of GRUB and exit.
-
-@item --quiet
-Suppress all normal output.
-@end table
-
-
 @node Obtaining and Building GRUB
 @appendix How to obtain and build GRUB
 
@@ -3861,8 +3838,7 @@ just do:
 @end example
 
 This will install the grub shell @file{grub} (@pxref{Invoking the grub
-shell}), the Multiboot checker @file{mbchk} (@pxref{Invoking mbchk}),
-and the GRUB images. This will also install the GRUB manual.
+shell}), and the GRUB images. This will also install the GRUB manual.
 
 Also, the latest version is available from the CVS. See
 @uref{http://savannah.gnu.org/cvs/?group=grub} for more information.

@@ -647,12 +647,6 @@ else
   fi
 fi
 
-dnl Build the example Multiboot kernel.
-AC_ARG_ENABLE(example-kernel,
-  [  --enable-example-kernel
-                          build the example Multiboot kernel])
-AM_CONDITIONAL(BUILD_EXAMPLE_KERNEL, test "x$enable_example_kernel" = xyes)
-
 dnl Automatic Linux mem= option.
 AC_ARG_ENABLE(auto-linux-mem-opt,
   [  --disable-auto-linux-mem-opt
