@@ -169,53 +169,6 @@ load_image (char *kernel, char *arg, kernel_t suggested_type,
       exec_type = 2;
       str = "kludge";
     }
-  else if (len > sizeof (struct exec) && !N_BADMAG ((*(pu.aout))))
-    {
-      entry_addr = (entry_func) pu.aout->a_entry;
-
-      if (type == KERNEL_TYPE_NONE)
-	{
-	  /*
-	   *  If it doesn't have a Multiboot header, then presume
-	   *  it is either a FreeBSD or NetBSD executable.  If so,
-	   *  then use a magic number of normal ordering, ZMAGIC to
-	   *  determine if it is FreeBSD.
-	   *
-	   *  This is all because freebsd and netbsd seem to require
-	   *  masking out some address bits...  differently for each
-	   *  one...  plus of course we need to know which booting
-	   *  method to use.
-	   */
-	  entry_addr = (entry_func) ((int) entry_addr & 0xFFFFFF);
-	  
-	  if (buffer[0] == 0xb && buffer[1] == 1)
-	    {
-	      type = KERNEL_TYPE_FREEBSD;
-	      cur_addr = (int) entry_addr;
-	      str2 = "FreeBSD";
-	    }
-	  else
-	    {
-	      type = KERNEL_TYPE_NETBSD;
-	      cur_addr = (int) entry_addr & 0xF00000;
-	      if (N_GETMAGIC ((*(pu.aout))) != NMAGIC)
-		align_4k = 0;
-	      str2 = "NetBSD";
-	    }
-	}
-
-      /* first offset into file */
-      grub_seek (N_TXTOFF (*(pu.aout)));
-      text_len = pu.aout->a_text;
-      data_len = pu.aout->a_data;
-      bss_len = pu.aout->a_bss;
-
-      if (cur_addr < 0x100000)
-	errnum = ERR_BELOW_1MB;
-
-      exec_type = 1;
-      str = "a.out";
-    }
   else if (lh->boot_flag == BOOTSEC_SIGNATURE
 	   && lh->setup_sects <= LINUX_MAX_SETUP_SECTS)
     {

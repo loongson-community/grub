@@ -1,3 +1,9 @@
+2010-01-25  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* stage2/imgact_aout.h: Rewrite using aout.h from GRUB 1.97.2 as
+	a base.
+	* stage2/boot.c (load_image): Remove a.out handler for *BSD kernels.
+
 2010-01-21  Robert Millan  <rmh.grub@aybabtu.com>
 
 	* configure.ac: Remove `--enable-example-kernel' option.
