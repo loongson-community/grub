@@ -714,7 +714,7 @@ indicate to the kernel what boot modules were loaded along with the
 kernel image, and where they can be found. @samp{mods_count} contains
 the number of modules loaded; @samp{mods_addr} contains the physical
 address of the first module structure. @samp{mods_count} may be zero,
-indicating no boot modules were loaded, even if bit 1 of @samp{flags} is
+indicating no boot modules were loaded, even if bit 3 of @samp{flags} is
 set. Each module structure is formatted as follows:
 
 @example
