@@ -594,17 +594,20 @@ operating system's responsibility to avoid overwriting this memory until
 it is done using it.
 
 @subsection Basic tags structure
-Boot information consists of fixed part and a series of tags. Fixed part is as following:
+Boot information consists of fixed part and a series of tags. Its start is 8-bytes aligned.  Fixed part is as following:
 @example
 @group
         +-------------------+
 0-3     | total_size        |
+4-7     | reserved          |
         +-------------------+
 @end group
 @end example
 
 @samp{total_size} contains the total size of boot information including
 this field and terminating tag in bytes
+
+@samp{reserved} is always set to zero and must be ignored by OS image
 
 Every tag begins with following fields:
 
@@ -618,8 +621,8 @@ Every tag begins with following fields:
 @end example
 
 @samp{type} contains an identifier of contents of the rest of the tag.
-@samp{size} contains the size of tag including header fields.
-Tags follow one another without any gaps. Tags are terminated by a tag of type @samp{0} and size @samp{8}.
+@samp{size} contains the size of tag including header fields but not including padding.
+Tags follow one another padded when necessary in order for each tag to start at 8-bytes aligned address. Tags are terminated by a tag of type @samp{0} and size @samp{8}.
 
 @subsection Basic memory information
 @example
@@ -695,8 +698,8 @@ partition on a disk partitioned in conventional DOS style, then
 @end group
 @end example
 
-@samp{string} contains command line. The command line is a normal C-styl 
-zero-terminated UTF-8 string padded to have length divisible by 4.
+@samp{string} contains command line. The command line is a normal C-style 
+zero-terminated UTF-8 string.
 
 @subsection Modules
 @example
@@ -722,8 +725,6 @@ string might be a command line (e.g. if the operating system treats boot
 modules as executable programs), or a pathname (e.g. if the operating
 system treats boot modules as files in a file system), but its exact use
 is specific to the operating system. 
-
-Tag is padded in the way to have size divisible by 4.
 
 One tag appears per module. This tag type may appear multiple times.
 
@@ -754,53 +755,46 @@ the sections are in memory (refer to the i386 @sc{elf} documentation for
 details as to how to read the section header(s)).
 
 @subsection Memory map
-If bit 6 in the @samp{flags} word is set, then the @samp{mmap_*} fields
-are valid, and indicate the address and length of a buffer containing a
-memory map of the machine provided by the @sc{bios}. @samp{mmap_addr} is
-the address, and @samp{mmap_length} is the total size of the buffer. The
-buffer consists of one or more of the following size/structure pairs
-(@samp{size} is really used for skipping to the next pair):
 
-@example
-@group
-        +-------------------+
--4      | size              |
-        +-------------------+
-0       | base_addr         |
-8       | length            |
-16      | type              |
-        +-------------------+
-@end group
-@end example
+This tag provides memory map.
 
-where @samp{size} is the size of the associated structure in bytes, which
-can be greater than the minimum of 20 bytes. @samp{base_addr} is the
-starting address. @samp{length} is the size of the memory region in bytes.
-@samp{type} is the variety of address range represented, where a
-value of 1 indicates available @sc{ram}, and all other values currently
-indicated a reserved area.
-
-The map provided is guaranteed to list all standard @sc{ram} that should
-be available for normal use.
-
-The corresponding tag is
 @example
 @group
         +-------------------+
 0       | type = 6          |
 4       | size              |
-8-xx    | entries           |
+8       | entry_size        |
+12      | entry_version     |
+16-xx   | entries           |
         +-------------------+
 @end group
 @end example
 
-@subsection Boot loader name
-If bit 9 in the @samp{flags} is set, the @samp{boot_loader_name} field
-is valid, and contains the physical address of the name of a boot
-loader booting the kernel. The name is a normal C-style zero-terminated
-string.
+@samp{entry_size} contains the size of one entry so that in future new fields may be added to it. It's guaranteed to be a multiple of 8. @samp{entry_version} is currently set at @samp{0}. Future versions will increment this field. Future version are guranteed to be backward compatible with older format. Each entry has the following structure:
 
-Corresponding tag is:
+
+@example
+@group
+        +-------------------+
+0       | base_addr         |
+8       | length            |
+16      | type              |
+20      | reserved          |
+        +-------------------+
+@end group
+@end example
+
+@samp{size} contains the size of current entry including this field itself. It may be bigger than 24 bytes in future versions but is guaranteed to be
+@samp{base_addr} is the starting physical address. @samp{length} is the size of the memory region in bytes.
+@samp{type} is the variety of address range represented, where a
+value of 1 indicates available @sc{ram}, and all other values currently
+indicated a reserved area.
+@samp{reserved} is set to @samp{0} by bootloader and must be ignored by the OS image.
+
+The map provided is guaranteed to list all standard @sc{ram} that should
+be available for normal use.
+
+@subsection Boot loader name
 @example
 @group
         +-------------------+
@@ -811,7 +805,9 @@ Corresponding tag is:
 @end group
 @end example
 
-@samp{string} contains zero-terminated UTF-8 string padded to have length divisible by 4.
+@samp{string} contains  the name of a boot
+loader booting the kernel. The name is a normal C-style UTF-8 zero-terminated
+string.
 
 @subsection APM table
 The tag type 10 contains @sc{apm} table
@@ -819,7 +815,7 @@ The tag type 10 contains @sc{apm} table
 @group
         +----------------------+
 0       | type = 10            |
-4       | size                 |
+4       | size = 28            |
 8       | version              |
 10      | cseg                 |
 12      | offset               |
@@ -889,17 +885,18 @@ yourself.
 24      | framebuffer_height |
 28      | framebuffer_bpp    |
 29      | framebuffer_type   |
-30      | color_info         |
+30      | reserved           |
+32      | color_info         |
         +--------------------+
 @end group
 @end example
 
-The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as follows:
+The field @samp{framebuffer_addr} contains framebuffer physical address. This field is 64-bit wide but bootloader @dfn{should} set it under 4GiB if possible for compatibility with payloads which aren't aware of PAE or amd64. The field @samp{framebuffer_pitch} contains pitch in bytes. The fields @samp{framebuffer_width}, @samp{framebuffer_height} contain framebuffer dimensions in pixels. The field @samp{framebuffer_bpp} contains number of bits per pixel. @samp{reserved} always contains 0 in current version of specification and must be ignored by OS image. If @samp{framebuffer_type} is set to 0 it means indexed color. In this case color_info is defined as follows:
 @example
 @group
         +----------------------------------+
-30      | framebuffer_palette_num_colors   |
-34-xx   | framebuffer_palette              |
+32      | framebuffer_palette_num_colors   |
+36-xx   | framebuffer_palette              |
         +----------------------------------+
 @end group
 @end example
@@ -920,12 +917,12 @@ Then color_type is defined as follows:
 @example
 @group
        +----------------------------------+
-30     | framebuffer_red_field_position   |
-31     | framebuffer_red_mask_size        |
-32     | framebuffer_green_field_position |
-33     | framebuffer_green_mask_size      |
-34     | framebuffer_blue_field_position  |
-35-35  | framebuffer_blue_mask_size       |
+32     | framebuffer_red_field_position   |
+33     | framebuffer_red_mask_size        |
+34     | framebuffer_green_field_position |
+35     | framebuffer_green_mask_size      |
+36     | framebuffer_blue_field_position  |
+37-37  | framebuffer_blue_mask_size       |
        +----------------------------------+
 @end group
 @end example

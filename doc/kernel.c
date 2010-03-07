@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <multiboot2.h>
+#include "multiboot2.h"
 
 /* Macros.  */
 
@@ -62,11 +62,18 @@ cmain (unsigned long magic, unsigned long addr)
       return;
     }
 
+  if (addr & 7)
+    {
+      printf ("Unaligned mbi: 0x%x\n", addr);
+      return;
+    }
+
   size = *(unsigned *) addr;
   printf ("Announced mbi size 0x%x\n", size);
-  for (tag = (struct multiboot_tag *) (addr + 4);
+  for (tag = (struct multiboot_tag *) (addr + 8);
        tag->type != MULTIBOOT_TAG_TYPE_END;
-       tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag + tag->size))
+       tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
+				       + ((tag->size + 7) & ~7)))
     {
       printf ("Tag 0x%x, Size 0x%x\n", tag->type, tag->size);
       switch (tag->type)
@@ -105,12 +112,11 @@ cmain (unsigned long magic, unsigned long addr)
 	    for (mmap = ((struct multiboot_tag_mmap *) tag)->entries;
 		 (multiboot_uint8_t *) mmap 
 		   < (multiboot_uint8_t *) tag + tag->size;
-		 mmap = (multiboot_memory_map_t *) ((unsigned long) mmap
-						    + mmap->size
-						    + sizeof (mmap->size)))
-	      printf (" size = 0x%x, base_addr = 0x%x%x,"
+		 mmap = (multiboot_memory_map_t *) 
+		   ((unsigned long) mmap
+		    + ((struct multiboot_tag_mmap *) tag)->entry_size))
+	      printf (" base_addr = 0x%x%x,"
 		      " length = 0x%x%x, type = 0x%x\n",
-		      (unsigned) mmap->size,
 		      (unsigned) (mmap->addr >> 32),
 		      (unsigned) (mmap->addr & 0xffffffff),
 		      (unsigned) (mmap->len >> 32),
@@ -209,7 +215,8 @@ cmain (unsigned long magic, unsigned long addr)
 
 	}
     }
-  tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag + tag->size);
+  tag = (struct multiboot_tag *) ((multiboot_uint8_t *) tag 
+				  + ((tag->size + 7) & ~7));
   printf ("Total mbi size 0x%x\n", (unsigned) tag - addr);
 }    
 

@@ -51,6 +51,7 @@
 /* This flag indicates the use of the address fields in the header.  */
 #define MULTIBOOT_AOUT_KLUDGE			0x00010000
 
+#define MULTIBOOT_TAG_ALIGN                  8
 #define MULTIBOOT_TAG_TYPE_END               0
 #define MULTIBOOT_TAG_TYPE_CMDLINE           1
 #define MULTIBOOT_TAG_TYPE_BOOT_LOADER_NAME  2
@@ -60,8 +61,6 @@
 #define MULTIBOOT_TAG_TYPE_MMAP              6
 #define MULTIBOOT_TAG_TYPE_VBE               7
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER       8
-#define MULTIBOOT_TAG_TYPE_ELF_SECTIONS      9
-#define MULTIBOOT_TAG_TYPE_APM              10
 
 #ifndef ASM_FILE
 
@@ -104,12 +103,14 @@ struct multiboot_color
 
 struct multiboot_mmap_entry
 {
-  multiboot_uint32_t size;
   multiboot_uint64_t addr;
   multiboot_uint64_t len;
 #define MULTIBOOT_MEMORY_AVAILABLE		1
 #define MULTIBOOT_MEMORY_RESERVED		2
+#define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE       3
+#define MULTIBOOT_MEMORY_NVS                    4
   multiboot_uint32_t type;
+  multiboot_uint32_t zero;
 } __attribute__((packed));
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;
 
@@ -123,6 +124,8 @@ struct multiboot_tag_string
 {
   multiboot_uint32_t type;
   multiboot_uint32_t size;
+  multiboot_uint32_t entry_size;
+  multiboot_uint32_t entry_version;
   char string[0];
 };
 
@@ -156,6 +159,8 @@ struct multiboot_tag_mmap
 {
   multiboot_uint32_t type;
   multiboot_uint32_t size;
+  multiboot_uint32_t entry_size;
+  multiboot_uint32_t entry_version;
   struct multiboot_mmap_entry entries[0];  
 };
 
@@ -197,6 +202,7 @@ struct multiboot_tag_framebuffer_common
 #define MULTIBOOT_FRAMEBUFFER_TYPE_RGB     1
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT	2
   multiboot_uint8_t framebuffer_type;
+  multiboot_uint16_t reserved;
 };
 
 struct multiboot_tag_framebuffer
