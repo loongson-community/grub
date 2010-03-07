@@ -347,7 +347,9 @@ executable header.
 * Header tags::
 * Information request header tag::
 * Address header tag::       
-* Console header tags::      
+* Console header tags::
+* Module alignment tag::
+
 @end menu
 
 
@@ -424,17 +426,20 @@ Tags are terminated by a tag of type @samp{0} and size @samp{12}.
 @group
         +-------------------+
 0       | type = 1          |
-4       | size = 16         |
+4       | size              |
 8       | optional          |
-12-15   | mbi_tag_type      |
+12-xx   | mbi_tag_types     |
         +-------------------+
 @end group
 @end example
 
+@samp{mbi_tag_types} is an array of u32 each one representing an information
+request
 If this tag is present and @samp{optional} is set to @samp{0} information
-conveyed by tag type @samp{mbi_tag_type} must be present. 
+conveyed by requested tag types must be present. If bootloader is unable
+to supply this information it must fail with an error
 
-Note: it doesn't garantee that any tags of type @samp{mbi_tag_type} will
+Note: it doesn't garantee that any tags of type @samp{mbi_tag_types} will
 actually be present. E.g. on a videoless system even if you requested tag
 @samp{8} no tags of type @samp{8} will be present in mbi.
 
@@ -446,12 +451,11 @@ actually be present. E.g. on a videoless system even if you requested tag
 @group
         +-------------------+
 0       | type = 2          |
-4       | size = 28         |
+4       | size = 24         |
 8       | optional          |
 12      | header_addr       |
 16      | load_addr         |
-20      | load_end_addr     |
-24-27   | entry_addr        |
+20-23   | load_end_addr     |
         +-------------------+
 @end group
 @end example
@@ -487,34 +491,56 @@ occupies to avoid placing boot modules and other data relevant to the
 operating system in that area. If this field is zero, the boot loader
 assumes that no bss segment is present.
 
-@item entry_addr
-The physical address to which the boot loader should jump in order to
-start running the operating system.
 @end table
 
-
-@node Console header tags
-@subsection The interractive console request
+@subsection The entry address tag of Multiboot header
 
 @example
 @group
         +-------------------+
 0       | type = 3          |
-4       | size = 12         |
-8-11    | optional          |
+4       | size = 16         |
+8       | optional          |
+12-15   | entry_addr        |
         +-------------------+
 @end group
 @end example
 
-If this tag is present at least one of supported consoles must be present
-and information about it must be available in mbi.
+All of the address fields in this tag are physical addresses.
+The meaning of each is as follows:
+
+@table @code
+
+@item entry_addr
+The physical address to which the boot loader should jump in order to
+start running the operating system.
+@end table
+
+@node Console header tags
+@subsection Flags tag
+
+@example
+@group
+        +-------------------+
+0       | type = 4          |
+4       | size = 16         |
+8       | optional          |
+12-15   | flags             |
+        +-------------------+
+@end group
+@end example
+
+If this tag is present and bit 0 of @samp{flags} is set
+at least one of supported consoles must be present and information about it must be available in mbi.
+If bit @samp{1} of @samp{flags} is set it
+indicates that the OS image has EGA text support.
 
 @subsection The framebuffer tag of Multiboot header
 
 @example
 @group
         +-------------------+
-0       | type = 4          |
+0       | type = 5          |
 4       | size = 24         |
 8       | optional          |
 12      | width             |
@@ -549,21 +575,8 @@ a text mode. The value zero indicates that the OS image has no
 preference.
 @end table
 
-@subsection The EGA text tag of Multiboot header
 
-@example
-@group
-        +-------------------+
-0       | type = 5          |
-4       | size = 12         |
-8-11    | optional          |
-        +-------------------+
-@end group
-@end example
-
-This tag indicates that the OS image has EGA text support.
-
-
+@node Module alignment tag
 @subsection Module alignment tag
 
 @example
