@@ -335,8 +335,8 @@ not use shared libraries or other fancy features.
 
 An OS image must contain an additional header called @dfn{Multiboot
 header}, besides the headers of the format used by the OS image. The
-Multiboot header must be contained completely within the first 8192
-bytes of the OS image, and must be longword (32-bit) aligned. In
+Multiboot header must be contained completely within the first 32768
+bytes of the OS image, and must be 64-bit aligned. In
 general, it should come @emph{as early as possible}, and may be
 embedded in the beginning of the text segment after the @emph{real}
 executable header.
@@ -408,14 +408,14 @@ Every structure has following format:
         +-------------------+
 0       | type              |
 4       | size              |
-8-11    | optional          |
+8-11    | flags             |
         +-------------------+
 @end group
 @end example
 
 @samp{type} contains an identifier of contents of the rest of the tag.
 @samp{size} contains the size of tag including header fields.
-@samp{optional} is set to 1 if bootloader may ignore this tag if it 
+If bit @samp{0} of @samp{flags} (also known as @samp{optional}) is set if bootloader may ignore this tag if it 
 lacks relevant support.
 Tags are terminated by a tag of type @samp{0} and size @samp{12}.
 
@@ -427,7 +427,7 @@ Tags are terminated by a tag of type @samp{0} and size @samp{12}.
         +-------------------+
 0       | type = 1          |
 4       | size              |
-8       | optional          |
+8       | flags             |
 12-xx   | mbi_tag_types     |
         +-------------------+
 @end group
@@ -451,11 +451,12 @@ actually be present. E.g. on a videoless system even if you requested tag
 @group
         +-------------------+
 0       | type = 2          |
-4       | size = 24         |
-8       | optional          |
+4       | size = 28         |
+8       | flags             |
 12      | header_addr       |
 16      | load_addr         |
-20-23   | load_end_addr     |
+20      | load_end_addr     |
+24-27   | bss_end_addr      |
         +-------------------+
 @end group
 @end example
@@ -500,7 +501,7 @@ assumes that no bss segment is present.
         +-------------------+
 0       | type = 3          |
 4       | size = 16         |
-8       | optional          |
+8       | flags             |
 12-15   | entry_addr        |
         +-------------------+
 @end group
@@ -524,15 +525,15 @@ start running the operating system.
         +-------------------+
 0       | type = 4          |
 4       | size = 16         |
-8       | optional          |
-12-15   | flags             |
+8       | flags             |
+12-15   | console_flags     |
         +-------------------+
 @end group
 @end example
 
-If this tag is present and bit 0 of @samp{flags} is set
+If this tag is present and bit 0 of @samp{console_flags} is set
 at least one of supported consoles must be present and information about it must be available in mbi.
-If bit @samp{1} of @samp{flags} is set it
+If bit @samp{1} of @samp{console_flags} is set it
 indicates that the OS image has EGA text support.
 
 @subsection The framebuffer tag of Multiboot header
@@ -542,7 +543,7 @@ indicates that the OS image has EGA text support.
         +-------------------+
 0       | type = 5          |
 4       | size = 24         |
-8       | optional          |
+8       | flags             |
 12      | width             |
 16      | height            |
 20-23   | depth             |
@@ -584,7 +585,7 @@ preference.
         +-------------------+
 0       | type = 6          |
 4       | size = 12         |
-8-11    | optional          |
+8-11    | flags             |
         +-------------------+
 @end group
 @end example
