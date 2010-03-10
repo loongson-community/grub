@@ -823,9 +823,6 @@ is specific to the operating system.
 One tag appears per module. This tag type may appear multiple times.
 
 @subsection ELF-Symbols
-If bit 5 in the @samp{flags} word is set, then the following fields in
-the Multiboot information structure starting at byte 28 are valid:
-
 @example
 @group
         +-------------------+
