@@ -879,7 +879,9 @@ u32     | reserved          |
 @samp{size} contains the size of current entry including this field itself. It may be bigger than 24 bytes in future versions but is guaranteed to be
 @samp{base_addr} is the starting physical address. @samp{length} is the size of the memory region in bytes.
 @samp{type} is the variety of address range represented, where a
-value of 1 indicates available @sc{ram}, and all other values currently
+value of 1 indicates available @sc{ram}, value of 3 indicates usable memory
+holding ACPI information, value of 4 indicates reserved memory which needs to
+be preserved on hibernation and all other values currently
 indicated a reserved area.
 @samp{reserved} is set to @samp{0} by bootloader and must be ignored by the OS image.
 
