@@ -24,6 +24,7 @@
 
 /* How many bytes from the start of the file we search for the header.  */
 #define MULTIBOOT_SEARCH			32768
+#define MULTIBOOT_HEADER_ALIGN			8
 
 /* The magic field should contain this.  */
 #define MULTIBOOT2_HEADER_MAGIC			0xe85250d6
@@ -61,6 +62,8 @@
 #define MULTIBOOT_TAG_TYPE_MMAP              6
 #define MULTIBOOT_TAG_TYPE_VBE               7
 #define MULTIBOOT_TAG_TYPE_FRAMEBUFFER       8
+#define MULTIBOOT_TAG_TYPE_ELF_SECTIONS      9
+#define MULTIBOOT_TAG_TYPE_APM               10
 
 #define MULTIBOOT_HEADER_TAG_END  0
 #define MULTIBOOT_HEADER_TAG_INFORMATION_REQUEST  1
@@ -72,6 +75,9 @@
 
 #define GRUB_MULTIBOOT_ARCHITECTURE_I386  0
 #define MULTIBOOT_HEADER_TAG_OPTIONAL 1
+
+#define MULTIBOOT_CONSOLE_FLAGS_CONSOLE_REQUIRED 1
+#define MULTIBOOT_CONSOLE_FLAGS_EGA_TEXT_SUPPORTED 2
 
 #ifndef ASM_FILE
 
