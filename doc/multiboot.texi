@@ -407,24 +407,24 @@ and @samp{header_length}), must have a 32-bit unsigned sum of zero.
 
 @node Header tags
 @subsection General tag structure
-Tags constitutes a buffer of structures immediately following each other.
+Tags constitutes a buffer of structures following each other padded on @samp{u_virt} size.
 Every structure has following format:
 
 @example
 @group
         +-------------------+
-u32     | type              |
+u16     | type              |
+u16     | flags             |
 u32     | size              |
-u32     | flags             |
         +-------------------+
 @end group
 @end example
 
-@samp{type} contains an identifier of contents of the rest of the tag.
+@samp{type} is divided into 2 parts. Lower contains an identifier of contents of the rest of the tag.
 @samp{size} contains the size of tag including header fields.
 If bit @samp{0} of @samp{flags} (also known as @samp{optional}) is set if bootloader may ignore this tag if it 
 lacks relevant support.
-Tags are terminated by a tag of type @samp{0} and size @samp{12}.
+Tags are terminated by a tag of type @samp{0} and size @samp{8}.
 
 @node Information request header tag
 @subsection Multiboot information request
@@ -432,9 +432,9 @@ Tags are terminated by a tag of type @samp{0} and size @samp{12}.
 @example
 @group
         +-------------------+
-u32     | type = 1          |
+u16     | type = 1          |
+u16     | flags             |
 u32     | size              |
-u32     | flags             |
 u32[n]  | mbi_tag_types     |
         +-------------------+
 @end group
@@ -457,9 +457,9 @@ actually be present. E.g. on a videoless system even if you requested tag
 @example
 @group
         +-------------------+
-u32     | type = 2          |
-u32     | size = 28         |
-u32     | flags             |
+u16     | type = 2          |
+u16     | flags             |
+u32     | size              |
 u_virt  | header_addr       |
 u_virt  | load_addr         |
 u_virt  | load_end_addr     |
@@ -506,9 +506,9 @@ assumes that no bss segment is present.
 @example
 @group
         +-------------------+
-u32     | type = 3          |
-u32     | size = 16         |
-u32     | flags             |
+u16     | type = 3          |
+u16     | flags             |
+u32     | size              |
 u_virt  | entry_addr        |
         +-------------------+
 @end group
@@ -530,9 +530,9 @@ start running the operating system.
 @example
 @group
         +-------------------+
-u32     | type = 4          |
-u32     | size = 16         |
-u32     | flags             |
+u16     | type = 4          |
+u16     | flags             |
+u32     | size = 12         |
 u32     | console_flags     |
         +-------------------+
 @end group
@@ -548,9 +548,9 @@ indicates that the OS image has EGA text support.
 @example
 @group
         +-------------------+
-u32     | type = 5          |
-u32     | size = 24         |
-u32     | flags             |
+u16     | type = 5          |
+u16     | flags             |
+u32     | size = 20         |
 u32     | width             |
 u32     | height            |
 u32     | depth             |
@@ -590,9 +590,9 @@ preference.
 @example
 @group
         +-------------------+
-u32     | type = 6          |
+u16     | type = 6          |
+u16     | flags             |
 u32     | size = 12         |
-u32     | flags             |
         +-------------------+
 @end group
 @end example
