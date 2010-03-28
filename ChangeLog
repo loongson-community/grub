@@ -1,3 +1,26 @@
+2010-03-14  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/kernel.c (cmain): Use padding to properly display 64-bit
+	quantities.
+	(printf): Add padding support.
+	Reported by: Soeren D. Schulze.
+
+2010-02-09  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi: Fix a typo.
+	Reported by: Trond
+
+2010-01-20  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi: Define NVS and ACPI memory types.
+	* doc/multiboot.h (MULTIBOOT_MEMORY_ACPI_RECLAIMABLE): New definition.
+	(MULTIBOOT_MEMORY_NVS): Likewise.
+
+2010-01-15  Robert Millan  <rmh.grub@aybabtu.com>
+
+	* doc/boot.S: Slight adjustment to make makeinfo happy.
+	* doc/kernel.c: Likewise.
+
 2010-01-15  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/kernel.c (cmain): Handle EGA text video information.
