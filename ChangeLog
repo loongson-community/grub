@@ -1,3 +1,24 @@
+2010-03-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Bump version to 1.6.
+	* doc/boot.S: Use tagged multiboot header.
+	* doc/kernel.c (cmain): Parse tagged mbi.
+	* doc/multiboot.texi: Selfishly added myself to authors.
+	(Terminology): New types u_virt and u_phys.
+	(Header address fields): Removed.
+	(Header graphics fields): Likewise.
+	(Header tags): New section.
+	(Information request header tag): Likewise.
+	(Address header tag): Likewise.
+	(Console header tags): Likewise.
+	(Module alignment tag): Likewise.
+	(Header layout): Specify new common header part.
+	(Header magic fields): Likewise.
+	(Machine state): Updated magic value.
+	(Boot information format): Changed to tagged structure.
+	* doc/multiboot2.h: Changed to tagged format.
+	* doc/src2texi: Handle more comments correctly.
+
 2010-03-14  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/kernel.c (cmain): Use padding to properly display 64-bit
