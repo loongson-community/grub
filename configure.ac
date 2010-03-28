@@ -13,7 +13,7 @@ dnl LIABILITY OF ANY KIND FOR ANY DAMAGES WHATSOEVER RESULTING FROM THE
 dnl USE OF THIS SOFTWARE.
 
 AC_PREREQ(2.59)
-AC_INIT([Multiboot], [0.6.96], [bug-grub@gnu.org])
+AC_INIT([Multiboot], [1.6], [bug-grub@gnu.org])
 AC_CONFIG_SRCDIR([doc/multiboot.texi])
 AC_CONFIG_HEADER([config.h])
 AM_INIT_AUTOMAKE
