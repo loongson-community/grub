@@ -320,9 +320,22 @@ printf (const char *format, ...)
 	putchar (c);
       else
 	{
-	  char *p;
+	  char *p, *p2;
+	  int pad0 = 0, pad = 0;
 	  
 	  c = *format++;
+	  if (c == '0')
+	    {
+	      pad0 = 1;
+	      c = *format++;
+	    }
+
+	  if (c >= '0' && c <= '9')
+	    {
+	      pad = c - '0';
+	      c = *format++;
+	    }
+
 	  switch (c)
 	    {
 	    case 'd':
@@ -339,6 +352,9 @@ printf (const char *format, ...)
 		p = "(null)";
 
 	    string:
+	      for (p2 = p; *p2; p2++);
+	      for (; p2 < p + pad; p2++)
+		putchar (pad0 ? '0' : ' ');
 	      while (*p)
 		putchar (*p++);
 	      break;

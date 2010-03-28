@@ -1,3 +1,10 @@
+2010-03-14  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/kernel.c (cmain): Use padding to properly display 64-bit
+	quantities.
+	(printf): Add padding support.
+	Reported by: Soeren D. Schulze.
+
 2010-02-09  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi: Fix a typo.
