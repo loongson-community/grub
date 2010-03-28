@@ -660,16 +660,6 @@ The OS image must leave interrupts disabled until it sets up its own
 @code{IDT}.
 @end table
 
-However, other machine state should be left by the boot loader in
-@dfn{normal working order}, i.e. as initialized by the @sc{bios} (or
-DOS, if that's what the boot loader runs from). In other words, the
-operating system should be able to make @sc{bios} calls and such after
-being loaded, as long as it does not overwrite the @sc{bios} data
-structures before doing so. Also, the boot loader must leave the
-@sc{pic} programmed with the normal @sc{bios}/DOS values, even if it
-changed them during the switch to 32-bit mode.
-
-
 @node Boot information format
 @section Boot information
 @subsection Boot information format

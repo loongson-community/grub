@@ -1,5 +1,9 @@
 2010-03-28  Vladimir Serbinenko  <phcoder@gmail.com>
 
+	* doc/multiboot.texi: Removed the promise of BIOS availability.
+
+2010-03-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
 	* configure.ac: Bump version to 1.6.
 	* doc/boot.S: Use tagged multiboot header.
 	* doc/kernel.c (cmain): Parse tagged mbi.
