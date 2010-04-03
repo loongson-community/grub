@@ -1,5 +1,10 @@
 2010-04-03  Vladimir Serbinenko  <phcoder@gmail.com>
 
+	* doc/multiboot.texi (Terminology): Add a remark that "kernel" may not
+	be a part of OS.
+
+2010-04-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
 	MIPS support.
 
 	* doc/multiboot2.h (GRUB_MULTIBOOT_ARCHITECTURE_I386): Removed leftover

@@ -266,10 +266,12 @@ system --- must follow the rules specified in this document in order
 to be @dfn{Multiboot-compliant}; earlier boot loader stages may be
 designed in whatever way is most convenient.
 
-@item OS image
+@item OS image, kernel
 The initial binary image that a boot loader loads into memory and
 transfers control to start an operating system. The OS image is
 typically an executable containing the operating system kernel.
+However it doesn't need to be a part of any OS and may be any kind
+of system tool.
 
 @item boot module
 Other auxiliary files that a boot loader loads into memory along with
