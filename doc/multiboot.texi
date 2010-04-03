@@ -392,6 +392,7 @@ The field @samp{architecture} specifies the Central Processing Unit
 Instruction Set Architecture. Since @samp{magic} isn't a palindrome
 it already specifies the endianness ISAs differing only in endianness
 recieve the same ID. @samp{0} means 32-bit (protected) mode of i386.
+@samp{4} means 32-bit MIPS.
 
 @item header_length
 The field @samp{header_length} specifies the Length of multiboot header
@@ -601,7 +602,34 @@ If this tag is present modules must be page aligned.
 
 
 @node Machine state
-@section Machine state
+@section MIPS machine state
+
+When the boot loader invokes the operating system, the machine
+must have the following state:
+
+@table @samp
+@item R4 (also known as A0)
+Must contain the magic value @samp{0x36d76289}; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+
+@item R5 (also known as A1)
+Must contain the 32-bit physical address of the Multiboot
+information structure provided by the boot loader (@pxref{Boot
+information format}).
+@end table
+
+All other processor registers and flag bits are undefined. This
+includes, in particular:
+
+@table @samp
+@item R29/SP
+The OS image must create its own stack as soon as it needs one.
+
+@end table
+
+@section I386 machine state
 
 When the boot loader invokes the 32-bit operating system, the machine
 must have the following state:

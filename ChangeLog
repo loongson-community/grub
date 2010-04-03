@@ -1,3 +1,13 @@
+2010-04-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	MIPS support.
+
+	* doc/multiboot2.h (GRUB_MULTIBOOT_ARCHITECTURE_I386): Removed leftover
+	GRUB_ prefix.
+	(MULTIBOOT_ARCHITECTURE_MIPS32): New constant.
+	* doc/multiboot.texi (MIPS machine state): New section.
+	(Header magic fields): New possible value of arcitecture field.
+
 2010-03-28  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi: Removed the promise of BIOS availability.
