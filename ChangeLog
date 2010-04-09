@@ -1,3 +1,7 @@
+2010-04-09  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi (Memory map): Add a remark about type 1.
+
 2010-04-03  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi (Terminology): Add a remark that "kernel" may not

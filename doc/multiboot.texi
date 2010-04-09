@@ -906,7 +906,7 @@ indicated a reserved area.
 @samp{reserved} is set to @samp{0} by bootloader and must be ignored by the OS image.
 
 The map provided is guaranteed to list all standard @sc{ram} that should
-be available for normal use.
+be available for normal use. This type however includes the regions occupied by kernel, mbi, segments and modules. Kernel must take care not to overwrite these regions.
 
 @subsection Boot loader name
 @example
