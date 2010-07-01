@@ -595,7 +595,7 @@ preference.
         +-------------------+
 u16     | type = 6          |
 u16     | flags             |
-u32     | size = 12         |
+u32     | size = 8          |
         +-------------------+
 @end group
 @end example
