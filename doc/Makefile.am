@@ -10,7 +10,7 @@ pkginclude_HEADERS = multiboot.h
 if BUILD_EXAMPLE_KERNEL
 noinst_PROGRAMS = kernel
 kernel_SOURCES = $(EXAMPLES)
-kernel_CFLAGS = -fno-builtin -nostdinc -O -g -Wall \
+kernel_CFLAGS = -m32 -nostdlib -fno-builtin -nostdinc -O -g -Wall \
 	-imacros $(top_builddir)/config.h
 kernel_LDFLAGS = -nostdlib -Wl,-N -Wl,-Ttext -Wl,100000 -Wl,--build-id=none
 

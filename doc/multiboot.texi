@@ -77,8 +77,9 @@ sequence standard. This edition documents version @value{VERSION}.
 * Terminology::                 
 * Specification::               
 * Examples::                    
-* History::                     
-* Index::                       
+* History::
+* Invoking mbchk::              How to use the Multiboot checker
+* Index::                  
 @end menu
 
 
@@ -1278,6 +1279,26 @@ Name change.
 Major changes plus HTMLification.
 @end itemize
 @end table
+
+@node Invoking mbchk
+@chapter Invoking mbchk
+
+The program @command{mbchk} checks for the format of a Multiboot
+kernel. We recommend using this program before booting your own kernel.
+
+@command{mbchk} accepts the following options:
+
+@table @option
+@item --help
+Print a summary of the command-line options and exit.
+
+@item --version
+Print the version number of GRUB and exit.
+
+@item --quiet
+Suppress all normal output.
+@end table
+
 
 
 @node Index

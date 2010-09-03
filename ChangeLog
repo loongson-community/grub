@@ -1,3 +1,17 @@
+2010-09-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Reimport mbchk.
+
+	* util/Makefile.am: New file.
+	* util/mbchk.c: Likewise.
+	* Makefile.am (SUBDIRS): Add util.
+	* configure.ac: New options --enable-mbchk. Check for HELP2MAN.
+	(CFLAGS): Don't alter.
+	(COND_MAN_PAGES): New conditional.
+	(AC_CONFIG_FILES): Add util/Makefile.
+	* doc/Makefile.am (kernel_CFLAGS): Add -m32 and -nostdlib.
+	* doc/multiboot.texi (Invoking mbchk): New chapter.
+
 2010-03-14  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/kernel.c (cmain): Use padding to properly display 64-bit

@@ -42,8 +42,17 @@ dnl Because recent automake complains about CCASFLAGS, set it here.
 CCASFLAGS='$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)'
 AC_SUBST(CCASFLAGS)
 
-CFLAGS="-m32 -nostdlib $CFLAGS"
+AC_ARG_ENABLE(mbchk,
+  [  --enable-mbchk
+                          build the mbchk (multiboot checker)])
+AM_CONDITIONAL(BUILD_MBCHK, test "x$enable_mbchk" = xyes)
+
+if test "x$enable_mbchk" = xyes; then
+  AC_PATH_PROG(HELP2MAN, help2man)
+fi
+
+AM_CONDITIONAL([COND_MAN_PAGES], [test x$enable_mbchk = xyes -a x$HELP2MAN != x])
 
 dnl Output.
-AC_CONFIG_FILES([Makefile doc/Makefile])
+AC_CONFIG_FILES([Makefile doc/Makefile util/Makefile])
 AC_OUTPUT
