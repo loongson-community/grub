@@ -708,7 +708,11 @@ partition on a disk partitioned in conventional DOS style, then
 If bit 2 of the @samp{flags} longword is set, the @samp{cmdline} field
 is valid, and contains the physical address of the command line to
 be passed to the kernel. The command line is a normal C-style
-zero-terminated string.
+zero-terminated string. The exact format of command line is left to
+OS developpers. General-purpose boot loaders should allow user a complete
+control on command line independently of other factors like image name.
+Boot loaders with specific payload in mind may completely or partially generate
+it algorithmically.
 
 If bit 3 of the @samp{flags} is set, then the @samp{mods} fields
 indicate to the kernel what boot modules were loaded along with the
