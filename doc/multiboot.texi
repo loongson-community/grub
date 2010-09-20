@@ -690,6 +690,8 @@ The OS image must leave interrupts disabled until it sets up its own
 @code{IDT}.
 @end table
 
+On EFI system boot services must be terminated.
+
 @node Boot information format
 @section Boot information
 @subsection Boot information format
@@ -1043,6 +1045,88 @@ u8     | framebuffer_blue_mask_size       |
 
 If @samp{framebuffer_type} is set to @samp{2} it means EGA text. In this case @samp{framebuffer_width} and @samp{framebuffer_height} are expressed in characters and not in pixels. @samp{framebuffer_bpp} is equal 16 (16 bits per character) and @samp{framebuffer_pitch} is expressed in bytes per text line.
 All further values of @samp{framebuffer_type} are reserved for future expansion
+
+@subsection EFI 32-bit system table pointer
+@example
+@group
+        +-------------------+
+u32     | type = 11         |
+u32     | size = 12         |
+u32     | pointer           |
+        +-------------------+
+@end group
+@end example
+
+This tag contains pointer to i386 EFI system table.
+
+@subsection EFI 64-bit system table pointer
+@example
+@group
+        +-------------------+
+u32     | type = 12         |
+u32     | size = 16         |
+u64     | pointer           |
+        +-------------------+
+@end group
+@end example
+
+This tag contains pointer to amd64 EFI system table.
+
+@subsection SMBIOS tables
+@example
+@group
+        +-------------------+
+u32     | type = 13         |
+u32     | size              |
+u8      | major             |
+u8      | minor             |
+u8[6]   | reserved          |
+        | smbios tables     |
+        +-------------------+
+@end group
+@end example
+
+This tag contains a copy of SMBIOS tables as well as their version.
+
+@subsection ACPI old RSDP
+@example
+@group
+        +-------------------+
+u32     | type = 14         |
+u32     | size              |
+        | copy of RSDPv1    |
+        +-------------------+
+@end group
+@end example
+
+This tag contains a copy of RSDP as defined per ACPI 1.0 specification.
+
+@subsection ACPI new RSDP
+@example
+@group
+        +-------------------+
+u32     | type = 15         |
+u32     | size              |
+        | copy of RSDPv2    |
+        +-------------------+
+@end group
+@end example
+
+This tag contains a copy of RSDP as defined per ACPI 2.0 or later specification.
+
+@subsection Networking information
+@example
+@group
+        +-------------------+
+u32     | type = 16         |
+u32     | size              |
+        | DHCP ACK          |
+        +-------------------+
+@end group
+@end example
+
+This tag contains network information in the format specified as DHCP. It may be either a real DHCP reply or just the configuration info in the same format. This tag appears once per card.
+
 
 @node Examples
 @chapter Examples
