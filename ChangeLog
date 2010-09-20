@@ -1,3 +1,7 @@
+2010-07-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi: Typo fix.
+
 2010-04-09  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi (Memory map): Add a remark about type 1.

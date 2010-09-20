@@ -1,5 +1,5 @@
 info_TEXINFOS = multiboot.texi
-EXAMPLES = boot.S kernel.c multiboot2.h
+EXAMPLES = boot_mips.S kernel.c multiboot2.h
 multiboot_TEXINFOS = boot.S.texi kernel.c.texi multiboot2.h.texi
 SRC2TEXI = src2texi
 noinst_SCRIPTS = $(SRC2TEXI)
@@ -12,7 +12,7 @@ noinst_PROGRAMS = kernel
 kernel_SOURCES = $(EXAMPLES)
 kernel_CFLAGS = -fno-builtin -nostdinc -O -g -Wall \
 	-imacros $(top_builddir)/config.h
-kernel_LDFLAGS = -nostdlib -Wl,-N -Wl,-Ttext -Wl,100000 -Wl,--build-id=none
+kernel_LDFLAGS = -nostdlib -Wl,-N -Wl,-Ttext -Wl,80100000 -Wl,--build-id=none
 
 boot.o: multiboot2.h
 endif

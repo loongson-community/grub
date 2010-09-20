@@ -42,7 +42,7 @@ dnl Because recent automake complains about CCASFLAGS, set it here.
 CCASFLAGS='$(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)'
 AC_SUBST(CCASFLAGS)
 
-CFLAGS="-m32 -nostdlib $CFLAGS"
+CFLAGS="-nostdlib $CFLAGS"
 
 dnl Output.
 AC_CONFIG_FILES([Makefile doc/Makefile])
