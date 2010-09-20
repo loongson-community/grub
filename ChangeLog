@@ -1,5 +1,9 @@
 2010-09-20  Vladimir Serbinenko  <phcoder@gmail.com>
 
+	* doc/multiboot.texi: New type for badram.
+
+2010-09-20  Vladimir Serbinenko  <phcoder@gmail.com>
+
 	* doc/multiboot.texi: New tags for EFI system table, DHCP ACK, SMBIOS
 	and RSDP.
 
