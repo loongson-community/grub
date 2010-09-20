@@ -1,3 +1,7 @@
+2010-09-20  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi: Add new memory type for badram.
+
 2010-09-13  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi: Clarify command line format.

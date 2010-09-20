@@ -824,7 +824,7 @@ starting address. @samp{length} is the size of the memory region in bytes.
 @samp{type} is the variety of address range represented, where a
 value of 1 indicates available @sc{ram}, value of 3 indicates usable memory
 holding ACPI information, value of 4 indicates reserved memory which needs to
-be preserved on hibernation and all other values currently
+be preserved on hibernation, value of 5 indicates a memory which is occupied by defective RAM modules and all other values currently
 indicated a reserved area.
 
 The map provided is guaranteed to list all standard @sc{ram} that should
