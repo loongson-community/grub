@@ -24,6 +24,7 @@
 
 /* How many bytes from the start of the file we search for the header.  */
 #define MULTIBOOT_SEARCH			8192
+#define MULTIBOOT_HEADER_ALIGN			4
 
 /* The magic field should contain this.  */
 #define MULTIBOOT_HEADER_MAGIC			0x1BADB002
@@ -202,20 +203,17 @@ struct multiboot_info
   multiboot_uint32_t framebuffer_width;
   multiboot_uint32_t framebuffer_height;
   multiboot_uint8_t framebuffer_bpp;
-#define MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED	0
-#define MULTIBOOT_FRAMEBUFFER_TYPE_RGB		1
+#define MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED 0
+#define MULTIBOOT_FRAMEBUFFER_TYPE_RGB     1
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT	2
   multiboot_uint8_t framebuffer_type;
   union
   {
-    /* Indexed color.  */
     struct
     {
-      struct multiboot_color *framebuffer_palette_addr;
+      multiboot_uint32_t framebuffer_palette_addr;
       multiboot_uint16_t framebuffer_palette_num_colors;
     };
-
-    /* Direct RGB color.  */
     struct
     {
       multiboot_uint8_t framebuffer_red_field_position;
@@ -228,6 +226,13 @@ struct multiboot_info
   };
 };
 typedef struct multiboot_info multiboot_info_t;
+
+struct multiboot_color
+{
+  multiboot_uint8_t red;
+  multiboot_uint8_t green;
+  multiboot_uint8_t blue;
+};
 
 struct multiboot_mmap_entry
 {
@@ -256,6 +261,20 @@ struct multiboot_mod_list
   multiboot_uint32_t pad;
 };
 typedef struct multiboot_mod_list multiboot_module_t;
+
+/* APM BIOS info.  */
+struct multiboot_apm_info
+{
+  grub_uint16_t version;
+  grub_uint16_t cseg;
+  grub_uint32_t offset;
+  grub_uint16_t cseg_16;
+  grub_uint16_t dseg;
+  grub_uint16_t flags;
+  grub_uint16_t cseg_len;
+  grub_uint16_t cseg_16_len;
+  grub_uint16_t dseg_len;
+};
 
 #endif /* ! ASM_FILE */
 
