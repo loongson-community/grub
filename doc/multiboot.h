@@ -141,13 +141,6 @@ struct multiboot_elf_section_header_table
 };
 typedef struct multiboot_elf_section_header_table multiboot_elf_section_header_table_t;
 
-struct multiboot_color
-{
-  multiboot_uint8_t red;
-  multiboot_uint8_t green;
-  multiboot_uint8_t blue;
-};
-
 struct multiboot_info
 {
   /* Multiboot info version number */
