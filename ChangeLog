@@ -1,3 +1,8 @@
+2010-10-22  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.h (multiboot_apm_info): Use multiboot and not GRUB
+	integer types.
+
 2010-09-20  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.h: Stylistic improvements. Add APM declarations.
