@@ -1,5 +1,11 @@
 2010-10-22  Vladimir Serbinenko  <phcoder@gmail.com>
 
+	* doc/Makefile.am (kernel_LDFLAGS): Add -m32.
+	(kernel_CFLAGS): Changed from this ...
+	(kernel_CPPFLAGS): ... to this.
+
+2010-10-22  Vladimir Serbinenko  <phcoder@gmail.com>
+
 	* doc/multiboot.h (multiboot_apm_info): Use multiboot and not GRUB
 	integer types.
 
