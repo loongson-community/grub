@@ -677,10 +677,12 @@ follows:
 +-------+-------+-------+-------+
 | part3 | part2 | part1 | drive |
 +-------+-------+-------+-------+
+Least significant             Most significant
 @end group
 @end example
 
-The first byte contains the @sc{bios} drive number as understood by the
+The most significant byte contains the @sc{bios} drive number
+as understood by the
 @sc{bios} INT 0x13 low-level disk interface: e.g. 0x00 for the first
 floppy disk or 0x80 for the first hard disk.
 

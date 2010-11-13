@@ -1,3 +1,9 @@
+2010-11-13  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* doc/multiboot.texi (BIOS drive): Replace ambigious "first" byte with
+	"most significant" byte.
+	Reported by: Mike Kasick.
+
 2010-10-22  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/Makefile.am (kernel_LDFLAGS): Add -m32.
