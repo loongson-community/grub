@@ -1,3 +1,10 @@
+2011-09-26  Colin Watson  <cjwatson@ubuntu.com>
+
+	* configure.ac: Build stage2 with -fno-reorder-functions to prevent
+	unlikely-to-be-executed functions being reordered before _start with
+	GCC 4.6.
+	Fixes Ubuntu bug #837815.
+
 2010-01-25  Robert Millan  <rmh.grub@aybabtu.com>
 
 	* stage2/imgact_aout.h: Rewrite using aout.h from GRUB 1.97.2 as
