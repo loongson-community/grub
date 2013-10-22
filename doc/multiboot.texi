@@ -1127,6 +1127,21 @@ u32     | size              |
 
 This tag contains network information in the format specified as DHCP. It may be either a real DHCP reply or just the configuration info in the same format. This tag appears once per card.
 
+@subsection EFI memory map
+@example
+@group
+        +-------------------+
+u32     | type = 17         |
+u32     | size              |
+u32     | descriptor size   |
+u32     | descriptor version|
+        | EFI memory map    |
+        +-------------------+
+@end group
+@end example
+
+This tag contains EFI memory map as per EFI specification.
+
 
 @node Examples
 @chapter Examples
