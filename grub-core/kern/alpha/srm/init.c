@@ -85,6 +85,12 @@ void pal_init(void);
 grub_addr_t grub_modbase;
 
 void
+grub_machine_get_bootlocation (char **device __attribute__ ((unused)),
+			       char **path __attribute__ ((unused)))
+{
+}
+
+void
 grub_machine_init (void)
 {
   unsigned i;

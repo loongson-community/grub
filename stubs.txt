@@ -1,1 +1,1 @@
-halt, exit, reboot, datetime, setjmp, console dimension
+halt, exit, reboot, datetime, setjmp, console dimension, bootlocation
