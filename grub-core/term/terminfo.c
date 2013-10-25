@@ -778,7 +778,7 @@ static grub_extcmd_t cmd;
 
 #if defined (GRUB_MACHINE_IEEE1275) || defined (GRUB_MACHINE_MIPS_LOONGSON) \
   || defined (GRUB_MACHINE_MIPS_QEMU_MIPS) || defined (GRUB_MACHINE_ARC) \
-  || defined (GRUB_MACHINE_UBOOT)
+  || defined (GRUB_MACHINE_UBOOT) || defined (GRUB_MACHINE_ALPHA_SRM)
 void grub_terminfo_init (void)
 #else
 GRUB_MOD_INIT(terminfo)
@@ -790,7 +790,9 @@ GRUB_MOD_INIT(terminfo)
 			      options);
 }
 
-#if defined (GRUB_MACHINE_IEEE1275) || defined (GRUB_MACHINE_MIPS_LOONGSON) || defined (GRUB_MACHINE_MIPS_QEMU_MIPS) || defined (GRUB_MACHINE_ARC)
+#if defined (GRUB_MACHINE_IEEE1275) || defined (GRUB_MACHINE_MIPS_LOONGSON) \
+  || defined (GRUB_MACHINE_MIPS_QEMU_MIPS) || defined (GRUB_MACHINE_ARC) \
+  || defined (GRUB_MACHINE_ALPHA_SRM)
 void grub_terminfo_fini (void)
 #else
 GRUB_MOD_FINI(terminfo)
