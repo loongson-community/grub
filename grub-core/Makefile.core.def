@@ -250,6 +250,7 @@ kernel = {
   alpha_srm = kern/alpha/srm/init.c;
   alpha_srm = term/alpha/srm/console.c;
   alpha_srm = disk/alpha/srm/srmdisk.c;
+  alpha_srm = commands/boot.c;
 
   emu = disk/host.c;
   emu = kern/emu/cache_s.S;
@@ -825,6 +826,7 @@ module = {
   mips_loongson = lib/mips/loongson/reboot.c;
   mips_qemu_mips = lib/mips/qemu_mips/reboot.c;
   uboot = lib/uboot/reboot.c;
+  alpha_srm = lib/alpha/srm/reboot.c;
   common = commands/reboot.c;
 };
 
@@ -1521,7 +1523,7 @@ module = {
   extra_dist = lib/powerpc/setjmp.S;
   extra_dist = lib/ia64/setjmp.S;
   extra_dist = lib/ia64/longjmp.S;
-  extra_dist = lib/arm/setjmp.S;
+  extra_dist = lib/alpha/setjmp.S;
 };
 
 module = {

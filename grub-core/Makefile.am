@@ -143,6 +143,7 @@ endif
 if COND_alpha_srm
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/alpha/divide.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/extcmd.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/loader.h
 endif
 
 if COND_mips
