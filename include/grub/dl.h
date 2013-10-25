@@ -254,9 +254,6 @@ grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
 
 #ifdef __alpha__
 #define GRUB_ARCH_DL_TRAMP_SIZE 0
-void
-grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
-				 grub_size_t *got);
 #define GRUB_ARCH_DL_TRAMP_ALIGN 16
 #define GRUB_ARCH_DL_GOT_ALIGN 16
 #endif

@@ -82,6 +82,8 @@ get_pfn (grub_addr_t va, grub_uint64_t ptbr)
 
 void pal_init(void);
 
+grub_addr_t grub_modbase;
+
 void
 grub_machine_init (void)
 {
@@ -93,6 +95,7 @@ grub_machine_init (void)
   grub_uint64_t low_pfn = ~0ULL, high_pfn = 0;
 
   grub_arch_pccclock = GRUB_ALPHA_SRM_HWRPB.pcc_freq;
+  grub_modbase = (grub_addr_t) _end;
 
   grub_console_init_early ();
 
@@ -166,12 +169,6 @@ grub_machine_fini (void)
 }
 
 void
-grub_machine_set_prefix (void)
-{
-  grub_env_set ("prefix", grub_prefix);
-}
-
-void
 grub_exit (void)
 {
   while (1);
@@ -183,14 +180,8 @@ grub_reboot (void)
   while (1);
 }
 
-grub_addr_t
-grub_arch_modules_addr (void)
-{
-  return (grub_addr_t) _end;
-}
-
-grub_err_t 
-grub_machine_mmap_iterate (grub_memory_hook_t hook)
+grub_err_t
+grub_machine_mmap_iterate (grub_memory_hook_t hook, void *hook_data)
 {
   struct grub_alpha_srm_memdesc *memdesc;
   unsigned i;
@@ -204,19 +195,19 @@ grub_machine_mmap_iterate (grub_memory_hook_t hook)
       case GRUB_ALPHA_SRM_MEMDESC_ENTRY_TYPE_AVAILABLE:
 	hook (memdesc->entries[i].start_page << log_page_size,
 	      memdesc->entries[i].num_pages << log_page_size,
-	      GRUB_MEMORY_AVAILABLE);
+	      GRUB_MEMORY_AVAILABLE, hook_data);
 	break;
       case GRUB_ALPHA_SRM_MEMDESC_ENTRY_TYPE_NONVOLATILE:
 	hook (memdesc->entries[i].start_page << log_page_size,
 	      memdesc->entries[i].num_pages << log_page_size,
-	      GRUB_MEMORY_NVRAM);
+	      GRUB_MEMORY_NVRAM, hook_data);
 	break;
       case GRUB_ALPHA_SRM_MEMDESC_ENTRY_TYPE_RESERVED1:
       case GRUB_ALPHA_SRM_MEMDESC_ENTRY_TYPE_RESERVED2:
       default:
 	hook (memdesc->entries[i].start_page << log_page_size,
 	      memdesc->entries[i].num_pages << log_page_size,
-	      GRUB_MEMORY_RESERVED);
+	      GRUB_MEMORY_RESERVED, hook_data);
 	break;
       }
   return GRUB_ERR_NONE;

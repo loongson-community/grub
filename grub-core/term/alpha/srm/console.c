@@ -71,8 +71,7 @@ static struct grub_terminfo_input_state grub_console_terminfo_input =
 static struct grub_terminfo_output_state grub_console_terminfo_output =
   {
     .put = put,
-    .width = 80,
-    .height = 25
+    .size = { 80, 24 }
   };
 
 static struct grub_term_input grub_console_term_input =
@@ -96,8 +95,7 @@ static struct grub_term_output grub_console_term_output =
     .setcursor = grub_terminfo_setcursor,
     .flags = GRUB_TERM_CODE_TYPE_ASCII,
     .data = &grub_console_terminfo_output,
-    .normal_color = GRUB_TERM_DEFAULT_NORMAL_COLOR,
-    .highlight_color = GRUB_TERM_DEFAULT_HIGHLIGHT_COLOR,
+    .progress_update_divisor = GRUB_PROGRESS_FAST
   };
 
 void
@@ -108,8 +106,6 @@ grub_console_init_early (void)
   grub_term_register_input ("console", &grub_console_term_input);
   grub_term_register_output ("console", &grub_console_term_output);
 }
-
-void grub_terminfo_init (void);
 
 void
 grub_console_init_lately (void)

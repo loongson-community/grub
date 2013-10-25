@@ -79,9 +79,12 @@ srmdisk_hash_add (char *devpath)
 
 
 static int
-grub_srmdisk_iterate (int (*hook) (const char *name))
+grub_srmdisk_iterate (grub_disk_dev_iterate_hook_t hook, void *hook_data,
+		      grub_disk_pull_t pull)
 {
   (void) hook;
+  (void) pull;
+  (void) hook_data;
   return 0;
 }
 

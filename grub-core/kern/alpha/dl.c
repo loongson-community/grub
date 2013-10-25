@@ -23,6 +23,8 @@
 #include <grub/cpu/types.h>
 #include <grub/mm.h>
 
+#pragma GCC diagnostic ignored "-Wcast-align"
+
 void
 grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
 				 grub_size_t *got)
@@ -30,7 +32,6 @@ grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
   const Elf64_Ehdr *e = ehdr;
   grub_size_t cntt = 0, cntg = 0;;
   const Elf64_Shdr *s;
-  Elf64_Word entsize;
   unsigned i;
 
   /* Find a symbol table.  */
@@ -43,7 +44,6 @@ grub_arch_dl_get_tramp_got_size (const void *ehdr, grub_size_t *tramp,
   if (i == grub_le_to_cpu16 (e->e_shnum))
     return;
 
-  entsize = s->sh_entsize;
 
   for (i = 0, s = (Elf64_Shdr *) ((char *) e + grub_le_to_cpu32 (e->e_shoff));
        i < grub_le_to_cpu16 (e->e_shnum);
