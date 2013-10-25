@@ -1,3 +1,38 @@
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/video/bitmap_scale.c: Use unsigned arithmetics when
+	appropriate.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/video/fb/fbblit.c: Use (255 ^ x) rather than (255 - x).
+	Use unsigned divisions rather than signed variants.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/video/readers/png.c (grub_png_convert_image): Use
+	unsigned arithmetics.
+	Add missing break.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/video/readers/jpeg.c: Use unsigned where appropriate.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/zfs/zfs.c (xor_out): Use unsigned modular arithmetics
+	rather than signed one.
+	(recovery): Likewise.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/net/dns.c (hash): Use unsigned arithmetic.
+
+2013-10-25  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/io/gzio.c (test_zlib_header): Use undigned modulo rather
+	than signed.
+
 2013-10-25  Jon McCune <jonmccune@google.com>
 
 	* docs/grub.texi: Cleanup security documentation around signatures.
