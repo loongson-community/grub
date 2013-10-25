@@ -70,6 +70,7 @@ get_uuid (const char *name, char **uuid, int getnative)
     case GRUB_DISK_DEVICE_ARCDISK_ID:
     case GRUB_DISK_DEVICE_HOSTDISK_ID:
     case GRUB_DISK_DEVICE_UBOOTDISK_ID:
+    case GRUB_DISK_DEVICE_SRMDISK_ID:
       break;
 
       /* Native disks.  */

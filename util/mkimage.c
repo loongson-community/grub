@@ -531,16 +531,9 @@ static const struct grub_install_image_target_desc image_targets[] =
       .bigendian = 0, 
       .id = IMAGE_ALPHA_SRM, 
       .flags = PLATFORM_FLAGS_NONE,
-      .prefix = GRUB_KERNEL_ALPHA_SRM_PREFIX,
-      .prefix_end = GRUB_KERNEL_ALPHA_SRM_PREFIX_END,
-      .raw_size = 0,
       .total_module_size = GRUB_KERNEL_ALPHA_SRM_TOTAL_MODULE_SIZE,
-      .kernel_image_size = TARGET_NO_FIELD,
-      .compressed_size = TARGET_NO_FIELD,
       .section_align = 8,
       .vaddr_offset = 0,
-      .install_dos_part = TARGET_NO_FIELD,
-      .install_bsd_part = TARGET_NO_FIELD,
       .elf_target = EM_ALPHA,
     },
   };
@@ -1161,6 +1154,10 @@ grub_install_generate_image (const char *dir, const char *prefix,
     case IMAGE_I386_IEEE1275:
     case IMAGE_PPC:
     case IMAGE_UBOOT:
+      break;
+
+      /* No idea. */
+    case IMAGE_ALPHA_SRM:
       break;
     }
 
