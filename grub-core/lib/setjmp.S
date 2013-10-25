@@ -14,6 +14,7 @@
 #elif defined(__arm__)
 #include "./arm/setjmp.S"
 #elif defined(__alpha__)
+#include "./alpha/setjmp.S"
 #else
 #error "Unknown target cpu type"
 #endif
