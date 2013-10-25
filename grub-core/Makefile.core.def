@@ -70,6 +70,8 @@ kernel = {
 
   ldadd = '$(LDADD_KERNEL)';
 
+  alpha_srm_cflags = '-mcpu=ev4 -mno-fp-regs -ffixed-8';
+
   i386_coreboot_ldflags    = '-Wl,-Ttext=0x8200';
   i386_multiboot_ldflags   = '-Wl,-Ttext=0x8200';
   i386_ieee1275_ldflags    = '-Wl,-Ttext=0x10000';
@@ -78,6 +80,7 @@ kernel = {
   sparc64_ieee1275_ldflags = '-Wl,-Ttext,0x4400';
   mips_arc_ldflags    = '-Wl,-Ttext,$(TARGET_LINK_ADDR)';
   mips_qemu_mips_ldflags    = '-Wl,-Ttext,0x80200000';
+  alpha_srm_ldflags    = '-Wl,-Ttext,0x20000000';
 
   mips_arc_cppflags = '-DGRUB_DECOMPRESSOR_LINK_ADDR=$(TARGET_DECOMPRESSOR_LINK_ADDR)';
   mips_loongson_cppflags = '-DUSE_ASCII_FALLBACK';
@@ -97,6 +100,7 @@ kernel = {
   mips_startup = kern/mips/startup.S;
   sparc64_ieee1275_startup = kern/sparc64/ieee1275/crt0.S;
   powerpc_ieee1275_startup = kern/powerpc/ieee1275/startup.S;
+  alpha_srm_startup = kern/alpha/srm/startup.S;
   arm_uboot_startup = kern/arm/uboot/startup.S;
   arm_efi_startup = kern/arm/efi/startup.S;
 
@@ -125,6 +129,7 @@ kernel = {
   noemu_nodist = symlist.c;
 
   mips = kern/generic/rtc_get_time_ms.c;
+  alpha_srm = kern/generic/rtc_get_time_ms.c;
 
   ieee1275 = disk/ieee1275/ofdisk.c;
   ieee1275 = kern/ieee1275/cmain.c;
@@ -236,6 +241,15 @@ kernel = {
   extra_dist = kern/arm/cache.S;
   arm = kern/arm/cache.c;
   arm = kern/arm/misc.S;
+
+  alpha_srm = kern/alpha/srm/dispatch.S;
+  alpha_srm = kern/alpha/dl.c;
+  alpha_srm = kern/alpha/cache.S;
+  alpha_srm = kern/alpha/divide.S;
+  alpha_srm = kern/alpha/srm/pal_init.c;
+  alpha_srm = kern/alpha/srm/init.c;
+  alpha_srm = term/alpha/srm/console.c;
+  alpha_srm = disk/alpha/srm/srmdisk.c;
 
   emu = disk/host.c;
   emu = kern/emu/cache_s.S;
@@ -792,6 +806,8 @@ module = {
   i386_qemu = lib/i386/halt.c;
   efi = lib/efi/halt.c;
   ieee1275 = lib/ieee1275/halt.c;
+  alpha_srm = lib/alpha/srm/halt.c;
+
   emu = lib/emu/halt.c;
   uboot = lib/uboot/halt.c;
 };
@@ -1491,6 +1507,7 @@ module = {
   powerpc_ieee1275 = lib/ieee1275/cmos.c;
 
   mips_arc = lib/arc/datetime.c;
+  alpha_srm = lib/alpha/srm/datetime.c;
   enable = noemu;
 };
 

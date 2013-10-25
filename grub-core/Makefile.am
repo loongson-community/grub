@@ -140,6 +140,11 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
 endif
 
+if COND_alpha_srm
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/alpha/divide.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/extcmd.h
+endif
+
 if COND_mips
 KERNEL_HEADER_FILES += $(top_builddir)/include/grub/cpu/kernel.h
 endif

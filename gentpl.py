@@ -23,7 +23,7 @@ GRUB_PLATFORMS = [ "emu", "i386_pc", "i386_efi", "i386_qemu", "i386_coreboot",
                    "i386_multiboot", "i386_ieee1275", "x86_64_efi",
                    "mips_loongson", "sparc64_ieee1275",
                    "powerpc_ieee1275", "mips_arc", "ia64_efi",
-                   "mips_qemu_mips", "arm_uboot", "arm_efi" ]
+                   "mips_qemu_mips", "alpha_srm", "arm_uboot", "arm_efi" ]
 
 GROUPS = {}
 
@@ -59,7 +59,7 @@ GROUPS["videomodules"]   = GRUB_PLATFORMS[:];
 for i in GROUPS["videoinkernel"]: GROUPS["videomodules"].remove(i)
 
 # Similar for terminfo
-GROUPS["terminfoinkernel"] = [ "emu", "mips_loongson", "mips_arc", "mips_qemu_mips" ] + GROUPS["ieee1275"] + GROUPS["uboot"];
+GROUPS["terminfoinkernel"] = [ "emu", "mips_loongson", "mips_arc", "mips_qemu_mips", "alpha_srm" ] + GROUPS["ieee1275"] + GROUPS["uboot"];
 GROUPS["terminfomodule"]   = GRUB_PLATFORMS[:];
 for i in GROUPS["terminfoinkernel"]: GROUPS["terminfomodule"].remove(i)
 

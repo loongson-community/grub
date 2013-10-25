@@ -32,6 +32,7 @@ typedef enum grub_memory_type
     GRUB_MEMORY_BADRAM = 5,
     GRUB_MEMORY_COREBOOT_TABLES = 16,
     GRUB_MEMORY_CODE = 20,
+    GRUB_MEMORY_NVRAM = 22
     /* This one is special: it's used internally but is never reported
        by firmware. Don't use -1 as it's used internally for other purposes. */
     GRUB_MEMORY_HOLE = -2,

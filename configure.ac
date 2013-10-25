@@ -121,6 +121,7 @@ if test "x$with_platform" = x; then
     mipsel-*) platform=loongson ;;
     mips-*) platform=arc ;;
     ia64-*) platform=efi ;;
+    alpha-*) platform=srm ;;
     arm-*) platform=uboot ;;
     *) AC_MSG_ERROR([unsupported CPU: "$target_cpu"]) ;;
   esac
@@ -157,6 +158,7 @@ case "$target_cpu"-"$platform" in
   mipsel-yeeloong) platform=loongson ;;
   mipsel-fuloong) platform=loongson ;;
   mipsel-loongson) ;;
+  alpha-srm ) ;;
   arm-uboot) ;;
   arm-efi) ;;
   *-emu) ;;
@@ -193,6 +195,7 @@ case "$platform" in
   uboot)	machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_UBOOT=1" ;;
   qemu)		machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_QEMU=1" ;;
   pc)		machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_PCBIOS=1" ;;
+  srm)		machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_ALPHA_SRM=1" ;;
   emu)		machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_EMU=1" ;;
   loongson)	machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_MIPS_LOONGSON=1 -DGRUB_MACHINE_MIPS_BONITO=1" ;;
   qemu_mips)	machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_MACHINE_MIPS_QEMU_MIPS=1 -DGRUB_MACHINE_MIPS_BONITO=1" ;;
@@ -1332,6 +1335,7 @@ AM_CONDITIONAL([COND_mips_arc], [test "(" x$target_cpu = xmips -o x$target_cpu =
 AM_CONDITIONAL([COND_sparc64_ieee1275], [test x$target_cpu = xsparc64 -a x$platform = xieee1275])
 AM_CONDITIONAL([COND_powerpc_ieee1275], [test x$target_cpu = xpowerpc -a x$platform = xieee1275])
 AM_CONDITIONAL([COND_mips], [test x$target_cpu = xmips -o x$target_cpu = xmipsel])
+AM_CONDITIONAL([COND_alpha_srm], [test x$target_cpu = xalpha -a x$platform = xsrm])
 AM_CONDITIONAL([COND_mipsel], [test x$target_cpu = xmipsel])
 AM_CONDITIONAL([COND_mipseb], [test x$target_cpu = xmips])
 AM_CONDITIONAL([COND_arm], [test x$target_cpu = xarm ])

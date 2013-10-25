@@ -1819,7 +1819,7 @@ typedef Elf32_Addr Elf32_Conflict;
 #define R_ALPHA_GLOB_DAT	25	/* Create GOT entry */
 #define R_ALPHA_JMP_SLOT	26	/* Create PLT entry */
 #define R_ALPHA_RELATIVE	27	/* Adjust by program base */
-#define R_ALPHA_TLS_GD_HI	28
+#define R_ALPHA_BRSGP	        28
 #define R_ALPHA_TLSGD		29
 #define R_ALPHA_TLS_LDM		30
 #define R_ALPHA_DTPMOD64	31

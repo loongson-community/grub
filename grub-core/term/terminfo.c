@@ -143,6 +143,19 @@ grub_terminfo_set_current (struct grub_term_output *term,
       return grub_errno;
     }
 
+  if (grub_strcmp ("srm", str) == 0)
+    {
+      data->name              = grub_strdup ("srm");
+      data->gotoxy            = grub_strdup ("\e[%i%p1%d;%p2%dH");
+      data->cls               = grub_strdup ("\e[2J");
+      data->reverse_video_on  = grub_strdup ("\e[7m");
+      data->reverse_video_off = grub_strdup ("\e[0m");
+      data->cursor_on         = grub_strdup ("\e[?25h");
+      data->cursor_off        = grub_strdup ("\e[?25l");
+      data->setcolor          = 0;
+      return grub_errno;
+    }
+
   if (grub_strcmp ("ieee1275", str) == 0
       || grub_strcmp ("ieee1275-nocursor", str) == 0)
     {

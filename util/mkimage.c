@@ -66,7 +66,7 @@ struct grub_install_image_target_desc
     IMAGE_I386_IEEE1275,
     IMAGE_LOONGSON_ELF, IMAGE_QEMU, IMAGE_PPC, IMAGE_YEELOONG_FLASH,
     IMAGE_FULOONG2F_FLASH, IMAGE_I386_PC_PXE, IMAGE_MIPS_ARC,
-    IMAGE_QEMU_MIPS_FLASH, IMAGE_UBOOT
+    IMAGE_QEMU_MIPS_FLASH, IMAGE_UBOOT, IMAGE_ALPHA_SRM
   } id;
   enum
     {
@@ -523,6 +523,25 @@ static const struct grub_install_image_target_desc image_targets[] =
                                 GRUB_PE32_SECTION_ALIGNMENT),
       .pe_target = GRUB_PE32_MACHINE_ARMTHUMB_MIXED,
       .elf_target = EM_ARM,
+    },
+    {
+      .dirname = "alpha-srm",
+      .names = {"alpha-srm", NULL},
+      .voidp_sizeof = 8,
+      .bigendian = 0, 
+      .id = IMAGE_ALPHA_SRM, 
+      .flags = PLATFORM_FLAGS_NONE,
+      .prefix = GRUB_KERNEL_ALPHA_SRM_PREFIX,
+      .prefix_end = GRUB_KERNEL_ALPHA_SRM_PREFIX_END,
+      .raw_size = 0,
+      .total_module_size = GRUB_KERNEL_ALPHA_SRM_TOTAL_MODULE_SIZE,
+      .kernel_image_size = TARGET_NO_FIELD,
+      .compressed_size = TARGET_NO_FIELD,
+      .section_align = 8,
+      .vaddr_offset = 0,
+      .install_dos_part = TARGET_NO_FIELD,
+      .install_bsd_part = TARGET_NO_FIELD,
+      .elf_target = EM_ALPHA,
     },
   };
 
@@ -1147,6 +1166,8 @@ grub_install_generate_image (const char *dir, const char *prefix,
 
   switch (image_target->id)
     {
+    case IMAGE_ALPHA_SRM:
+      break;
     case IMAGE_I386_PC:
     case IMAGE_I386_PC_PXE:
       {

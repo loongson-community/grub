@@ -33,6 +33,8 @@ grub_arch_sync_caches (void *address __attribute__ ((unused)),
 		       grub_size_t len __attribute__ ((unused)))
 {
 }
+#elif defined (__alpha__)
+void EXPORT_FUNC(grub_arch_sync_all_caches) (void);
 #else
 void EXPORT_FUNC(grub_arch_sync_caches) (void *address, grub_size_t len);
 #endif
