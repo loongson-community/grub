@@ -128,7 +128,7 @@ get_logical_num_lines (struct line *linep, struct per_term_screen *term_screen)
 {
   return (grub_getstringwidth (linep->buf, linep->buf + linep->len,
 			       term_screen->term)
-	  / term_screen->geo.entry_width) + 1;
+	  / (unsigned) term_screen->geo.entry_width) + 1;
 }
 
 static void
@@ -230,8 +230,8 @@ update_screen (struct screen *screen, struct per_term_screen *term_screen,
   linep = screen->lines + screen->line;
   grub_size_t t = grub_getstringwidth (linep->buf, linep->buf + screen->column,
 				       term_screen->term);
-  y += t / term_screen->geo.entry_width;
-  if (t % term_screen->geo.entry_width == 0
+  y += t / (unsigned) term_screen->geo.entry_width;
+  if (t % (unsigned) term_screen->geo.entry_width == 0
       && t != 0 &&  screen->column == linep->len)
     y--;
   /* Check if scrolling is necessary.  */
@@ -1029,12 +1029,14 @@ complete (struct screen *screen, int continuous, int update)
       if (restore)
 	for (i = 0; i < screen->nterms; i++)
 	  {
-	    int width = grub_term_width (screen->terms[i].term) - 2;
+	    unsigned width = grub_term_width (screen->terms[i].term);
+	    if (width > 2)
+	      width -= 2;
 	    if (width > 15)
 	      width -= 6;
-	    int num_sections = ((completion_buffer.len
-				 + width - 1)
-				/ width);
+	    unsigned num_sections = ((completion_buffer.len
+				      + width - 1)
+				     / width);
 	    grub_uint32_t *endp;
 	    struct grub_term_coordinate pos;
 	    grub_uint32_t *p = ucs4;
@@ -1080,7 +1082,7 @@ complete (struct screen *screen, int continuous, int update)
 		grub_puts_terminal ("\n    ", screen->terms[i].term);
 	      }
 
-	    p += (count % num_sections) * width;
+	    p += ((unsigned) count % num_sections) * width;
 	    endp = p + width;
 
 	    if (p != ucs4)
