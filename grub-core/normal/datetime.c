@@ -40,7 +40,8 @@ grub_get_weekday (struct grub_datetime *datetime)
   y = datetime->year - a;
   m = datetime->month + 12 * a - 2;
 
-  return (datetime->day + y + y / 4 - y / 100 + y / 400 + (31 * m / 12)) % 7;
+  return ((unsigned)(datetime->day + y + y / 4 - y / 100 + y / 400
+		     + (31 * m / 12))) % 7;
 }
 
 const char *
