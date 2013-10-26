@@ -214,7 +214,7 @@ _gcry_mpih_divrem( mpi_ptr_t qp, mpi_size_t qextra_limbs,
       case 0:
 	/* We are asked to divide by zero, so go ahead and do it!  (To make
 	   the compiler not remove this statement, return the value.)  */
-	return 1 / dsize;
+	return 0;//1 / dsize;
 
       case 1:
 	{

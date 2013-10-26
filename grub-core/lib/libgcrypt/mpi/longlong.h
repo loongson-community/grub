@@ -170,7 +170,7 @@ MA 02111-1307, USA. */
     (pl) = __m0 * __m1; 						\
   } while (0)
 #define UMUL_TIME 46
-#ifndef LONGLONG_STANDALONE
+#if 0
 #define udiv_qrnnd(q, r, n1, n0, d) \
   do { UDItype __r;							\
     (q) = __udiv_qrnnd (&__r, (n1), (n0), (d)); 			\
@@ -353,7 +353,7 @@ extern UDItype __udiv_qrnnd ();
 #define UMUL_TIME 40
 #define UDIV_TIME 80
 #endif
-#ifndef LONGLONG_STANDALONE
+#if 0
 #define udiv_qrnnd(q, r, n1, n0, d) \
   do { USItype __r;							\
     (q) = __udiv_qrnnd (&__r, (n1), (n0), (d)); 			\
@@ -1294,7 +1294,7 @@ typedef unsigned int UTItype __attribute__ ((mode (TI)));
 #define UMUL_TIME 39		/* 39 instructions */
 #endif
 #ifndef udiv_qrnnd
-#ifndef LONGLONG_STANDALONE
+#if 0
 #define udiv_qrnnd(q, r, n1, n0, d) \
   do { USItype __r;							\
     (q) = __udiv_qrnnd (&__r, (n1), (n0), (d)); 			\

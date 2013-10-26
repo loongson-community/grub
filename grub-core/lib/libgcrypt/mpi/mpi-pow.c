@@ -75,9 +75,6 @@ gcry_mpi_powm (gcry_mpi_t res,
   rp = res->d;
   ep = expo->d;
 
-  if (!msize)
-    msize = 1 / msize;	    /* Provoke a signal.  */
-
   if (!esize)
     {
       /* Exponent is zero, result is 1 mod MOD, i.e., 1 or 0 depending

@@ -123,13 +123,27 @@ typedef signed grub_fixed_signed_t;
 static inline signed
 grub_fixed_sfs_divide (signed a, grub_fixed_signed_t b)
 {
-  return (a * GRUB_FIXED_1) / b;
+  if (b < 0)
+    {
+      b = -b;
+      a = -a;
+    }
+  if (a < 0)
+    return -((unsigned) a * GRUB_FIXED_1) / (unsigned) b;
+  return ((unsigned) a * GRUB_FIXED_1) / (unsigned) b;
 }
 
 static inline grub_fixed_signed_t
 grub_fixed_fsf_divide (grub_fixed_signed_t a, signed b)
 {
-  return a / b;
+  if (b < 0)
+    {
+      b = -b;
+      a = -a;
+    }
+  if (a < 0)
+    return -(unsigned) a / (unsigned) b;
+  return (unsigned) a / (unsigned) b;
 }
 
 static inline signed

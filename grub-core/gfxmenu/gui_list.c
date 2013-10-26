@@ -271,14 +271,14 @@ draw_scrollbar (list_impl_t self,
       tracklen += thumb_vertical_pad;
       tracktop -= thumb->get_top_pad (thumb);
     }
-  int thumby = tracktop + tracklen * (value - min) / (max - min);
-  int thumbheight = tracklen * extent / (max - min) + 1;
+  int thumby = tracktop + tracklen * (value - min) / (unsigned) (max - min);
+  int thumbheight = tracklen * extent / (unsigned) (max - min) + 1;
   /* Rare occasion: too many entries or too low height. */
   if (thumbheight < thumb_vertical_pad)
     {
       thumbheight = thumb_vertical_pad;
       thumby = tracktop + ((tracklen - thumb_vertical_pad) * (value - min)
-                           / (max - extent));
+                           / (unsigned)(max - extent));
     }
   int thumbx = frame->get_left_pad (frame);
   int thumbwidth = scrollbar_width - frame_horizontal_pad;

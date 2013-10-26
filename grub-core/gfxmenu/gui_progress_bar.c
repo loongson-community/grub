@@ -170,7 +170,7 @@ draw_pixmap_bar (grub_gui_progress_bar_t self)
     hlheight -= hl_v_pad;
 
   barwidth = (tracklen * (self->value - self->start) 
-	      / (self->end - self->start));
+	      / (unsigned) (self->end - self->start));
 
   if (barwidth >= hl_h_pad)
     {

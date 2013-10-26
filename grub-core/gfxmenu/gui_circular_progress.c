@@ -36,8 +36,8 @@ struct grub_gui_circular_progress
   int visible;
   int start;
   int end;
-  int value;
-  int num_ticks;
+  unsigned value;
+  unsigned num_ticks;
   int start_angle;
   int ticks_disappear;
   char *theme_dir;
@@ -238,7 +238,12 @@ parse_angle (const char *value)
       /* Unicode symbol of degrees (a circle, U+b0). Put here in UTF-8 to
 	 avoid potential problem with text file reesncoding  */
       || grub_strcmp (ptr, "\xc2\xb0") == 0)
-    angle = (angle * 64 + 45) / 90;
+    {
+      if (angle >= 0)
+	angle = ((unsigned) angle * 64 + 45) / 90;
+      else
+	angle = -((unsigned) -angle * 64 + 45) / 90;
+    }
   return angle;
 }
 
