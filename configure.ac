@@ -90,6 +90,7 @@ case "$target_cpu" in
   i[[3456]]86)	target_cpu=i386 ;;
   amd64)	target_cpu=x86_64 ;;
   sparc)	target_cpu=sparc64 ;;
+  s390x)	target_cpu=s390 ;;
   mipsel|mips64el)
                 target_cpu=mipsel;
 		machine_CPPFLAGS="$machine_CPPFLAGS -DGRUB_CPU_MIPSEL=1";
@@ -122,6 +123,7 @@ if test "x$with_platform" = x; then
     mips-*) platform=arc ;;
     ia64-*) platform=efi ;;
     arm-*) platform=uboot ;;
+    s390-* | s390x-*) platform=mainframe ;;
     *) AC_MSG_ERROR([unsupported CPU: "$target_cpu"]) ;;
   esac
 else
@@ -159,6 +161,7 @@ case "$target_cpu"-"$platform" in
   mipsel-loongson) ;;
   arm-uboot) ;;
   arm-efi) ;;
+  s390-mainframe) ;;
   *-emu) ;;
   *) AC_MSG_ERROR([platform "$platform" is not supported for target CPU "$target_cpu"]) ;;
 esac
@@ -1331,6 +1334,7 @@ AM_CONDITIONAL([COND_mips_qemu_mips], [test "(" x$target_cpu = xmips -o x$target
 AM_CONDITIONAL([COND_mips_arc], [test "(" x$target_cpu = xmips -o x$target_cpu = xmipsel ")"  -a x$platform = xarc])
 AM_CONDITIONAL([COND_sparc64_ieee1275], [test x$target_cpu = xsparc64 -a x$platform = xieee1275])
 AM_CONDITIONAL([COND_powerpc_ieee1275], [test x$target_cpu = xpowerpc -a x$platform = xieee1275])
+AM_CONDITIONAL([COND_s390_mainframe], [test x$target_cpu = xs390 -a x$platform = xmainframe])
 AM_CONDITIONAL([COND_mips], [test x$target_cpu = xmips -o x$target_cpu = xmipsel])
 AM_CONDITIONAL([COND_mipsel], [test x$target_cpu = xmipsel])
 AM_CONDITIONAL([COND_mipseb], [test x$target_cpu = xmips])
