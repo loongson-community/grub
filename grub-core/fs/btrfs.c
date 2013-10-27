@@ -1580,6 +1580,7 @@ grub_btrfs_dir (grub_device_t device, const char *path,
 	  else
 	    {
 	      info.mtime = grub_le_to_cpu64 (inode.mtime.sec);
+	      info.size = grub_le_to_cpu64 (inode.size);
 	      info.mtimeset = 1;
 	    }
 	  c = cdirel->name[grub_le_to_cpu16 (cdirel->n)];

@@ -671,6 +671,7 @@ grub_sfs_dir_iter (const char *filename, enum grub_fshelp_filetype filetype,
   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
   info.mtime = node->mtime + 8 * 365 * 86400 + 86400 * 2;
   info.mtimeset = 1;
+  info.size = node->size;
   grub_free (node->cache);
   grub_free (node);
   return ctx->hook (filename, &info, ctx->hook_data);

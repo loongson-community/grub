@@ -38,7 +38,8 @@ struct grub_archelp_data
 
 static grub_err_t
 grub_cpio_find_file (struct grub_archelp_data *data, char **name,
-		     grub_int32_t *mtime, grub_uint32_t *mode)
+		     grub_int32_t *mtime, grub_uint32_t *mode,
+		     grub_uint64_t *size)
 {
   struct head hd;
   grub_size_t namesize;
@@ -86,6 +87,7 @@ grub_cpio_find_file (struct grub_archelp_data *data, char **name,
 
   data->dofs = data->hofs + ALIGN_CPIO (sizeof (hd) + namesize);
   data->next_hofs = data->dofs + ALIGN_CPIO (data->size);
+  *size = data->size;
   return GRUB_ERR_NONE;
 }
 

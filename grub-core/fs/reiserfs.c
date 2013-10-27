@@ -1271,6 +1271,7 @@ grub_reiserfs_dir_iter (const char *filename,
   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
   info.mtimeset = 1;
   info.mtime = node->mtime;
+  info.size = node->size;
   grub_free (node);
   return ctx->hook (filename, &info, ctx->hook_data);
 }

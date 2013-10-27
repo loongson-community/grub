@@ -656,6 +656,15 @@ grub_squash_dir_iter (const char *filename, enum grub_fshelp_filetype filetype,
   info.dir = ((filetype & GRUB_FSHELP_TYPE_MASK) == GRUB_FSHELP_DIR);
   info.mtimeset = 1;
   info.mtime = grub_le_to_cpu32 (node->ino.mtime);
+  switch (node->ino.type)
+    {
+    case grub_cpu_to_le16_compile_time (SQUASH_TYPE_LONG_REGULAR):
+      info.size = grub_le_to_cpu64 (node->ino.long_file.size);
+      break;
+    case grub_cpu_to_le16_compile_time (SQUASH_TYPE_REGULAR):
+      info.size = grub_le_to_cpu32 (node->ino.file.size);
+      break;
+    }
   grub_free (node);
   return ctx->hook (filename, &info, ctx->hook_data);
 }

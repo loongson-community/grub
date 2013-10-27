@@ -39,6 +39,7 @@ struct grub_dirhook_info
   unsigned mtimeset:1;
   unsigned case_insensitive:1;
   grub_int32_t mtime;
+  grub_off_t size;
 };
 
 typedef int (*grub_fs_dir_hook_t) (const char *filename,

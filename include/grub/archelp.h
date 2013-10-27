@@ -40,7 +40,8 @@ struct grub_archelp_ops
   grub_err_t
   (*find_file) (struct grub_archelp_data *data, char **name,
 		grub_int32_t *mtime,
-		grub_archelp_mode_t *mode);
+		grub_archelp_mode_t *mode,
+		grub_uint64_t *size);
 
   char *
   (*get_link_target) (struct grub_archelp_data *data);

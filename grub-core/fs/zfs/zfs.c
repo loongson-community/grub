@@ -3999,6 +3999,8 @@ iterate_zap (const char *name, grub_uint64_t val, struct grub_zfs_dir_ctx *ctx)
       info.mtimeset = 1;
       info.mtime = grub_zfs_to_cpu64 (grub_get_unaligned64 ((char *) sahdrp + hdrsize + SA_MTIME_OFFSET), dn.endian);
       info.case_insensitive = ctx->data->subvol.case_insensitive;
+      info.size = grub_zfs_to_cpu64 (grub_get_unaligned64 ((char *) sahdrp + hdrsize + SA_SIZE_OFFSET), dn.endian);
+
     }
   
   if (dn.dn.dn_bonustype == DMU_OT_ZNODE)
@@ -4006,6 +4008,7 @@ iterate_zap (const char *name, grub_uint64_t val, struct grub_zfs_dir_ctx *ctx)
       info.mtimeset = 1;
       info.mtime = grub_zfs_to_cpu64 (((znode_phys_t *) DN_BONUS (&dn.dn))->zp_mtime[0],
 				      dn.endian);
+      info.size = grub_zfs_to_cpu64 (((znode_phys_t *) DN_BONUS (&dn.dn))->zp_size, dn.endian);
     }
   info.dir = (dn.dn.dn_type == DMU_OT_DIRECTORY_CONTENTS);
   grub_dprintf ("zfs", "type=%d, name=%s\n", 

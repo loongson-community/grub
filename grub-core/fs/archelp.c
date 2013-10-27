@@ -155,9 +155,10 @@ grub_archelp_dir (struct grub_archelp_data *data,
     {
       grub_int32_t mtime;
       grub_uint32_t mode;
+      grub_uint64_t size;
       grub_err_t err;
 
-      if (arcops->find_file (data, &name, &mtime, &mode))
+      if (arcops->find_file (data, &name, &mtime, &mode, &size))
 	goto fail;
 
       if (mode == GRUB_ARCHELP_ATTR_END)
@@ -189,6 +190,7 @@ grub_archelp_dir (struct grub_archelp_data *data,
 		  info.mtime = mtime;
 		  info.mtimeset = 1;
 		}
+	      info.size = size;
 	      if (hook (n, &info, hook_data))
 		{
 		  grub_free (name);
@@ -248,8 +250,9 @@ grub_archelp_open (struct grub_archelp_data *data,
     {
       grub_uint32_t mode;
       int restart;
+      grub_uint64_t size;
       
-      if (arcops->find_file (data, &fn, NULL, &mode))
+      if (arcops->find_file (data, &fn, NULL, &mode, &size))
 	goto fail;
 
       if (mode == GRUB_ARCHELP_ATTR_END)

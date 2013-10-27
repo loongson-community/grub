@@ -44,7 +44,8 @@ struct grub_archelp_data
 static grub_err_t
 grub_cbfs_find_file (struct grub_archelp_data *data, char **name,
 		     grub_int32_t *mtime,
-		     grub_uint32_t *mode)
+		     grub_uint32_t *mode,
+		     grub_uint64_t *size)
 {
   grub_size_t offset;
   for (;;
@@ -71,6 +72,7 @@ grub_cbfs_find_file (struct grub_archelp_data *data, char **name,
 	  return GRUB_ERR_NONE;
 	}
       data->size = grub_be_to_cpu32 (hd.len);
+      *size = grub_be_to_cpu32 (hd.len);
       (void) mtime;
       offset = grub_be_to_cpu32 (hd.offset);
 

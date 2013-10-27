@@ -889,6 +889,7 @@ grub_bfs_dir_iter (const char *name, grub_uint64_t value,
   info.mtime = grub_bfs_to_cpu64 (ino.mtime) >> 16;
 #endif
   info.dir = ((grub_bfs_to_cpu32 (ino.mode) & ATTR_TYPE) == ATTR_DIR);
+  info.size = grub_bfs_to_cpu64 (ino.size);
   return ctx->hook (name, &info, ctx->hook_data);
 }
 

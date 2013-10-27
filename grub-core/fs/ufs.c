@@ -711,6 +711,8 @@ grub_ufs_dir (grub_device_t device, const char *path,
 #endif
       info.mtimeset = 1;
 
+      info.size = grub_ufs_to_cpu64 (inode.size);
+
       if (hook (filename, &info, hook_data))
 	{
 	  grub_free (filename);

@@ -938,6 +938,8 @@ grub_fat_find_dir (grub_disk_t disk, struct grub_fat_data *data,
 #endif
 	  data->cur_cluster_num = ~0U;
 
+	  info.size = data->file_size;
+
 	  if (call_hook)
 	    hook (ctxt.filename, &info, hook_data);
 

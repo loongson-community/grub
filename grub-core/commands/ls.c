@@ -116,35 +116,11 @@ print_files_long (const char *filename, const struct grub_dirhook_info *info,
 
   if (! info->dir)
     {
-      grub_file_t file;
-      char *pathname;
-
-      if (ctx->dirname[grub_strlen (ctx->dirname) - 1] == '/')
-	pathname = grub_xasprintf ("%s%s", ctx->dirname, filename);
-      else
-	pathname = grub_xasprintf ("%s/%s", ctx->dirname, filename);
-
-      if (!pathname)
-	return 1;
-
-      /* XXX: For ext2fs symlinks are detected as files while they
-	 should be reported as directories.  */
-      grub_file_filter_disable_compression ();
-      file = grub_file_open (pathname);
-      if (! file)
-	{
-	  grub_errno = 0;
-	  grub_free (pathname);
-	  return 0;
-	}
-
       if (! ctx->human)
-	grub_printf ("%-12llu", (unsigned long long) file->size);
+	grub_printf ("%-12llu", (unsigned long long) info->size);
       else
-	grub_printf ("%-12s", grub_get_human_size (file->size,
-						   GRUB_HUMAN_SIZE_SHORT));
-      grub_file_close (file);
-      grub_free (pathname);
+	grub_printf ("%-12s", grub_get_human_size (info->size,
+						   GRUB_HUMAN_SIZE_SHORT));    
     }
   else
     grub_printf ("%-12s", _("DIR"));
