@@ -1,0 +1,104 @@
+###############################################################################
+# BRLTTY - A background process providing access to the console screen (when in
+#          text mode) for a blind person using a refreshable braille display.
+#
+# Copyright (C) 1995-2012 by The BRLTTY Developers.
+#
+# BRLTTY comes with ABSOLUTELY NO WARRANTY.
+#
+# This is free software, placed under the terms of the
+# GNU Lesser General Public License, as published by the Free Software
+# Foundation; either version 2.1 of the License, or (at your option) any
+# later version. Please see the file LICENSE-LGPL for details.
+#
+# Web Page: http://mielke.cc/brltty/
+#
+# This software is maintained by Dave Mielke <dave@mielke.cc>.
+###############################################################################
+
+title Bindings for Keypad-based Navigation
+
+
+####################
+# Default Bindings #
+####################
+
+bind KPInsert+!KP5 Home
+bind KPInsert+!KPArrowLeft Back
+bind KPInsert+!KPArrowRight CsrTrk
+bind KPInsert+!KPArrowUp LnUp
+bind KPInsert+!KPArrowDown LnDn
+bind KPInsert+!KPHome Top_Left
+bind KPInsert+!KPEnd Bot_Left
+bind KPInsert+!KPPageUp PrDifLn
+bind KPInsert+!KPPageDown NxDifLn
+
+bind KPDelete+!KP5 DescChar
+bind KPDelete+!KPArrowLeft Freeze
+bind KPDelete+!KPArrowRight CsrJmp_Vert
+bind KPDelete+!KPArrowUp PrPgrph
+bind KPDelete+!KPArrowDown NxPgrph
+bind KPDelete+!KPHome PrPrompt
+bind KPDelete+!KPEnd NxPrompt
+bind KPDelete+!KPPageUp AttrUp
+bind KPDelete+!KPPageDown AttrDn
+
+bind KPEnter+!KP5 Say_Line
+bind KPEnter+!KPArrowUp Say_Above
+bind KPEnter+!KPArrowDown Say_Below
+bind KPEnter+!KPArrowLeft Mute
+bind KPEnter+!KPArrowRight AutoSpeak
+bind KPEnter+!KP7 Say_Slower
+bind KPEnter+!KP9 Say_Faster
+bind KPEnter+!KP1 Say_Softer
+bind KPEnter+!KP3 Say_Louder
+
+bind KPPlus+!KP5 Paste
+bind KPPlus+!KP7 Clip_New
+bind KPPlus+!KP1 Clip_Add
+bind KPPlus+!KP9 Copy_Line
+bind KPPlus+!KP3 Copy_Rect
+bind KPPlus+!KPArrowUp PrIndent
+bind KPPlus+!KPArrowDown NxIndent
+bind KPPlus+!KPArrowLeft PrDifChar
+bind KPPlus+!KPArrowRight NxDifChar
+
+bind KPMinus+!KP5 PrefMenu
+bind KPMinus+!KPArrowLeft PrefLoad
+bind KPMinus+!KPArrowRight PrefSave
+bind KPMinus+!KPArrowUp WinUp
+bind KPMinus+!KPArrowDown WinDn
+bind KPMinus+!KP7 Help
+bind KPMinus+!KP9 Learn
+bind KPMinus+!KP1 RestartBrl
+bind KPMinus+!KP3 RestartSpeech
+
+
+#################
+# Menu Bindings #
+#################
+
+context menu
+
+bind KPInsert+!KPArrowLeft FWINLT
+bind KPInsert+!KPArrowRight FWINRT
+bind KPInsert+!KPArrowUp MENU_PREV_ITEM
+bind KPInsert+!KPArrowDown MENU_NEXT_ITEM
+bind KPInsert+!KPHome MENU_FIRST_ITEM
+bind KPInsert+!KPEnd MENU_LAST_ITEM
+bind KPInsert+!KPPageUp MENU_PREV_SETTING
+bind KPInsert+!KPPageDown MENU_NEXT_SETTING
+
+bind KPInsert+!KPEnter PREFMENU
+bind KPInsert+!KPPlus PREFSAVE
+bind KPInsert+!KPMinus PREFLOAD
+
+
+#################
+# Braille Input #
+#################
+
+assign brailleContext 1
+assign brailleOff KPInsert+!KPSlash
+assign brailleOn KPInsert+!KPAsterisk
+include kbd-braille.kti

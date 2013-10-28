@@ -1,0 +1,148 @@
+###############################################################################
+# BRLTTY - A background process providing access to the console screen (when in
+#          text mode) for a blind person using a refreshable braille display.
+#
+# Copyright (C) 1995-2012 by The BRLTTY Developers.
+#
+# BRLTTY comes with ABSOLUTELY NO WARRANTY.
+#
+# This is free software, placed under the terms of the
+# GNU Lesser General Public License, as published by the Free Software
+# Foundation; either version 2.1 of the License, or (at your option) any
+# later version. Please see the file LICENSE-LGPL for details.
+#
+# Web Page: http://mielke.cc/brltty/
+#
+# This software is maintained by Dave Mielke <dave@mielke.cc>.
+###############################################################################
+
+title Voyager
+
+
+####################
+# Default Bindings #
+####################
+
+bind RoutingKey ROUTE
+bind Thumb1+Thumb4 CSRJMP_VERT
+
+bind Thumb1 FWINLT
+bind Thumb4 FWINRT
+bind Thumb2 LNUP
+bind Thumb3 LNDN
+
+bind Thumb1+Thumb2 TOP_LEFT
+bind Thumb1+Thumb3 BOT_LEFT
+bind Thumb4+Thumb2 TOP
+bind Thumb4+Thumb3 BOT
+
+bind Up KEY_CURSOR_UP
+bind Down KEY_CURSOR_DOWN
+
+bind Left BACK
+bind Right HOME
+bind Left+Right CSRTRK
+
+bind Left+Up DISPMD
+bind Left+Down SIXDOTS
+bind Right+Up AUTOREPEAT
+bind Right+Down AUTOSPEAK
+
+bind Thumb2+Dot1+Dot2 SKPBLNKWINS
+bind Thumb2+Dot1+Dot2+Dot7 SKPBLNKWINS+off
+bind Thumb2+Dot1+Dot2+Dot8 SKPBLNKWINS+on
+bind Thumb2+Dot1+Dot4 CSRVIS
+bind Thumb2+Dot1+Dot4+Dot7 CSRVIS+off
+bind Thumb2+Dot1+Dot4+Dot8 CSRVIS+on
+bind Thumb2+Dot1+Dot2+Dot4 FREEZE
+bind Thumb2+Dot1+Dot2+Dot5 HELP
+bind Thumb2+Dot2+Dot4 SKPIDLNS
+bind Thumb2+Dot2+Dot4+Dot7 SKPIDLNS+off
+bind Thumb2+Dot2+Dot4+Dot8 SKPIDLNS+on
+bind Thumb2+Dot1+Dot2+Dot3 LEARN
+bind Thumb2+Dot1+Dot3+Dot4 PREFMENU
+bind Thumb2+Dot1+Dot3+Dot4+Dot7 PREFLOAD
+bind Thumb2+Dot1+Dot3+Dot4+Dot8 PREFSAVE
+bind Thumb2+Dot2+Dot3+Dot4 INFO
+bind Thumb2+Dot1+dot3+Dot6 ATTRVIS
+bind Thumb2+Dot1+Dot3+Dot6+Dot7 ATTRVIS+off
+bind Thumb2+Dot1+Dot3+Dot6+Dot8 ATTRVIS+on
+
+bind Thumb1+RoutingKey CLIP_NEW
+bind Thumb2+RoutingKey CLIP_ADD
+bind Thumb3+RoutingKey COPY_LINE
+bind Thumb4+RoutingKey COPY_RECT
+bind RoutingKey+!RoutingKey CLIP_COPY
+bind Thumb2+Dot1+Dot2+Dot3+Dot4 PASTE
+
+bind Left+Thumb1 LNBEG
+bind Left+Thumb4 LNEND
+bind Right+Thumb1 CHRLT
+bind Right+Thumb4 CHRRT
+bind Up+Thumb1 FWINLTSKIP
+bind Up+Thumb4 FWINRTSKIP
+bind Down+Thumb1 PRSEARCH
+bind Down+Thumb4 NXSEARCH
+
+bind Left+Thumb2 ATTRUP
+bind Left+Thumb3 ATTRDN
+bind Right+Thumb2 PRDIFLN
+bind Right+Thumb3 NXDIFLN
+bind Up+Thumb2 PRPGRPH
+bind Up+Thumb3 NXPGRPH
+bind Down+Thumb2 PRPROMPT
+bind Down+Thumb3 NXPROMPT
+
+Bind Left+RoutingKey SETMARK
+Bind Right+RoutingKey GOTOMARK
+bind Up+RoutingKey DESCCHAR
+bind Down+RoutingKey SETLEFT
+
+bind Thumb1+Thumb2+RoutingKey PRINDENT
+bind Thumb3+Thumb4+RoutingKey NXINDENT
+
+map Dot1 DOT1
+map Dot2 DOT2
+map Dot3 DOT3
+map Dot4 DOT4
+map Dot5 DOT5
+map Dot6 DOT6
+map Dot7 DOT7
+map Dot8 DOT8
+map Thumb2 SPACE
+map Thumb3 SPACE
+map Left UPPERCASE
+map Right CONTROL
+
+bind Thumb3+Dot1+Dot2 KEY_BACKSPACE
+bind Thumb3+Dot1+Dot4+Dot5 KEY_DELETE
+bind Thumb3+Dot1+Dot5 KEY_ESCAPE
+bind Thumb3+Dot2+Dot4 KEY_INSERT
+bind Thumb3+Dot2+Dot3+Dot4+Dot5 KEY_TAB
+bind Thumb3+Dot4+Dot6 KEY_ENTER
+bind Thumb3+Dot2 KEY_PAGE_UP
+bind Thumb3+Dot5 KEY_PAGE_DOWN
+bind Thumb3+Dot3 KEY_HOME
+bind Thumb3+Dot6 KEY_END
+bind Thumb3+Dot7 KEY_CURSOR_LEFT
+bind Thumb3+Dot8 KEY_CURSOR_RIGHT
+
+
+#################
+# Menu Bindings #
+#################
+
+context menu
+
+bind Left MENU_PREV_ITEM
+bind Right MENU_NEXT_ITEM
+
+bind Up MENU_PREV_SETTING
+bind Down MENU_NEXT_SETTING
+
+bind Right+Up MENU_FIRST_ITEM
+bind Right+Down MENU_LAST_ITEM
+
+bind Left+Right PREFMENU
+bind Left+Up PREFLOAD
+bind Left+Down PREFSAVE

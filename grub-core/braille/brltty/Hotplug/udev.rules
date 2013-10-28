@@ -1,0 +1,130 @@
+###############################################################################
+# BRLTTY - A background process providing access to the console screen (when in
+#          text mode) for a blind person using a refreshable braille display.
+#
+# Copyright (C) 1995-2012 by The BRLTTY Developers.
+#
+# BRLTTY comes with ABSOLUTELY NO WARRANTY.
+#
+# This is free software, placed under the terms of the
+# GNU General Public License, as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any
+# later version. Please see the file LICENSE-GPL for details.
+#
+# Web Page: http://mielke.cc/brltty/
+#
+# This software is maintained by Dave Mielke <dave@mielke.cc>.
+###############################################################################
+
+# udev rules file for brltty
+
+SUBSYSTEM=="usb_device", GOTO="brltty_usb_begin"
+SUBSYSTEM=="usb", KERNEL!="*:*", GOTO="brltty_usb_begin"
+GOTO="brltty_end"
+
+LABEL="brltty_usb_begin"
+
+# Alva
+ENV{PRODUCT}=="6b0/1/*", ENV{BRLTTY_DRIVER}="al", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="798/640/*", ENV{BRLTTY_DRIVER}="al", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="798/680/*", ENV{BRLTTY_DRIVER}="al", GOTO="brltty_usb_run"
+
+# Baum
+ENV{PRODUCT}=="403/fe70/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe71/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe72/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe73/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe74/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe75/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe76/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/fe77/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2000/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2001/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2002/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2007/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2008/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2009/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2010/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2011/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2014/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2015/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/2016/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="904/3000/*", ENV{BRLTTY_DRIVER}="bm", GOTO="brltty_usb_run"
+
+# EuroBraille
+ENV{PRODUCT}=="c251/1122/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1123/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1124/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1125/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1126/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1127/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1128/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1129/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112a/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112b/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112c/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112d/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112e/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/112f/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1130/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1131/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="c251/1132/*", ENV{BRLTTY_DRIVER}="eu", GOTO="brltty_usb_run"
+
+# FreedomScientific
+ENV{PRODUCT}=="f4e/100/*", ENV{BRLTTY_DRIVER}="fs", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="f4e/111/*", ENV{BRLTTY_DRIVER}="fs", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="f4e/112/*", ENV{BRLTTY_DRIVER}="fs", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="f4e/114/*", ENV{BRLTTY_DRIVER}="fs", GOTO="brltty_usb_run"
+
+# HandyTech
+ENV{PRODUCT}=="921/1200/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="403/6001/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="1fe4/3/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="1fe4/44/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="1fe4/54/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="1fe4/74/*", ENV{BRLTTY_DRIVER}="ht", GOTO="brltty_usb_run"
+
+# HIMS
+ENV{PRODUCT}=="45e/930a/*", ENV{BRLTTY_DRIVER}="hm", GOTO="brltty_usb_run"
+
+# HumanWare
+ENV{PRODUCT}=="1c71/c005/*", ENV{BRLTTY_DRIVER}="hw", GOTO="brltty_usb_run"
+
+# Metec
+ENV{PRODUCT}=="452/100/*", ENV{BRLTTY_DRIVER}="mt", GOTO="brltty_usb_run"
+
+# Papenmeier
+ENV{PRODUCT}=="403/f208/*", ENV{BRLTTY_DRIVER}="pm", GOTO="brltty_usb_run"
+
+# Pegasus
+ENV{PRODUCT}=="4242/1/*", ENV{BRLTTY_DRIVER}="pg", GOTO="brltty_usb_run"
+
+# Seika
+ENV{PRODUCT}=="10c4/ea60/*", ENV{BRLTTY_DRIVER}="sk", GOTO="brltty_usb_run"
+ENV{PRODUCT}=="10c4/ea80/*", ENV{BRLTTY_DRIVER}="sk", GOTO="brltty_usb_run"
+
+# Voyager
+ENV{PRODUCT}=="798/1/*", ENV{BRLTTY_DRIVER}="vo", GOTO="brltty_usb_run"
+
+GOTO="brltty_end"
+
+LABEL="brltty_usb_run"
+ENV{BRLTTY_DEVICE}="usb:$sysfs{serial}"
+GOTO="brltty_run"
+
+LABEL="brltty_run"
+ENV{BRLTTY_PID_FILE}="/var/run/brltty.$kernel.pid"
+ACTION=="add", GOTO="brltty_add"
+ACTION=="remove", GOTO="brltty_remove"
+GOTO="brltty_end"
+
+LABEL="brltty_add"
+SYMLINK+="brltty/$env{BRLTTY_DRIVER}-$env{BRLTTY_DEVICE}"
+RUN+="/bin/brltty -E -P$env{BRLTTY_PID_FILE}"
+GOTO="brltty_end"
+
+LABEL="brltty_remove"
+RUN+="/bin/sh -c 'kill -TERM `cat $env{BRLTTY_PID_FILE}`'"
+GOTO="brltty_end"
+
+LABEL="brltty_end"

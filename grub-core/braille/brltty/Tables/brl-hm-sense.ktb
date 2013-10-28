@@ -1,0 +1,175 @@
+###############################################################################
+# BRLTTY - A background process providing access to the console screen (when in
+#          text mode) for a blind person using a refreshable braille display.
+#
+# Copyright (C) 1995-2012 by The BRLTTY Developers.
+#
+# BRLTTY comes with ABSOLUTELY NO WARRANTY.
+#
+# This is free software, placed under the terms of the
+# GNU Lesser General Public License, as published by the Free Software
+# Foundation; either version 2.1 of the License, or (at your option) any
+# later version. Please see the file LICENSE-LGPL for details.
+#
+# Web Page: http://mielke.cc/brltty/
+#
+# This software is maintained by Dave Mielke <dave@mielke.cc>.
+###############################################################################
+
+title HIMS Braille Sense
+
+
+####################
+# Default Bindings #
+####################
+
+map Dot1 DOT1
+map Dot2 DOT2
+map Dot3 DOT3
+map Dot4 DOT4
+map Dot5 DOT5
+map Dot6 DOT6
+map Dot7 DOT7
+map Dot8 DOT8
+map Space SPACE
+map F2 UPPERCASE
+map F3 CONTROL
+
+bind RoutingKey ROUTE
+
+bind F4 HOME
+bind F1+F4 BACK
+bind F2+F3 CSRJMP_VERT
+
+bind Backward FWINLT
+bind Forward FWINRT
+bind Backward+Forward LNBEG
+
+bind F2 LNUP
+bind F3 LNDN
+
+bind F1+F2 FWINLTSKIP
+bind F3+F4 FWINRTSKIP
+
+bind F1+Backward PRPROMPT
+bind F1+Forward NXPROMPT
+
+bind F2+Backward PRDIFLN
+bind F2+Forward NXDIFLN
+
+bind F3+Backward ATTRUP
+bind F3+Forward ATTRDN
+
+bind F4+Backward PRPGRPH
+bind F4+Forward NXPGRPH
+
+bind F1+F2+Backward TOP_LEFT
+bind F1+F2+Forward BOT_LEFT
+
+bind F3+F4+Backward CHRLT
+bind F3+F4+Forward CHRRT
+
+bind F1+F3+F4 CONTEXT+1 # RoutingKey -> CLIP_NEW
+bind F2+F3+F4 CONTEXT+2 # RoutingKey -> CLIP_ADD
+bind F1+F2+F3 CONTEXT+3 # RoutingKey -> COPY_LINE
+bind F1+F2+F4 CONTEXT+4 # RoutingKey -> COPY_RECT
+bind F1+F2+F3+F4 PASTE
+
+bind F1+F3 CONTEXT+5 # RoutingKey -> SETLEFT
+bind F2+F4 CONTEXT+6 # RoutingKey -> DESCCHAR
+
+bind Space+Dot1 DISPMD
+bind Space+Dot1+dot7 DISPMD+off
+bind Space+Dot1+Dot8 DISPMD+on
+bind Space+Dot1+Dot2 SKPBLNKWINS
+bind Space+Dot1+Dot2+dot7 SKPBLNKWINS+off
+bind Space+Dot1+Dot2+Dot8 SKPBLNKWINS+on
+bind Space+Dot1+Dot4 CSRVIS
+bind Space+Dot1+Dot4+dot7 CSRVIS+off
+bind Space+Dot1+Dot4+Dot8 CSRVIS+on
+bind Space+Dot1+Dot2+Dot4 FREEZE
+bind Space+Dot1+Dot2+Dot5 HELP
+bind Space+Dot2+Dot4 SKPIDLNS
+bind Space+Dot2+Dot4+dot7 SKPIDLNS+off
+bind Space+Dot2+Dot4+Dot8 SKPIDLNS+on
+bind Space+Dot1+Dot2+Dot3 LEARN
+bind Space+Dot1+Dot2+Dot3+Dot4 PREFMENU
+bind Space+Dot1+Dot2+Dot3+Dot4+Dot7 PREFLOAD
+bind Space+Dot1+Dot2+Dot3+Dot4+Dot8 PREFSAVE
+bind Space+Dot2+Dot3+Dot4 INFO
+bind Space+Dot2+Dot3+Dot4+Dot5 CSRTRK
+bind Space+Dot2+Dot3+Dot4+Dot5+dot7 CSRTRK+off
+bind Space+Dot2+Dot3+Dot4+Dot5+Dot8 CSRTRK+on
+bind Space+Dot1+Dot3+Dot6 ATTRVIS
+bind Space+Dot1+Dot3+Dot6+dot7 ATTRVIS+off
+bind Space+Dot1+Dot3+Dot6+Dot8 ATTRVIS+on
+bind Space+Dot1+Dot2+Dot3+Dot6 CONTEXT+7 # RoutingKey -> SWITCHVT
+bind Space+Dot1+Dot2+Dot3+Dot6+Dot7 SWITCHVT_PREV
+bind Space+Dot1+Dot2+Dot3+Dot6+Dot8 SWITCHVT_NEXT
+bind Space+Dot2+Dot3+Dot5 SIXDOTS+on
+bind Space+Dot2+Dot3+Dot6 SIXDOTS+off
+
+bind Space+Dot7 KEY_BACKSPACE
+bind Space+Dot8 KEY_ENTER
+bind Space+Dot7+Dot8 KEY_TAB
+
+bind Space+Dot2+Dot3 KEY_CURSOR_LEFT
+bind Space+Dot5+Dot6 KEY_CURSOR_RIGHT
+bind Space+Dot2+Dot5 KEY_CURSOR_UP
+bind Space+Dot3+Dot6 KEY_CURSOR_DOWN
+
+bind Space+Dot5 KEY_PAGE_UP
+bind Space+Dot6 KEY_PAGE_DOWN
+bind Space+Dot2 KEY_HOME
+bind Space+Dot3 KEY_END
+
+bind Space+Dot2+Dot6 KEY_ESCAPE
+bind Space+Dot3+Dot5 KEY_INSERT
+bind Space+Dot2+Dot5+Dot6 KEY_DELETE
+bind Space+Dot2+Dot3+Dot5+Dot6 CONTEXT+8 # RoutingKey -> KEY_FUNCTION
+
+
+#################
+# Menu Bindings #
+#################
+
+context menu
+
+bind F2 MENU_PREV_ITEM
+bind F3 MENU_NEXT_ITEM
+
+bind Backward MENU_PREV_SETTING
+bind Forward MENU_NEXT_SETTING
+
+bind F1+F2 MENU_FIRST_ITEM
+bind F3+F4 MENU_LAST_ITEM
+
+
+############################
+# Routing Key Alternatives #
+############################
+
+context 1
+bind !RoutingKey CLIP_NEW
+
+context 2
+bind !RoutingKey CLIP_ADD
+
+context 3
+bind !RoutingKey COPY_LINE
+
+context 4
+bind !RoutingKey COPY_RECT
+
+context 5
+bind !RoutingKey SETLEFT
+
+context 6
+bind !RoutingKey DESCCHAR
+
+context 7
+bind !RoutingKey SWITCHVT
+
+context 8
+bind !RoutingKey KEY_FUNCTION
+
