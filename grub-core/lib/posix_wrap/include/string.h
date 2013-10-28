@@ -167,8 +167,8 @@ strdup (const char *s)
   return grub_strdup (s);
 }
 
-static inline grub_wchar_t *
-wmempcpy (grub_wchar_t *dest, const grub_wchar_t *src, grub_size_t n)
+static inline wchar_t *
+wmempcpy (wchar_t *dest, const wchar_t *src, grub_size_t n)
 {
   grub_memcpy (dest, src, sizeof (dest[0]) * n);
   return dest + n;
@@ -215,7 +215,7 @@ static inline char *
 mbschr (const char *src, int c)
 {
   int count = 0;
-  grub_wchar_t code = 0;
+  grub_uint32_t code = 0;
   const char *last_start = src;
 
   while (1)
@@ -233,7 +233,7 @@ mbschr (const char *src, int c)
 	continue;
       if (code == 0)
 	break;
-      if (code == c)
+      if ((int) code == c)
 	return (char *) last_start;
       last_start = src;
     }

@@ -42,7 +42,7 @@ grub_font_draw_string (const char *str, grub_font_t font,
                        int left_x, int baseline_y)
 {
   int x;
-  grub_wchar_t *logical;
+  grub_uint32_t *logical;
   grub_ssize_t logical_len, visual_len;
   struct grub_unicode_glyph *visual, *ptr;
 
@@ -83,9 +83,9 @@ int
 grub_font_get_string_width (grub_font_t font, const char *str)
 {
   int width = 0;
-  grub_wchar_t *ptr;
+  grub_uint32_t *ptr;
   grub_ssize_t logical_len;
-  grub_wchar_t *logical;
+  grub_uint32_t *logical;
 
   logical_len = grub_utf8_to_ucs4_alloc (str, &logical, 0);
   if (logical_len < 0)

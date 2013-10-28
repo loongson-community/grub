@@ -642,8 +642,8 @@ module = {
   name = regexp;
   common = commands/regexp.c;
   common = commands/wildcard.c;
-  ldadd = libgnulib.a;
-  dependencies = libgnulib.a;
+  ldadd = libregexp.a;
+  dependencies = libregexp.a;
   cflags = '$(CFLAGS_POSIX) $(CFLAGS_GNULIB)';
   cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_GNULIB)';
 };
@@ -835,7 +835,7 @@ module = {
   name = verify;
   common = commands/verify.c;
   cflags = '$(CFLAGS_POSIX)';
-  cppflags = '-I$(srcdir)/lib/posix_wrap';
+  cppflags = '-I$(srcdir)/lib/posix_wrap/include';
 };
 
 module = {

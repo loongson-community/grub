@@ -247,36 +247,17 @@ grub_normal_init_page (struct grub_term_output *term,
  
   grub_term_cls (term);
 
-  if (!grub_term_is_tiny (term))
+  msg_formatted = grub_xasprintf (msg, PACKAGE_VERSION);
+  if (!msg_formatted)
+    return;
+ 
+  msg_len = grub_utf8_to_ucs4_alloc (msg_formatted,
+  				     &unicode_msg, &last_position);
+  grub_free (msg_formatted);
+ 
+  if (msg_len < 0)
     {
-      int msg_len;
-      int posx;
-      const char *msg = _("GNU GRUB  version %s");
-      char *msg_formatted;
-      grub_wchar_t *unicode_msg;
-      grub_wchar_t *last_position;
- 
-      msg_formatted = grub_xasprintf (msg, PACKAGE_VERSION);
-      if (!msg_formatted)
-	return;
- 
-      msg_len = grub_utf8_to_ucs4_alloc (msg_formatted,
-					 &unicode_msg, &last_position);
-      grub_free (msg_formatted);
- 
-      if (msg_len < 0)
-	{
-	  return;
-	}
-
-      posx = grub_getstringwidth (unicode_msg, last_position, term);
-      posx = (grub_term_width (term) - posx) / 2;
-      grub_term_gotoxy (term, posx, 1);
-
-      grub_print_ucs4 (unicode_msg, last_position, 0, 0, term);
-      grub_putcode ('\n', term);
-      grub_putcode ('\n', term);
-      grub_free (unicode_msg);
+      return;
     }
 
   posx = grub_getstringwidth (unicode_msg, last_position, term);
@@ -426,19 +407,18 @@ grub_normal_reader_init (int nested)
     return grub_errno;
 
   FOR_ACTIVE_TERM_OUTPUTS(term)
-    if (!grub_term_is_tiny (term))
-      {
-	grub_normal_init_page (term, 1);
-	grub_term_setcursor (term, 1);
+  {
+    grub_normal_init_page (term, 1);
+    grub_term_setcursor (term, 1);
 
-	if (grub_term_width (term) > 3 + STANDARD_MARGIN + 20)
-	  grub_print_message_indented (msg_formatted, 3, STANDARD_MARGIN, term);
-	else
-	  grub_print_message_indented (msg_formatted, 0, 0, term);
-	grub_putcode ('\n', term);
-	grub_putcode ('\n', term);
-	grub_putcode ('\n', term);
-      }
+    if (grub_term_width (term) > 3 + STANDARD_MARGIN + 20)
+      grub_print_message_indented (msg_formatted, 3, STANDARD_MARGIN, term);
+    else
+      grub_print_message_indented (msg_formatted, 0, 0, term);
+    grub_putcode ('\n', term);
+    grub_putcode ('\n', term);
+    grub_putcode ('\n', term);
+  }
   grub_free (msg_formatted);
  
   return 0;

@@ -85,7 +85,7 @@ HOST_CPPFLAGS="$HOST_CPPFLAGS -DLOCALEDIR=\\\"\$(localedir)\\\""
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -Wall -W"
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -I\$(top_srcdir)/include"
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -I\$(top_builddir)/include"
-TARGET_CPPFLAGS="$TARGET_CPPFLAGS -Dfloat=__float__bug__ -Ddouble=__double__bug__ -DGRUB_RUNTIME=1"
+TARGET_CPPFLAGS="$TARGET_CPPFLAGS -DGRUB_RUNTIME=1"
 
 case "$target_cpu" in
   i[[3456]]86)	target_cpu=i386 ;;

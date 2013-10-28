@@ -22,8 +22,8 @@
 #include <grub/charset.h>
 #include <grub/misc.h>
 
-#define wint_t grub_posix_wint_t
-#define wchar_t grub_posix_wchar_t
+#include <stddef.h>
+
 #define mbstate_t grub_posix_mbstate_t
 
 /* UCS-4.  */
@@ -32,20 +32,21 @@ enum
     WEOF = -1
   };
 
+typedef int wint_t;
+
 typedef struct mbstate {
-  grub_wchar_t code;
+  grub_uint32_t code;
   int count;
 } mbstate_t;
+
 
 /* UTF-8. */
 #define MB_CUR_MAX 4
 #define MB_LEN_MAX 4
 
 static inline grub_size_t
-mbrtowc (grub_wchar_t *pwc, const char *s, grub_size_t n, mbstate_t *ps)
+mbrtowc (wchar_t *pwc, const char *s, grub_size_t n, mbstate_t *ps)
 {
-  COMPILE_TIME_ASSERT (sizeof (wchar_t) == sizeof (grub_wchar_t));
-  COMPILE_TIME_ASSERT (GRUB_WCHAR_MAX == WCHAR_MAX);
   const char *ptr;
   if (!s)
     {
@@ -149,22 +150,22 @@ wmemcmp (const wchar_t *s1, const wchar_t *s2, grub_size_t n)
   return 0;
 }
 
-static inline grub_wchar_t *
-wmemchr (const grub_wchar_t *s, grub_wchar_t c, grub_size_t n)
+static inline wchar_t *
+wmemchr (const wchar_t *s, wchar_t c, grub_size_t n)
 {
   for (; n--; s++)
     {
       if (*s == c)
-	return (grub_wchar_t *) s;
+	return (wchar_t *) s;
     }
 
   return 0;
 }
 
 static inline grub_size_t
-wcslen (const grub_wchar_t *s)
+wcslen (const wchar_t *s)
 {
-  const grub_wchar_t *ptr;
+  const wchar_t *ptr;
   for (ptr = s; *ptr; ptr++);
   return ptr - s;
 }
@@ -196,7 +197,7 @@ mbslen (const char *src)
 {
   int count = 0;
   grub_size_t ret = 0;
-  grub_wchar_t code = 0;
+  grub_uint32_t code = 0;
 
   while (1)
     {

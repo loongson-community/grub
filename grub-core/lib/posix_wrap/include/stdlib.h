@@ -97,9 +97,11 @@ atol (const char *nptr)
 }
 
 static inline grub_size_t
-mbstowcs (grub_wchar_t *dest, const char *src, grub_size_t n)
+mbstowcs (wchar_t *dest, const char *src, grub_size_t n)
 {
-  grub_size_t ret = grub_utf8_to_ucs4 (dest, n, (const grub_uint8_t *) src,
+  COMPILE_TIME_ASSERT( sizeof (grub_uint32_t) == sizeof (wchar_t));
+  grub_size_t ret = grub_utf8_to_ucs4 ((grub_uint32_t *) dest,
+				       n, (const grub_uint8_t *) src,
 				       -1, NULL);
   if (ret < n)
     dest[ret] = 0;

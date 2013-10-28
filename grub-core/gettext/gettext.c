@@ -554,7 +554,6 @@ GRUB_MOD_INIT (gettext)
   COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
   for (i = 0; i < ARRAY_SIZE (domains); i++)
     {
-      grub_err_t err;
       err = grub_gettext_init_ext (&main_context[i], lang,
 				   grub_env_get ("locale_dir"),
 				   grub_env_get ("prefix"), domains[i]);

@@ -45,8 +45,8 @@ grub_cmd_help (grub_extcmd_context_t ctxt __attribute__ ((unused)), int argc,
 	    struct grub_term_output *term;
 	    const char *summary_translated = _(cmd->summary);
 	    char *command_help;
-	    grub_wchar_t *unicode_command_help;
-	    grub_wchar_t *unicode_last_position;
+	    grub_uint32_t *unicode_command_help;
+	    grub_uint32_t *unicode_last_position;
 
 	    command_help = grub_xasprintf ("%s %s", cmd->name, summary_translated);
 	    if (!command_help)
@@ -58,7 +58,7 @@ grub_cmd_help (grub_extcmd_context_t ctxt __attribute__ ((unused)), int argc,
 	    FOR_ACTIVE_TERM_OUTPUTS(term)
 	    {
 	      unsigned stringwidth;
-	      grub_wchar_t *unicode_last_screen_position;
+	      grub_uint32_t *unicode_last_screen_position;
 
 	      unicode_last_screen_position = unicode_command_help;
 

@@ -59,9 +59,7 @@
 #define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((typeof (addr)) (align) - 1))
 #define ALIGN_DOWN(addr, align) \
 	((addr) & ~((typeof (addr)) align - 1))
-#ifndef GRUB_POSIX
 #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
-#endif
 #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
 
 #define grub_dprintf(condition, fmt, args...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, fmt, ## args)
