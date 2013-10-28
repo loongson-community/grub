@@ -498,6 +498,16 @@ if [ "${grub_modinfo_target_cpu}-${grub_modinfo_platform}" = "i386-pc" ] || [ "$
     done
 fi
 
+# Copy gettext files
+for domain in grub bison-runtime brltty; do
+    mkdir -p "${grubdir}"/locale/$domain
+    for dir in "${localedir}"/*; do
+	if test -f "$dir/LC_MESSAGES/$domain.mo"; then
+            cp -f "$dir/LC_MESSAGES/$domain.mo" "${grubdir}/locale/$domain/${dir##*/}.mo"
+	fi
+    done
+done
+
 if ! is_path_readable_by_grub "${grubdir}"; then
     gettext_printf "Path \`%s' is not readable by GRUB on boot. Installation is impossible. Aborting.\n" "${grubdir}" 1>&2
     exit 1

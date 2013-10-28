@@ -645,6 +645,54 @@ grub_vsnprintf_real (char *str, grub_size_t max_len, const char *fmt0, va_list a
       count++;
     }
 
+  void write_wide (grub_uint32_t code)
+  {
+    int shift;
+    unsigned mask;
+
+    if (code <= 0x7f)
+      {
+	shift = 0;
+	mask = 0;
+      }
+    else if (code <= 0x7ff)
+      {
+	shift = 6;
+	mask = 0xc0;
+      }
+    else if (code <= 0xffff)
+      {
+	shift = 12;
+	mask = 0xe0;
+      }
+    else if (code <= 0x1fffff)
+      {
+	shift = 18;
+	mask = 0xf0;
+      }
+    else if (code <= 0x3ffffff)
+      {
+	shift = 24;
+	mask = 0xf8;
+      }
+    else if (code <= 0x7fffffff)
+      {
+	shift = 30;
+	mask = 0xfc;
+      }
+    else
+      {
+	code = '?';
+	shift = 0;
+	mask = 0;
+      }
+
+    write_char (mask | (code >> shift));
+
+    for (shift -= 6; shift >= 0; shift -= 6)
+      write_char (0x80 | (0x3f & (code >> shift)));
+  }
+
   void write_str (const char *s)
     {
       while (*s)

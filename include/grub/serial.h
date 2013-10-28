@@ -77,6 +77,11 @@ struct grub_serial_port
   struct grub_serial_driver *driver;
   struct grub_serial_config config;
   int configured;
+  enum
+    { 
+      GRUB_SERIAL_PORT_TYPE_GENERIC,
+      GRUB_SERIAL_PORT_TYPE_TERMINAL
+    } port_type;
   int broken;
 
   /* This should be void *data but since serial is useful as an early console

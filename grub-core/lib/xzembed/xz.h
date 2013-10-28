@@ -24,14 +24,12 @@
 #ifndef XZ_H
 #define XZ_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <unistd.h>
 #include <string.h>
 #include <grub/misc.h>
 
-#ifndef GRUB_POSIX_BOOL_DEFINED
-typedef enum { false = 0, true = 1 } bool;
-#endif
 
 /**
  * enum xz_ret - Return codes

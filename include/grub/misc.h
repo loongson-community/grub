@@ -59,7 +59,9 @@
 #define ALIGN_UP_OVERHEAD(addr, align) ((-(addr)) & ((typeof (addr)) (align) - 1))
 #define ALIGN_DOWN(addr, align) \
 	((addr) & ~((typeof (addr)) align - 1))
+#ifndef GRUB_POSIX
 #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
+#endif
 #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
 
 #define grub_dprintf(condition, fmt, args...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, fmt, ## args)
@@ -453,6 +455,17 @@ grub_error_load (const struct grub_error_saved *save)
 {
   grub_memcpy (grub_errmsg, save->errmsg, sizeof (grub_errmsg));
   grub_errno = save->grub_errno;
+}
+
+static inline char *
+grub_strpbrk (const char *s, const char *accept)
+{
+  const char *ptr, *ptr2;
+  for (ptr = s; *ptr; ptr++)
+    for (ptr2 = accept; *ptr2; ptr2++)
+      if (*ptr == *ptr2)
+	return (char *) ptr;
+  return 0;
 }
 
 #if BOOT_TIME_STATS

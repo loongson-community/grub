@@ -1417,6 +1417,9 @@ grub_cmd_xnu_splash (grub_extcmd_context_t ctxt,
   if (! grub_xnu_heap_size)
     return grub_error (GRUB_ERR_BAD_OS, N_("you need to load the kernel first"));
 
+  if (! grub_xnu_heap_size)
+    return grub_error (GRUB_ERR_BAD_OS, "no xnu kernel loaded");
+
   if (ctxt->state[XNU_SPLASH_CMD_ARGINDEX_MODE].set &&
       grub_strcmp (ctxt->state[XNU_SPLASH_CMD_ARGINDEX_MODE].arg,
 		   "stretch") == 0)

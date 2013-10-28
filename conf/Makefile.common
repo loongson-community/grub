@@ -110,8 +110,11 @@ starfielddir = $(pkgdatadir)/themes/starfield
 CFLAGS_GNULIB = -Wno-undef -Wno-sign-compare -Wno-unused -Wno-unused-parameter -Wno-redundant-decls -Wno-unreachable-code -Wno-conversion -Wno-old-style-definition -Wno-unsafe-loop-optimizations
 CPPFLAGS_GNULIB = -I$(top_builddir)/grub-core/gnulib -I$(top_srcdir)/grub-core/gnulib
 
+CFLAGS_BRAILLE = -Wno-strict-prototypes -Wno-missing-field-initializers -Wno-unused-parameter -Wno-shadow -Wno-sign-compare
+CPPFLAGS_BRAILLE = -I$(top_srcdir)/grub-core/braille/brltty_wrap -I$(top_srcdir)/grub-core/braille/brltty/Programs -I$(top_srcdir)/grub-core/braille/brltty -Wno-sign-compare -DPACKAGE_REVISION=\"\" -include $(top_srcdir)/grub-core/braille/config.h
+
 CFLAGS_POSIX = -fno-builtin
-CPPFLAGS_POSIX = -I$(top_srcdir)/grub-core/lib/posix_wrap
+CPPFLAGS_POSIX = -I$(top_srcdir)/grub-core/lib/posix_wrap/include
 
 CFLAGS_GCRY = -Wno-error -Wno-missing-field-initializers -Wno-redundant-decls $(CFLAGS_POSIX)
 CPPFLAGS_GCRY = -I$(top_srcdir)/grub-core/lib/libgcrypt_wrap $(CPPFLAGS_POSIX) -D_GCRYPT_IN_LIBGCRYPT=1 -I$(top_srcdir)/include/grub/gcrypt

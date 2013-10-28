@@ -60,6 +60,14 @@
 
 #define RE_ENABLE_I18N 1
 
+#define _GL_UNUSED __attribute__ ((unused))
+#define HAVE_VPRINTF 1
+#define HAVE_DECL_STRERROR 1
+#define HAVE_INLINE 1
+#define HAVE_MBRTOWC 1
+
+#define ENABLE_NLS 1
+
 #define _GNU_SOURCE 1
 
 #endif

@@ -622,13 +622,7 @@ extern int re_exec (const char *);
    'configure' might #define 'restrict' to those words, so pick a
    different name.  */
 #ifndef _Restrict_
-# if 199901L <= __STDC_VERSION__
-#  define _Restrict_ restrict
-# elif 2 < __GNUC__ || (2 == __GNUC__ && 95 <= __GNUC_MINOR__)
-#  define _Restrict_ __restrict
-# else
-#  define _Restrict_
-# endif
+# define _Restrict_ __restrict
 #endif
 /* gcc 3.1 and up support the [restrict] syntax.  Don't trust
    sys/cdefs.h's definition of __restrict_arr, though, as it

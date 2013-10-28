@@ -92,10 +92,6 @@ typedef size_t yy_size_t;
  */
 
 #ifndef GRUB_UTIL
-#define stdin  0
-#define stdout 0
-
-#define fprintf(...) 0
 #define exit(...)
 #endif
 

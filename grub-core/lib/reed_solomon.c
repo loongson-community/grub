@@ -293,6 +293,10 @@ decode_block (gf_single_t *ptr, grub_size_t s,
       if (!ds || !rr)
 	continue;
 
+      /* Nothing to do.  */
+      if (!ds || !rr)
+	continue;
+
       for (j = 0; j < (int) ds; j++)
 	mstat[j] = ptr[SECTOR_SIZE * j + i];
       for (j = 0; j < (int) rr; j++)
@@ -350,6 +354,10 @@ grub_reed_solomon_add_redundancy (void *buffer, grub_size_t data_size,
     return;
 
   init_powx ();
+
+  /* Nothing to do.  */
+  if (!rs)
+    return;
 
   while (s > 0)
     {

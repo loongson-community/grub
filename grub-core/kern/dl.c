@@ -77,16 +77,6 @@ grub_dl_remove (grub_dl_t mod)
 
 
 
-struct grub_symbol
-{
-  struct grub_symbol *next;
-  const char *name;
-  void *addr;
-  int isfunc;
-  grub_dl_t mod;	/* The module to which this symbol belongs.  */
-};
-typedef struct grub_symbol *grub_symbol_t;
-
 /* The size of the symbol table.  */
 #define GRUB_SYMTAB_SIZE	509
 
@@ -114,6 +104,18 @@ grub_dl_resolve_symbol (const char *name)
 
   for (sym = grub_symtab[grub_symbol_hash (name)]; sym; sym = sym->next)
     if (grub_strcmp (sym->name, name) == 0)
+      return sym;
+
+  return 0;
+}
+
+grub_symbol_t
+grub_get_symbol (const char *name, grub_dl_t mod)
+{
+  grub_symbol_t sym;
+
+  for (sym = grub_symtab[grub_symbol_hash (name)]; sym; sym = sym->next)
+    if (grub_strcmp (sym->name, name) == 0 && sym->mod == mod)
       return sym;
 
   return 0;

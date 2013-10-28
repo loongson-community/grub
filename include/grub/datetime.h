@@ -51,6 +51,8 @@ const char *grub_get_weekday_name (struct grub_datetime *datetime);
 void grub_unixtime2datetime (grub_int32_t nix,
 			     struct grub_datetime *datetime);
 
+typedef grub_int64_t grub_time_t;
+
 static inline int
 grub_datetime2unixtime (const struct grub_datetime *datetime, grub_int32_t *nix)
 {
@@ -129,5 +131,9 @@ grub_get_datetime_cmos (struct grub_datetime *datetime);
 grub_err_t
 grub_set_datetime_cmos (struct grub_datetime *datetime);
 #endif
+
+grub_size_t
+grub_strftime (char *s, grub_size_t max, const char *format,
+	       const struct grub_datetime *tm);
 
 #endif /* ! KERNEL_DATETIME_HEADER */

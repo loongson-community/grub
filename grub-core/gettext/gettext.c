@@ -34,8 +34,6 @@ GRUB_MOD_LICENSE ("GPLv3+");
    http://www.gnu.org/software/autoconf/manual/gettext/MO-Files.html .
 */
 
-static struct grub_gettext_context main_context, secondary_context;
-
 static const char *(*grub_gettext_original) (const char *s);
 
 struct grub_gettext_msg
@@ -68,6 +66,21 @@ struct grub_gettext_context
   int grub_gettext_max_log;
   struct grub_gettext_msg *grub_gettext_msg_list;
 };
+
+const char *const domains[] =
+  {
+    "grub",
+    "bison-runtime",
+    "brltty"
+  };
+enum
+  {
+    CONTEXT_GRUB,
+    CONTEXT_BISON,
+    CONTEXT_BRLTTY,
+    CONTEXT_CNT
+  };
+static struct grub_gettext_context main_context[ARRAY_SIZE (domains)], secondary_context;
 
 #define MO_MAGIC_NUMBER 		0x950412de
 
@@ -244,6 +257,21 @@ grub_gettext_translate_real (struct grub_gettext_context *ctx,
   return NULL;
 }
 
+const char *
+grub_dgettext (const char *domainname, const char *msgid)
+{
+  unsigned i;
+  const char *ret = msgid;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    if (grub_strcmp (domainname, domains[i]) == 0)
+      {
+	ret = grub_gettext_translate_real (&main_context[i], msgid);
+	break;
+      }
+  return ret;
+}
+
 static const char *
 grub_gettext_translate (const char *orig)
 {
@@ -251,7 +279,7 @@ grub_gettext_translate (const char *orig)
   if (orig[0] == 0)
     return orig;
 
-  ret = grub_gettext_translate_real (&main_context, orig);
+  ret = grub_gettext_translate_real (&main_context[CONTEXT_GRUB], orig);
   if (ret)
     return ret;
   ret = grub_gettext_translate_real (&secondary_context, orig);
@@ -343,14 +371,18 @@ grub_mofile_open (struct grub_gettext_context *ctx,
    to fd_mo anyway ...  */
 static grub_err_t
 grub_mofile_open_lang (struct grub_gettext_context *ctx,
-		       const char *part1, const char *part2, const char *locale)
+		       const char *part1, const char *part2,
+		       const char *domain, const char *locale)
 {
   char *mo_file;
   grub_err_t err;
 
   /* mo_file e.g.: /boot/grub/locale/ca.mo   */
 
-  mo_file = grub_xasprintf ("%s%s/%s.mo", part1, part2, locale);
+  if (domain)
+    mo_file = grub_xasprintf ("%s%s/%s/%s.mo", part1, part2, domain, locale);
+  else
+    mo_file = grub_xasprintf ("%s%s/%s.mo", part1, part2, locale);
   if (!mo_file)
     return grub_errno;
 
@@ -385,7 +417,8 @@ grub_mofile_open_lang (struct grub_gettext_context *ctx,
 static grub_err_t
 grub_gettext_init_ext (struct grub_gettext_context *ctx,
 		       const char *locale,
-		       const char *locale_dir, const char *prefix)
+		       const char *locale_dir, const char *prefix,
+		       const char *domain)
 {
   const char *part1, *part2;
   grub_err_t err;
@@ -406,7 +439,7 @@ grub_gettext_init_ext (struct grub_gettext_context *ctx,
   if (!part1 || part1[0] == 0)
     return 0;
 
-  err = grub_mofile_open_lang (ctx, part1, part2, locale);
+  err = grub_mofile_open_lang (ctx, part1, part2, domain, locale);
 
   /* ll_CC didn't work, so try ll.  */
   if (err)
@@ -418,7 +451,7 @@ grub_gettext_init_ext (struct grub_gettext_context *ctx,
 	{
 	  *underscore = '\0';
 	  grub_errno = GRUB_ERR_NONE;
-	  err = grub_mofile_open_lang (ctx, part1, part2, lang);
+	  err = grub_mofile_open_lang (ctx, part1, part2, domain, lang);
 	}
 
       grub_free (lang);
@@ -431,13 +464,20 @@ grub_gettext_env_write_lang (struct grub_env_var *var
 			     __attribute__ ((unused)), const char *val)
 {
   grub_err_t err;
-  err = grub_gettext_init_ext (&main_context, val, grub_env_get ("locale_dir"),
-			       grub_env_get ("prefix"));
-  if (err)
-    grub_print_error ();
+  unsigned i;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    {
+      err = grub_gettext_init_ext (&main_context[i], val,
+				   grub_env_get ("locale_dir"),
+				   grub_env_get ("prefix"),
+				   domains[i]);
+      if (err)
+	grub_print_error ();
+    }
 
   err = grub_gettext_init_ext (&secondary_context, val,
-			       grub_env_get ("secondary_locale_dir"), 0);
+			       grub_env_get ("secondary_locale_dir"), 0, 0);
   if (err)
     grub_print_error ();
 
@@ -448,11 +488,16 @@ void
 grub_gettext_reread_prefix (const char *val)
 {
   grub_err_t err;
-  err = grub_gettext_init_ext (&main_context, grub_env_get ("lang"), 
-			       grub_env_get ("locale_dir"),
-			       val);
-  if (err)
-    grub_print_error ();
+  unsigned i;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    {
+      err = grub_gettext_init_ext (&main_context[i], grub_env_get ("lang"), 
+				   grub_env_get ("locale_dir"),
+				   val, domains[i]);
+      if (err)
+	grub_print_error ();
+    }
 }
 
 static char *
@@ -460,10 +505,15 @@ read_main (struct grub_env_var *var
 	   __attribute__ ((unused)), const char *val)
 {
   grub_err_t err;
-  err = grub_gettext_init_ext (&main_context, grub_env_get ("lang"), val,
-			       grub_env_get ("prefix"));
-  if (err)
-    grub_print_error ();
+  unsigned i;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    {
+      err = grub_gettext_init_ext (&main_context[i], grub_env_get ("lang"), val,
+				   grub_env_get ("prefix"), domains[i]);
+      if (err)
+	grub_print_error ();
+    }
   return grub_strdup (val);
 }
 
@@ -473,7 +523,7 @@ read_secondary (struct grub_env_var *var
 {
   grub_err_t err;
   err = grub_gettext_init_ext (&secondary_context, grub_env_get ("lang"), val,
-			       0);
+			       0, 0);
   if (err)
     grub_print_error ();
 
@@ -500,12 +550,19 @@ GRUB_MOD_INIT (gettext)
 
   lang = grub_env_get ("lang");
 
-  err = grub_gettext_init_ext (&main_context, lang, grub_env_get ("locale_dir"),
-			       grub_env_get ("prefix"));
-  if (err)
-    grub_print_error ();
+  unsigned i;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    {
+      grub_err_t err;
+      err = grub_gettext_init_ext (&main_context[i], lang,
+				   grub_env_get ("locale_dir"),
+				   grub_env_get ("prefix"), domains[i]);
+      if (err)
+	grub_print_error ();
+    }
   err = grub_gettext_init_ext (&secondary_context, lang,
-			       grub_env_get ("secondary_locale_dir"), 0);
+			       grub_env_get ("secondary_locale_dir"), 0, 0);
   if (err)
     grub_print_error ();
 
@@ -531,7 +588,10 @@ GRUB_MOD_INIT (gettext)
 
 GRUB_MOD_FINI (gettext)
 {
-  grub_gettext_delete_list (&main_context);
+  unsigned i;
+  COMPILE_TIME_ASSERT (ARRAY_SIZE (domains) == CONTEXT_CNT);
+  for (i = 0; i < ARRAY_SIZE (domains); i++)
+    grub_gettext_delete_list (&main_context[i]);
   grub_gettext_delete_list (&secondary_context);
 
   grub_gettext = grub_gettext_original;

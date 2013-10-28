@@ -55,6 +55,12 @@ iswlower (wint_t wc)
   return grub_islower (wc);
 }
 
+static inline int
+iswupper (wint_t wc)
+{
+  return grub_isupper (wc);
+}
+
 static inline wint_t
 towlower (wint_t c)
 {
@@ -74,6 +80,42 @@ iswalnum (wint_t c)
 }
 
 static inline int
+iswspace (wint_t c)
+{
+  return grub_isspace (c);
+}
+
+static inline int
+iswalpha (wint_t c)
+{
+  return grub_isalpha (c);
+}
+
+static inline int
+iswcntrl (wint_t c)
+{
+  return grub_iscntrl (c);
+}
+
+static inline int
+iswdigit (wint_t c)
+{
+  return grub_isdigit (c);
+}
+
+static inline int
+iswpunct (wint_t wc)
+{
+  return grub_isprint (wc) && !grub_isspace (wc) && !iswalnum (wc);
+}
+
+static inline int
+iswprint (wint_t wc)
+{
+  return grub_isprint (wc);
+}
+
+static inline int
 iswctype (wint_t wc, wctype_t desc)
 {
   switch (desc)
@@ -81,25 +123,25 @@ iswctype (wint_t wc, wctype_t desc)
     case GRUB_CTYPE_ALNUM:
       return iswalnum (wc);
     case GRUB_CTYPE_CNTRL:
-      return grub_iscntrl (wc);
+      return iswcntrl (wc);
     case GRUB_CTYPE_LOWER:
       return iswlower (wc);
     case GRUB_CTYPE_SPACE:
-      return grub_isspace (wc);
+      return iswspace (wc);
     case GRUB_CTYPE_ALPHA:
-      return grub_isalpha (wc);
+      return iswalpha (wc);
     case GRUB_CTYPE_DIGIT:
-      return grub_isdigit (wc);
+      return iswdigit (wc);
     case GRUB_CTYPE_PRINT:
-      return grub_isprint (wc);
+      return iswprint (wc);
     case GRUB_CTYPE_UPPER:
-      return grub_isupper (wc);
+      return iswupper (wc);
     case GRUB_CTYPE_BLANK:
       return wc == ' ' || wc == '\t';
     case GRUB_CTYPE_GRAPH:
       return grub_isgraph (wc);
     case GRUB_CTYPE_PUNCT:
-      return grub_isprint (wc) && !grub_isspace (wc) && !iswalnum (wc);
+      return iswpunct (wc);
     case GRUB_CTYPE_XDIGIT:
       return grub_isxdigit (wc);
     default:

@@ -19,15 +19,16 @@
 #ifndef GRUB_POSIX_SYS_TYPES_H
 #define GRUB_POSIX_SYS_TYPES_H	1
 
+#define GRUB_POSIX 1
 #include <grub/misc.h>
 
 #include <stddef.h>
 
 typedef grub_ssize_t ssize_t;
-#ifndef GRUB_POSIX_BOOL_DEFINED
-typedef enum { false = 0, true = 1 } bool;
-#define GRUB_POSIX_BOOL_DEFINED 1
-#endif
+#include <stdbool.h>
+
+#define UINTMAX_C(c)	c ## ULL
+#define UINT64_C(c)	c ## ULL
 
 typedef grub_uint8_t uint8_t;
 typedef grub_uint16_t uint16_t;
@@ -38,6 +39,16 @@ typedef grub_int8_t int8_t;
 typedef grub_int16_t int16_t;
 typedef grub_int32_t int32_t;
 typedef grub_int64_t int64_t;
+
+#define PRIu32 PRIuGRUB_UINT32_T
+#define PRIX32 PRIxGRUB_UINT32_T
+
+#define PRIu8 PRIuGRUB_UINT8_T
+#define PRIX8 PRIxGRUB_UINT8_T
+#define PRIu16 PRIuGRUB_UINT16_T
+#define PRIX16 PRIxGRUB_UINT16_T
+
+#define UINT32_MAX GRUB_UINT32_MAX
 
 #define HAVE_U64_TYPEDEF 1
 typedef grub_uint64_t u64;

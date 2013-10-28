@@ -29,8 +29,8 @@
 struct term_state
 {
   struct term_state *next;
-  struct grub_unicode_glyph *backlog_glyphs;
-  const grub_uint32_t *backlog_ucs4;
+  const struct grub_unicode_glyph *backlog_glyphs;
+  const grub_wchar_t *backlog_ucs4;
   int backlog_fixed_tab;
   grub_size_t backlog_len;
 
@@ -59,7 +59,7 @@ static struct term_state *term_states = NULL;
 static int grub_more;
 
 static void
-putcode_real (grub_uint32_t code, struct grub_term_output *term, int fixed_tab);
+putcode_real (grub_wchar_t code, struct grub_term_output *term, int fixed_tab);
 
 void
 grub_normal_reset_more (void)
@@ -75,7 +75,7 @@ print_more (void)
   char key;
   struct grub_term_coordinate *pos;
   grub_term_output_t term;
-  grub_uint32_t *unicode_str, *unicode_last_position;
+  grub_wchar_t *unicode_str, *unicode_last_position;
 
   pos = grub_term_save_pos ();
 
@@ -146,10 +146,45 @@ enum
     GRUB_CP437_CORNER_UL       = 0xda,
   };
 
-static grub_uint32_t
-map_code (grub_uint32_t in, struct grub_term_output *term)
+char
+grub_translit (grub_wchar_t in)
 {
-  if (in <= 0x7f)
+  if (!(in & ~0x7f))
+    return in;
+
+  switch (in)
+    {
+    case GRUB_UNICODE_LEFTARROW:
+      return '<';
+		
+    case GRUB_UNICODE_UPARROW:
+      return '^';
+	  
+    case GRUB_UNICODE_RIGHTARROW:
+      return '>';
+		
+    case GRUB_UNICODE_DOWNARROW:
+      return 'v';
+		  
+    case GRUB_UNICODE_HLINE:
+      return '-';
+		  
+    case GRUB_UNICODE_VLINE:
+      return '|';
+		  
+    case GRUB_UNICODE_CORNER_UL:
+    case GRUB_UNICODE_CORNER_UR:
+    case GRUB_UNICODE_CORNER_LL:
+    case GRUB_UNICODE_CORNER_LR:
+      return '+';
+    }
+  return '?';
+}
+
+static grub_wchar_t
+map_code (grub_wchar_t in, struct grub_term_output *term)
+{
+  if (!(in & ~0x7f))
     return in;
 
   switch (term->flags & GRUB_TERM_CODE_TYPE_MASK)
@@ -180,37 +215,9 @@ map_code (grub_uint32_t in, struct grub_term_output *term)
 	case GRUB_UNICODE_CORNER_LR:
 	  return GRUB_CP437_CORNER_LR;
 	}
-      return '?';
     case GRUB_TERM_CODE_TYPE_ASCII:
       /* Better than nothing.  */
-      switch (in)
-	{
-	case GRUB_UNICODE_LEFTARROW:
-	  return '<';
-		
-	case GRUB_UNICODE_UPARROW:
-	  return '^';
-	  
-	case GRUB_UNICODE_RIGHTARROW:
-	  return '>';
-		
-	case GRUB_UNICODE_DOWNARROW:
-	  return 'v';
-		  
-	case GRUB_UNICODE_HLINE:
-	  return '-';
-		  
-	case GRUB_UNICODE_VLINE:
-	  return '|';
-		  
-	case GRUB_UNICODE_CORNER_UL:
-	case GRUB_UNICODE_CORNER_UR:
-	case GRUB_UNICODE_CORNER_LL:
-	case GRUB_UNICODE_CORNER_LR:
-	  return '+';
-		
-	}
-      return '?';
+      return grub_translit (in);
     }
   return in;
 }
@@ -218,7 +225,7 @@ map_code (grub_uint32_t in, struct grub_term_output *term)
 void
 grub_puts_terminal (const char *str, struct grub_term_output *term)
 {
-  grub_uint32_t *unicode_str, *unicode_last_position;
+  grub_wchar_t *unicode_str, *unicode_last_position;
   grub_error_push ();
   grub_utf8_to_ucs4_alloc (str, &unicode_str,
 			   &unicode_last_position);
@@ -463,7 +470,7 @@ putglyph (const struct grub_unicode_glyph *c, struct grub_term_output *term,
       for (i = -1; i < (int) c->ncomb; i++)
 	{
 	  grub_uint8_t u8[20], *ptr;
-	  grub_uint32_t code;
+	  grub_wchar_t code;
 	      
 	  if (i == -1)
 	    {
@@ -501,7 +508,7 @@ putglyph (const struct grub_unicode_glyph *c, struct grub_term_output *term,
 }
 
 static void
-putcode_real (grub_uint32_t code, struct grub_term_output *term, int fixed_tab)
+putcode_real (grub_wchar_t code, struct grub_term_output *term, int fixed_tab)
 {
   struct grub_unicode_glyph c =
     {
@@ -517,7 +524,7 @@ putcode_real (grub_uint32_t code, struct grub_term_output *term, int fixed_tab)
 
 /* Put a Unicode character.  */
 void
-grub_putcode (grub_uint32_t code, struct grub_term_output *term)
+grub_putcode (grub_wchar_t code, struct grub_term_output *term)
 {
   /* Combining character by itself?  */
   if (grub_unicode_get_comb_type (code) != GRUB_UNICODE_COMB_NONE)
@@ -558,8 +565,8 @@ fill_margin (struct grub_term_output *term, int r)
 }
 
 static int
-print_ucs4_terminal (const grub_uint32_t * str,
-		     const grub_uint32_t * last_position,
+print_ucs4_terminal (const grub_wchar_t * str,
+		     const grub_wchar_t * last_position,
 		     int margin_left, int margin_right,
 		     struct grub_term_output *term,
 		     struct term_state *state,
@@ -568,12 +575,12 @@ print_ucs4_terminal (const grub_uint32_t * str,
 		     grub_uint32_t contchar,
 		     int primitive_wrap, int fill_right, struct grub_term_pos *pos)
 {
-  const grub_uint32_t *ptr;
+  const grub_wchar_t *ptr;
   grub_ssize_t startwidth = dry_run ? 0 : get_startwidth (term, margin_left);
   grub_ssize_t line_width = startwidth;
   grub_ssize_t lastspacewidth = 0;
   grub_ssize_t max_width = get_maxwidth (term, margin_left, margin_right);
-  const grub_uint32_t *line_start = str, *last_space = str - 1;
+  const grub_wchar_t *line_start = str, *last_space = str - 1;
   int lines = 0;
   int i;
   struct term_state local_state;
@@ -635,7 +642,7 @@ print_ucs4_terminal (const grub_uint32_t * str,
 
       if (line_width > max_width || *ptr == '\n')
 	{
-	  const grub_uint32_t *ptr2;
+	  const grub_wchar_t *ptr2;
 	  int wasn = (*ptr == '\n');
 
 	  if (wasn)
@@ -733,7 +740,7 @@ print_ucs4_terminal (const grub_uint32_t * str,
       lines++;
   if (!dry_run && !skip_lines && max_lines)
     {
-      const grub_uint32_t *ptr2;
+      const grub_wchar_t *ptr2;
 
       for (ptr2 = line_start; ptr2 < last_position; ptr2++)
 	{
@@ -873,8 +880,8 @@ getcharwidth (const struct grub_unicode_glyph *c, void *term)
 }
 
 static int
-print_ucs4_real (const grub_uint32_t * str,
-		 const grub_uint32_t * last_position,
+print_ucs4_real (const grub_wchar_t * str,
+		 const grub_wchar_t * last_position,
 		 int margin_left, int margin_right,
 		 struct grub_term_output *term, int backlog,
 		 int dry_run, int fixed_tab, unsigned skip_lines,
@@ -988,8 +995,8 @@ grub_print_ucs4_menu (const grub_uint32_t * str,
 }
 
 void
-grub_print_ucs4 (const grub_uint32_t * str,
-		 const grub_uint32_t * last_position,
+grub_print_ucs4 (const grub_wchar_t * str,
+		 const grub_wchar_t * last_position,
 		 int margin_left, int margin_right,
 		 struct grub_term_output *term)
 {
@@ -998,8 +1005,8 @@ grub_print_ucs4 (const grub_uint32_t * str,
 }
 
 int
-grub_ucs4_count_lines (const grub_uint32_t * str,
-		       const grub_uint32_t * last_position,
+grub_ucs4_count_lines (const grub_wchar_t * str,
+		       const grub_wchar_t * last_position,
 		       int margin_left, int margin_right,
 		       struct grub_term_output *term)
 {
@@ -1010,7 +1017,7 @@ grub_ucs4_count_lines (const grub_uint32_t * str,
 void
 grub_xnputs (const char *str, grub_size_t msg_len)
 {
-  grub_uint32_t *unicode_str = NULL, *unicode_last_position;
+  grub_wchar_t *unicode_str = NULL, *unicode_last_position;
   int backlog = 0;
   grub_term_output_t term;
 

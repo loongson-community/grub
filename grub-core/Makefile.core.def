@@ -406,7 +406,7 @@ image = {
   common = lib/xzembed/xz_dec_lzma2.c;
   common = lib/xzembed/xz_dec_stream.c;
 
-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -DGRUB_EMBED_DECOMPRESSOR=1';
+  cppflags = '$(CPPFLAGS_POSIX) -I$(srcdir)/lib/xzembed -DGRUB_EMBED_DECOMPRESSOR=1';
 
   objcopyflags = '-O binary';
   mips_ldflags = '-static-libgcc -Wl,-Ttext,$(TARGET_DECOMPRESSOR_LINK_ADDR)';
@@ -577,10 +577,18 @@ module = {
 };
 
 library = {
-  name = libgnulib.a;
+  name = libregexp.a;
   common = gnulib/regex.c;
   cflags = '$(CFLAGS_POSIX) $(CFLAGS_GNULIB)';
-  cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_GNULIB)';
+  cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_GNULIB) -DGRUB_POSIX_GETTEXT_DOMAIN=\"grub\"';
+};
+
+module = {
+  name = getopt;
+  common = gnulib/getopt.c;
+  common = gnulib/getopt1.c;
+  cflags = '$(CFLAGS_POSIX) $(CFLAGS_GNULIB)';
+  cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_GNULIB) -DGRUB_POSIX_GETTEXT_DOMAIN=\"grub\"';
 };
 
 module = {
@@ -1202,7 +1210,7 @@ module = {
   common = fs/btrfs.c;
   common = lib/crc.c;
   cflags = '$(CFLAGS_POSIX) -Wno-undef';
-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
+  cppflags = '$(CPPFLAGS_POSIX) -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
 };
 
 module = {
@@ -1344,7 +1352,7 @@ module = {
   name = squash4;
   common = fs/squash4.c;
   cflags = '$(CFLAGS_POSIX) -Wno-undef';
-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
+  cppflags = '$(CPPFLAGS_POSIX) -I$(srcdir)/lib/xzembed -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
 };
 
 module = {
@@ -2019,7 +2027,7 @@ module = {
   common = lib/xzembed/xz_dec_bcj.c;
   common = lib/xzembed/xz_dec_lzma2.c;
   common = lib/xzembed/xz_dec_stream.c;
-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed';
+  cppflags = '$(CPPFLAGS_POSIX) -I$(srcdir)/lib/xzembed';
   cflags='-Wno-unreachable-code';
 };
 
@@ -2028,7 +2036,7 @@ module = {
   common = io/lzopio.c;
   common = lib/minilzo/minilzo.c;
   cflags = '$(CFLAGS_POSIX) -Wno-undef -Wno-redundant-decls -Wno-error';
-  cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
+  cppflags = '$(CPPFLAGS_POSIX) -I$(srcdir)/lib/minilzo -DMINILZO_HAVE_CONFIG_H';
 };
 
 module = {
@@ -2053,6 +2061,87 @@ module = {
   name = keylayouts;
   common = commands/keylayouts.c;
   enable = x86;
+};
+
+module = {
+  name = braille_baum;
+  common = braille/brltty/Drivers/Braille/Baum/braille.c;
+  cflags = '$(CFLAGS_POSIX) $(CFLAGS_BRAILLE)';
+  cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_BRAILLE) -DDRIVER_NAME=Baum -DDRIVER_CODE=1 -DDRIVER_COMMENT=\"\" -DDRIVER_VERSION=\"\" -DDRIVER_DEVELOPERS=\"\" -DGRUB_POSIX_GETTEXT_DOMAIN=\"brltty\"';
+};
+
+module = {
+  name = braille_core;
+  common = braille/brltty/Programs/atb_compile.c;
+  common = braille/brltty/Programs/atb_translate.c;
+  common = braille/brltty/Programs/brl.c;
+  common = braille/brltty/Programs/brltty.c;
+  common = braille/brltty/Programs/bluetooth_none.c;
+  common = braille/brltty/Programs/bluetooth.c;
+  common = braille/brltty/Programs/clipboard.c;
+  common = braille/brltty/Programs/config.c;
+  common = braille/brltty/Programs/ctb_translate.c;
+  common = braille/brltty/Programs/dataarea.c;
+  common = braille/brltty/Programs/device.c;
+  common = braille/brltty/Programs/driver.c;
+  common = braille/brltty/Programs/drivers.c;
+  common = braille/brltty/Programs/menu.c;
+  common = braille/brltty/Programs/parse.c;
+  common = braille/brltty/Programs/queue.c;
+  common = braille/brltty/Programs/routing.c;
+  common = braille/brltty/Programs/scancodes.c;
+  common = braille/brltty/Programs/scr_frozen.c;
+  common = braille/brltty/Programs/ses.c;
+  common = braille/brltty/Programs/scr.c;
+  common = braille/brltty/Programs/ttb_translate.c;
+  common = braille/brltty/Programs/tunes.c;
+  common = braille/brltty/Programs/usb.c;
+  common = braille/brltty/Programs/usb_serial.c;
+  common = braille/brltty/Programs/usb_hid.c;
+
+  common = braille/brltty/Programs/async.c;
+  common = braille/brltty/Programs/auth.c;
+  common = braille/brltty/Programs/charset.c;
+  common = braille/brltty/Programs/charset_grub.c;
+  common = braille/brltty/Programs/cmd.c;
+  common = braille/brltty/Programs/ctb_compile.c;
+  common = braille/brltty/Programs/datafile.c;
+  common = braille/brltty/Programs/file.c;
+  common = braille/brltty/Programs/hostcmd.c; 
+  common = braille/brltty/Programs/hostcmd_none.c; 
+  common = braille/brltty/Programs/io_misc.c;
+  common = braille/brltty/Programs/kbd.c;
+  common = braille/brltty/Programs/kbd_none.c;
+  common = braille/brltty/Programs/ktb_compile.c;
+  common = braille/brltty/Programs/ktb_translate.c;
+  common = braille/brltty/Programs/ktb_list.c;
+  common = braille/brltty/Programs/ktb_keyboard.c;
+  common = braille/brltty/Programs/lock.c;
+  common = braille/brltty/Programs/log.c;
+  common = braille/brltty/Programs/main.c;
+/*  common = braille/brltty/Programs/mount.c; */
+  common = braille/brltty/Programs/options.c;
+  common = braille/brltty/Programs/prefs.c;
+  common = braille/brltty/Programs/program.c;
+  common = braille/brltty/Programs/scr_base.c;
+  common = braille/brltty/Programs/scr_help.c;
+  common = braille/brltty/Programs/scr_main.c;
+  common = braille/brltty/Programs/scr_menu.c;
+/*  common = braille/brltty/Programs/scr_real.c; */
+/*  common = braille/brltty/Programs/serial.c; */
+  common = braille/brltty/Programs/status.c;
+  common = braille/brltty/Programs/sys_grub.c;
+  common = braille/brltty/Programs/timing.c;
+  common = braille/brltty/Programs/touch.c;
+  common = braille/brltty/Programs/ttb_compile.c;
+  common = braille/brltty/Programs/ttb_native.c;
+  common = braille/brltty/Programs/unicode.c;
+
+/*  common = braille/brltty_wrap/charset.c; */
+  common = braille/brltty_wrap/usb.c;
+  common = braille/brltty_wrap/serial.c;
+  cflags = '$(CFLAGS_POSIX) $(CFLAGS_BRAILLE)';
+  cppflags = '$(CPPFLAGS_POSIX) $(CPPFLAGS_BRAILLE) -DGRUB_POSIX_GETTEXT_DOMAIN=\"brltty\"';
 };
 
 module = {
@@ -2130,6 +2219,24 @@ module = {
   i386 = gdb/i386/machdep.S;
   i386 = gdb/i386/signal.c;
   enable = i386;
+};
+
+module = {
+  name = posix;
+  common = lib/posix_wrap/errno.c;
+  common = lib/posix_wrap/stdio.c;
+  common = lib/posix_wrap/string.c;
+  common = lib/posix_wrap/time.c;
+};
+
+module = {
+  name = bsearch;
+  common = lib/bsearch.c;
+};
+
+module = {
+  name = qsort;
+  common = lib/qsort.c;
 };
 
 module = {

@@ -26,6 +26,8 @@
 #if (defined(ENABLE_NLS) && ENABLE_NLS) || !defined (GRUB_UTIL)
 
 extern const char *(*EXPORT_VAR(grub_gettext)) (const char *s);
+const char *
+grub_dgettext (const char *domainname, const char *msgid);
 
 # ifdef GRUB_UTIL
 

@@ -21,6 +21,13 @@
 
 #include <grub/mm.h>
 #include <grub/misc.h>
+#include <grub/charset.h>
+#include <grub/posix.h>
+#include <grub/bsearch.h>
+#include <grub/sort.h>
+#include <grub/env.h>
+
+#include <wchar.h>
 
 static inline void 
 free (void *ptr)
@@ -31,25 +38,94 @@ free (void *ptr)
 static inline void *
 malloc (grub_size_t size)
 {
-  return grub_malloc (size);
+  void *ret;
+  ret = grub_malloc (size);
+  grub_posix_errno = grub_errno;
+  grub_errno = 0;
+  return ret;
 }
 
 static inline void *
 calloc (grub_size_t size, grub_size_t nelem)
 {
-  return grub_zalloc (size * nelem);
+  void *ret;
+  ret = grub_zalloc (size * nelem);
+  grub_posix_errno = grub_errno;
+  grub_errno = 0;
+  return ret;
 }
 
 static inline void *
 realloc (void *ptr, grub_size_t size)
 {
-  return grub_realloc (ptr, size);
+  void *ret;
+  ret = grub_realloc (ptr, size);
+  grub_posix_errno = grub_errno;
+  grub_errno = 0;
+  return ret;
 }
 
 static inline int
 abs (int c)
 {
   return (c >= 0) ? c : -c;
+}
+
+static inline long
+labs (long c)
+{
+  return (c >= 0) ? c : -c;
+}
+
+static inline unsigned long int
+strtoul (const char *nptr, char **endptr, int base)
+{
+  unsigned long int ret;
+  ret = grub_strtoul (nptr, endptr, base);
+  grub_posix_errno = grub_errno;
+  grub_errno = 0;
+  return ret;
+}
+
+static inline long 
+atol (const char *nptr)
+{
+  long ret;
+  ret = grub_strtol (nptr, NULL, 10);
+  grub_errno = 0;
+  return ret;
+}
+
+static inline grub_size_t
+mbstowcs (grub_wchar_t *dest, const char *src, grub_size_t n)
+{
+  grub_size_t ret = grub_utf8_to_ucs4 (dest, n, (const grub_uint8_t *) src,
+				       -1, NULL);
+  if (ret < n)
+    dest[ret] = 0;
+  return ret;
+}
+
+static inline void *
+bsearch(const void *key, const void *base,
+	grub_size_t nmemb, grub_size_t size,
+	int (*compar)(const void *, const void *))
+{
+  return grub_bsearch (key, base, nmemb, size, compar);
+}
+
+static inline void
+qsort (void *base, grub_size_t nmemb, grub_size_t size,
+       grub_comparator_t compar)
+{
+  grub_qsort (base, nmemb, size, compar);
+}
+
+static inline const char *
+getenv (const char *name)
+{
+  /* FIXME: Add standard POSIX variables.  */
+  return grub_env_get (name);
 }
 
 #endif

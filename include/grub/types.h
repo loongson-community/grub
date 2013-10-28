@@ -124,6 +124,9 @@ typedef grub_int32_t	grub_ssize_t;
 # define PRIdGRUB_SSIZE	"d"
 #endif
 
+#define PRIxGRUB_UINT8_T   "x"
+#define PRIxGRUB_UINT16_T  "x"
+
 #define GRUB_UCHAR_MAX 0xFF
 #define GRUB_USHRT_MAX 65535
 #define GRUB_SHRT_MAX 0x7fff

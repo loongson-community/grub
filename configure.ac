@@ -85,6 +85,7 @@ HOST_CPPFLAGS="$HOST_CPPFLAGS -DLOCALEDIR=\\\"\$(localedir)\\\""
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -Wall -W"
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -I\$(top_srcdir)/include"
 TARGET_CPPFLAGS="$TARGET_CPPFLAGS -I\$(top_builddir)/include"
+TARGET_CPPFLAGS="$TARGET_CPPFLAGS -Dfloat=__float__bug__ -Ddouble=__double__bug__ -DGRUB_RUNTIME=1"
 
 case "$target_cpu" in
   i[[3456]]86)	target_cpu=i386 ;;
@@ -851,9 +852,9 @@ if test "x$target_cpu" = xi386; then
 fi
 
 if test "$platform" != emu; then
-AC_CACHE_CHECK([whether -nostdinc -isystem works], [grub_cv_cc_isystem], [
+AC_CACHE_CHECK([whether -nostdinc -ffreestanding -isystem works], [grub_cv_cc_isystem], [
   SAVED_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="$TARGET_CPPFLAGS -nostdinc -isystem `$TARGET_CC -print-file-name=include`"
+  CPPFLAGS="$TARGET_CPPFLAGS -nostdinc -ffreestanding -isystem `$TARGET_CC -print-file-name=include`"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>
 #include <stddef.h>
 int va_arg_func (int fixed, va_list args);]], [[]])],
@@ -863,7 +864,7 @@ int va_arg_func (int fixed, va_list args);]], [[]])],
 ])
 
 if test x"$grub_cv_cc_isystem" = xyes ; then
-  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -nostdinc -isystem `$TARGET_CC -print-file-name=include`"
+  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -nostdinc -ffreestanding -isystem `$TARGET_CC -print-file-name=include`"
 fi
 fi
 

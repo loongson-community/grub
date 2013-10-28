@@ -9,7 +9,7 @@
 aclocal.m4
 ahci_test
 ascii.bitmaps
-ascii.h
+asciifont.h
 autom4te.cache
 build_env.mk
 .bzrignore

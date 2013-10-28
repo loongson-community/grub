@@ -27,6 +27,7 @@
 #include <grub/types.h>
 #include <grub/err.h>
 #include <grub/mm.h>
+#include <grub/misc.h>
 
 typedef enum 
   {

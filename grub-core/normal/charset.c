@@ -102,7 +102,7 @@ grub_encode_utf8_character (grub_uint8_t *dest, grub_uint8_t *destend,
 
 /* Convert UCS-4 to UTF-8.  */
 grub_size_t
-grub_ucs4_to_utf8 (const grub_uint32_t *src, grub_size_t size,
+grub_ucs4_to_utf8 (const grub_wchar_t *src, grub_size_t size,
 		   grub_uint8_t *dest, grub_size_t destsize)
 {
   /* Keep last char for \0.  */
@@ -130,10 +130,10 @@ grub_ucs4_to_utf8 (const grub_uint32_t *src, grub_size_t size,
 /* Returns the number of bytes the string src would occupy is converted
    to UTF-8, excluding trailing \0.  */
 grub_size_t
-grub_get_num_of_utf8_bytes (const grub_uint32_t *src, grub_size_t size)
+grub_get_num_of_utf8_bytes (const grub_wchar_t *src, grub_size_t size)
 {
   grub_size_t remaining;
-  const grub_uint32_t *ptr;
+  const grub_wchar_t *ptr;
   grub_size_t cnt = 0;
 
   remaining = size;
@@ -178,7 +178,7 @@ int
 grub_is_valid_utf8 (const grub_uint8_t *src, grub_size_t srcsize)
 {
   int count = 0;
-  grub_uint32_t code = 0;
+  grub_wchar_t code = 0;
 
   while (srcsize)
     {
@@ -198,8 +198,8 @@ grub_is_valid_utf8 (const grub_uint8_t *src, grub_size_t srcsize)
 }
 
 grub_ssize_t
-grub_utf8_to_ucs4_alloc (const char *msg, grub_uint32_t **unicode_msg,
-			 grub_uint32_t **last_position)
+grub_utf8_to_ucs4_alloc (const char *msg, grub_wchar_t **unicode_msg,
+			 grub_wchar_t **last_position)
 {
   grub_size_t msg_len = grub_strlen (msg);
 
@@ -224,13 +224,13 @@ grub_utf8_to_ucs4_alloc (const char *msg, grub_uint32_t **unicode_msg,
    If SRCEND is not NULL, then *SRCEND is set to the next byte after the
    last byte used in SRC.  */
 grub_size_t
-grub_utf8_to_ucs4 (grub_uint32_t *dest, grub_size_t destsize,
+grub_utf8_to_ucs4 (grub_wchar_t *dest, grub_size_t destsize,
 		   const grub_uint8_t *src, grub_size_t srcsize,
 		   const grub_uint8_t **srcend)
 {
-  grub_uint32_t *p = dest;
+  grub_wchar_t *p = dest;
   int count = 0;
-  grub_uint32_t code = 0;
+  grub_wchar_t code = 0;
 
   if (srcend)
     *srcend = src;
@@ -419,11 +419,11 @@ is_type_after (enum grub_comb_type a, enum grub_comb_type b)
 }
 
 grub_size_t
-grub_unicode_aglomerate_comb (const grub_uint32_t *in, grub_size_t inlen,
+grub_unicode_aglomerate_comb (const grub_wchar_t *in, grub_size_t inlen,
 			      struct grub_unicode_glyph *out)
 {
   int haveout = 0;
-  const grub_uint32_t *ptr;
+  const grub_wchar_t *ptr;
   unsigned last_comb_pointer = 0;
 
   grub_memset (out, 0, sizeof (*out));
@@ -764,7 +764,7 @@ bidi_line_wrap (struct grub_unicode_glyph *visual_out,
 
 
 static grub_ssize_t
-grub_bidi_line_logical_to_visual (const grub_uint32_t *logical,
+grub_bidi_line_logical_to_visual (const grub_wchar_t *logical,
 				  grub_size_t logical_len,
 				  struct grub_unicode_glyph *visual_out,
 				  grub_size_t (*getcharwidth) (const struct grub_unicode_glyph *visual, void *getcharwidth_arg),
@@ -839,7 +839,7 @@ grub_bidi_line_logical_to_visual (const grub_uint32_t *logical,
   cur_level = base_level;
   cur_override = OVERRIDE_NEUTRAL;
   {
-    const grub_uint32_t *lptr;
+    const grub_wchar_t *lptr;
     enum {JOIN_DEFAULT, NOJOIN, JOIN_FORCE} join_state = JOIN_DEFAULT;
     int zwj_propagate_to_previous = 0;
     for (lptr = logical; lptr < logical + logical_len;)
@@ -1122,7 +1122,7 @@ grub_bidi_line_logical_to_visual (const grub_uint32_t *logical,
 }
 
 grub_ssize_t
-grub_bidi_logical_to_visual (const grub_uint32_t *logical,
+grub_bidi_logical_to_visual (const grub_wchar_t *logical,
 			     grub_size_t logical_len,
 			     struct grub_unicode_glyph **visual_out,
 			     grub_size_t (*getcharwidth) (const struct grub_unicode_glyph *visual, void *getcharwidth_arg),
@@ -1130,7 +1130,7 @@ grub_bidi_logical_to_visual (const grub_uint32_t *logical,
 			     grub_size_t max_length, grub_size_t startwidth,
 			     grub_uint32_t contchar, struct grub_term_pos *pos, int primitive_wrap)
 {
-  const grub_uint32_t *line_start = logical, *ptr;
+  const grub_wchar_t *line_start = logical, *ptr;
   struct grub_unicode_glyph *visual_ptr;
   *visual_out = visual_ptr = grub_malloc (3 * sizeof (visual_ptr[0])
 					  * logical_len);

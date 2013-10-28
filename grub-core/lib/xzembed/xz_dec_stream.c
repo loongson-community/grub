@@ -21,6 +21,8 @@
  * http://tukaani.org/xz/embedded.html
  */
 
+#include <grub/misc.h>
+
 #include "xz_config.h"
 #include "xz_private.h"
 #include "xz_stream.h"

@@ -323,7 +323,7 @@ grub_term_unregister_output (grub_term_output_t term)
 #define FOR_ACTIVE_TERM_OUTPUTS(var) FOR_LIST_ELEMENTS((var), (grub_term_outputs))
 #define FOR_DISABLED_TERM_OUTPUTS(var) FOR_LIST_ELEMENTS((var), (grub_term_outputs_disabled))
 
-void grub_putcode (grub_uint32_t code, struct grub_term_output *term);
+void grub_putcode (grub_wchar_t code, struct grub_term_output *term);
 int EXPORT_FUNC(grub_getkey) (void);
 int EXPORT_FUNC(grub_getkey_noblock) (void);
 void grub_cls (void);
@@ -346,6 +346,11 @@ static inline struct grub_term_coordinate
 grub_term_getxy (struct grub_term_output *term)
 {
   return term->getxy (term);
+}
+
+static inline unsigned grub_term_is_tiny (struct grub_term_output *term)
+{
+  return grub_term_height (term) < 5;
 }
 
 static inline void

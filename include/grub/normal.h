@@ -27,6 +27,7 @@
 #include <grub/menu.h>
 #include <grub/command.h>
 #include <grub/file.h>
+#include <grub/charset.h>
 
 /* The standard left and right margin for some messages.  */
 #define STANDARD_MARGIN 6
@@ -87,25 +88,25 @@ int grub_parse_color_name_pair (grub_uint8_t *ret, const char *name);
 /* Defined in `menu_text.c'.  */
 void grub_wait_after_message (void);
 void
-grub_print_ucs4 (const grub_uint32_t * str,
-		 const grub_uint32_t * last_position,
+grub_print_ucs4 (const grub_wchar_t * str,
+		 const grub_wchar_t * last_position,
 		 int margin_left, int margin_right,
 		 struct grub_term_output *term);
 
 void
-grub_print_ucs4_menu (const grub_uint32_t * str,
-		      const grub_uint32_t * last_position,
+grub_print_ucs4_menu (const grub_wchar_t * str,
+		      const grub_wchar_t * last_position,
 		      int margin_left, int margin_right,
 		      struct grub_term_output *term,
-		      int skip_lines, int max_lines, grub_uint32_t contchar,
+		      int skip_lines, int max_lines, grub_wchar_t contchar,
 		      struct grub_term_pos *pos);
 int
-grub_ucs4_count_lines (const grub_uint32_t * str,
-		       const grub_uint32_t * last_position,
+grub_ucs4_count_lines (const grub_wchar_t * str,
+		       const grub_wchar_t * last_position,
 		       int margin_left, int margin_right,
 		       struct grub_term_output *term);
-grub_size_t grub_getstringwidth (grub_uint32_t * str,
-				 const grub_uint32_t * last_position,
+grub_size_t grub_getstringwidth (grub_wchar_t * str,
+				 const grub_wchar_t * last_position,
 				 struct grub_term_output *term);
 void grub_print_message_indented (const char *msg, int margin_left,
 				  int margin_right,

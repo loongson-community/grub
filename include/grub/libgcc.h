@@ -20,6 +20,9 @@
 #ifndef __STDC_VERSION__
 #define __STDC_VERSION__ 0
 #endif
+
+#undef _GL_UNUSED
+
 #include <config-util.h>
 
 /* On x86 these functions aren't really needed. Save some space.  */

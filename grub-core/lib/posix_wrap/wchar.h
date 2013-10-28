@@ -20,23 +20,20 @@
 #define GRUB_POSIX_WCHAR_H	1
 
 #include <grub/charset.h>
+#include <grub/misc.h>
 
 #define wint_t grub_posix_wint_t
 #define wchar_t grub_posix_wchar_t
 #define mbstate_t grub_posix_mbstate_t
 
 /* UCS-4.  */
-typedef grub_int32_t wint_t;
 enum
   {
     WEOF = -1
   };
 
-/* UCS-4.  */
-typedef grub_int32_t wchar_t;
-
 typedef struct mbstate {
-  grub_uint32_t code;
+  grub_wchar_t code;
   int count;
 } mbstate_t;
 
@@ -44,9 +41,11 @@ typedef struct mbstate {
 #define MB_CUR_MAX 4
 #define MB_LEN_MAX 4
 
-static inline size_t
-mbrtowc (wchar_t *pwc, const char *s, size_t n, mbstate_t *ps)
+static inline grub_size_t
+mbrtowc (grub_wchar_t *pwc, const char *s, grub_size_t n, mbstate_t *ps)
 {
+  COMPILE_TIME_ASSERT (sizeof (wchar_t) == sizeof (grub_wchar_t));
+  COMPILE_TIME_ASSERT (GRUB_WCHAR_MAX == WCHAR_MAX);
   const char *ptr;
   if (!s)
     {
@@ -79,7 +78,7 @@ mbsinit(const mbstate_t *ps)
   return ps->count == 0;
 }
 
-static inline size_t
+static inline grub_size_t
 wcrtomb (char *s, wchar_t wc, mbstate_t *ps __attribute__ ((unused)))
 {
   if (s == 0)
@@ -114,6 +113,110 @@ wcscoll (const wchar_t *s1, const wchar_t *s2)
   if (*s1 > *s2)
     return +1;
   return 0;
+}
+
+static inline wchar_t *
+wmemset (wchar_t *wcs, wchar_t wc, grub_size_t n)
+{
+  wchar_t *ptr = wcs;
+  while (n--)
+    *ptr++ = wc;
+  return wcs;
+}
+
+static inline wchar_t *
+wmemcpy (wchar_t *dest, const wchar_t *src, grub_size_t n)
+{
+  memcpy (dest, src, sizeof (dest[0]) * n);
+  return dest;
+}
+
+static inline int
+wmemcmp (const wchar_t *s1, const wchar_t *s2, grub_size_t n)
+{
+  const wchar_t *t1 = s1;
+  const wchar_t *t2 = s2;
+
+  while (n--)
+    {
+      if (*t1 != *t2)
+	return (int) *t1 - (int) *t2;
+
+      t1++;
+      t2++;
+    }
+
+  return 0;
+}
+
+static inline grub_wchar_t *
+wmemchr (const grub_wchar_t *s, grub_wchar_t c, grub_size_t n)
+{
+  for (; n--; s++)
+    {
+      if (*s == c)
+	return (grub_wchar_t *) s;
+    }
+
+  return 0;
+}
+
+static inline grub_size_t
+wcslen (const grub_wchar_t *s)
+{
+  const grub_wchar_t *ptr;
+  for (ptr = s; *ptr; ptr++);
+  return ptr - s;
+}
+
+static inline wchar_t *
+wmemmove (wchar_t *dest, const wchar_t *src, grub_size_t n)
+{
+  grub_memmove (dest, src, n * sizeof (dest[0]));
+  return dest;
+}
+
+static inline wchar_t *
+wcschr (const wchar_t *s, wchar_t c)
+{
+  do
+    {
+      if (*s == c)
+	return (wchar_t *) s;
+    }
+  while (*s++);
+
+  return 0;
+}
+
+int wcwidth (wchar_t c);
+
+static inline grub_size_t
+mbslen (const char *src)
+{
+  int count = 0;
+  grub_size_t ret = 0;
+  grub_wchar_t code = 0;
+
+  while (1)
+    {
+      int was_count = count;
+      if (!grub_utf8_process (*src++, &code, &count))
+	{
+	  code = '?';
+	  count = 0;
+	  /* Character c may be valid, don't eat it.  */
+	  if (was_count)
+	    src--;
+	}
+      if (count != 0)
+	continue;
+      if (code == 0)
+	break;
+      ret++;
+    }
+
+  return ret;
 }
 
 #endif

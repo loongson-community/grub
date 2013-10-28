@@ -19,7 +19,17 @@
 #ifndef GRUB_CHARSET_HEADER
 #define GRUB_CHARSET_HEADER	1
 
+#define __STDC_LIMIT_MACROS 1
+#define __need_wchar_t 1
+#define __need_wint_t 1
+#include <stdint.h>
+#include <stddef.h>
 #include <grub/types.h>
+#include <grub/misc.h>
+#ifndef WCHAR_MAX
+#define WCHAR_MAX __WCHAR_MAX__
+#endif
+#define GRUB_WCHAR_MAX WCHAR_MAX
 
 #define GRUB_UINT8_1_LEADINGBIT 0x80
 #define GRUB_UINT8_2_LEADINGBITS 0xc0
@@ -49,12 +59,16 @@
 #define GRUB_UTF16_LOWER_SURROGATE(code) \
   (0xDC00 | (((code) - GRUB_UCS2_LIMIT) & 0x3ff))
 
+typedef wchar_t grub_wchar_t;
+
 /* Process one character from UTF8 sequence. 
    At beginning set *code = 0, *count = 0. Returns 0 on failure and
    1 on success. *count holds the number of trailing bytes.  */
 static inline int
-grub_utf8_process (grub_uint8_t c, grub_uint32_t *code, int *count)
+grub_utf8_process (grub_uint8_t c, grub_wchar_t *code, int *count)
 {
+  COMPILE_TIME_ASSERT (sizeof (grub_wchar_t) == 4);
+  COMPILE_TIME_ASSERT ((WCHAR_MAX >> 20));
   if (*count)
     {
       if ((c & GRUB_UINT8_2_LEADINGBITS) != GRUB_UINT8_1_LEADINGBIT)
@@ -127,7 +141,7 @@ grub_utf8_to_utf16 (grub_uint16_t *dest, grub_size_t destsize,
 {
   grub_uint16_t *p = dest;
   int count = 0;
-  grub_uint32_t code = 0;
+  grub_wchar_t code = 0;
 
   if (srcend)
     *srcend = src;
@@ -289,26 +303,26 @@ grub_latin1_to_utf8 (grub_uint8_t *dest, const grub_uint8_t *src,
 }
 
 /* Convert UCS-4 to UTF-8.  */
-char *grub_ucs4_to_utf8_alloc (const grub_uint32_t *src, grub_size_t size);
+char *grub_ucs4_to_utf8_alloc (const grub_wchar_t *src, grub_size_t size);
 
 int
 grub_is_valid_utf8 (const grub_uint8_t *src, grub_size_t srcsize);
 
 grub_ssize_t grub_utf8_to_ucs4_alloc (const char *msg,
-				      grub_uint32_t **unicode_msg,
-				      grub_uint32_t **last_position);
+				      grub_wchar_t **unicode_msg,
+				      grub_wchar_t **last_position);
 
 /* Returns the number of bytes the string src would occupy is converted
    to UTF-8, excluding \0.  */
 grub_size_t
-grub_get_num_of_utf8_bytes (const grub_uint32_t *src, grub_size_t size);
+grub_get_num_of_utf8_bytes (const grub_wchar_t *src, grub_size_t size);
 
 /* Converts UCS-4 to UTF-8. Returns the number of bytes effectively written
    excluding the trailing \0.  */
 grub_size_t
-grub_ucs4_to_utf8 (const grub_uint32_t *src, grub_size_t size,
+grub_ucs4_to_utf8 (const grub_wchar_t *src, grub_size_t size,
 		   grub_uint8_t *dest, grub_size_t destsize);
-grub_size_t grub_utf8_to_ucs4 (grub_uint32_t *dest, grub_size_t destsize,
+grub_size_t grub_utf8_to_ucs4 (grub_wchar_t *dest, grub_size_t destsize,
 			       const grub_uint8_t *src, grub_size_t srcsize,
 			       const grub_uint8_t **srcend);
 /* Returns -2 if not enough space, -1 on invalid character.  */
@@ -316,6 +330,8 @@ grub_ssize_t
 grub_encode_utf8_character (grub_uint8_t *dest, grub_uint8_t *destend,
 			    grub_uint32_t code);
 
+char
+grub_translit (grub_wchar_t in);
 const grub_uint32_t *
 grub_unicode_get_comb_start (const grub_uint32_t *str, 
 			     const grub_uint32_t *cur);
