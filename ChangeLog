@@ -1,3 +1,7 @@
+2013-10-20  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Add EFI mmap specification
+
 2010-09-20  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* doc/multiboot.texi: New type for badram.
