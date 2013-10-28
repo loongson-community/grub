@@ -22,7 +22,6 @@
 #include <grub/types.h>
 #include <grub/mm.h>
 #include <grub/misc.h>
-#include <grub/charset.h>
 
 struct grub_unicode_bidi_pair
 {
@@ -251,7 +250,7 @@ struct grub_term_pos
 };
 
 grub_ssize_t
-grub_bidi_logical_to_visual (const grub_wchar_t *logical,
+grub_bidi_logical_to_visual (const grub_uint32_t *logical,
 			     grub_size_t logical_len,
 			     struct grub_unicode_glyph **visual_out,
 			     grub_size_t (*getcharwidth) (const struct grub_unicode_glyph *visual, void *getcharwidth_arg),
@@ -264,7 +263,7 @@ grub_bidi_logical_to_visual (const grub_wchar_t *logical,
 enum grub_comb_type
 grub_unicode_get_comb_type (grub_uint32_t c);
 grub_size_t
-grub_unicode_aglomerate_comb (const grub_wchar_t *in, grub_size_t inlen,
+grub_unicode_aglomerate_comb (const grub_uint32_t *in, grub_size_t inlen,
 			      struct grub_unicode_glyph *out);
 
 static inline const struct grub_unicode_combining *
