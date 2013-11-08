@@ -126,6 +126,9 @@ struct grub_disk
   /* Logarithm of sector size.  */
   unsigned int log_sector_size;
 
+  /* Maximum number of sectors read divided by GRUB_DISK_CACHE_SIZE.  */
+  unsigned int max_agglomerate;
+
   /* The id used by the disk cache manager.  */
   unsigned long id;
 
@@ -165,6 +168,8 @@ typedef struct grub_disk_memberlist *grub_disk_memberlist_t;
 #define GRUB_DISK_CACHE_BITS	6
 #define GRUB_DISK_CACHE_SIZE	(1 << GRUB_DISK_CACHE_BITS)
 
+#define GRUB_DISK_MAX_MAX_AGGLOMERATE ((1 << (30 - GRUB_DISK_CACHE_BITS - GRUB_DISK_SECTOR_BITS)) - 1)
+
 /* Return value of grub_disk_get_size() in case disk size is unknown. */
 #define GRUB_DISK_SIZE_UNKNOWN	 0xffffffffffffffffULL
 
@@ -194,11 +199,17 @@ grub_err_t EXPORT_FUNC(grub_disk_read) (grub_disk_t disk,
 					grub_off_t offset,
 					grub_size_t size,
 					void *buf);
-grub_err_t EXPORT_FUNC(grub_disk_write) (grub_disk_t disk,
-					 grub_disk_addr_t sector,
-					 grub_off_t offset,
-					 grub_size_t size,
-					 const void *buf);
+grub_err_t grub_disk_write (grub_disk_t disk,
+			    grub_disk_addr_t sector,
+			    grub_off_t offset,
+			    grub_size_t size,
+			    const void *buf);
+extern grub_err_t (*EXPORT_VAR(grub_disk_write_weak)) (grub_disk_t disk,
+						       grub_disk_addr_t sector,
+						       grub_off_t offset,
+						       grub_size_t size,
+						       const void *buf);
+
 
 grub_uint64_t EXPORT_FUNC(grub_disk_get_size) (grub_disk_t disk);
 
@@ -221,6 +232,18 @@ grub_stop_disk_firmware (void)
       grub_disk_firmware_fini = NULL;
     }
 }
+
+/* Disk cache.  */
+struct grub_disk_cache
+{
+  enum grub_disk_dev_id dev_id;
+  unsigned long disk_id;
+  grub_disk_addr_t sector;
+  char *data;
+  int lock;
+};
+
+extern struct grub_disk_cache EXPORT_VAR(grub_disk_cache_table)[GRUB_DISK_CACHE_NUM];
 
 #if defined (GRUB_UTIL)
 void grub_lvm_init (void);

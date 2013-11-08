@@ -194,7 +194,7 @@ grub_real_malloc (grub_mm_header_t *first, grub_size_t n, grub_size_t align)
     {
       grub_off_t extra;
 
-      extra = ((grub_addr_t) (p + 1) >> GRUB_MM_ALIGN_LOG2) % align;
+      extra = ((grub_addr_t) (p + 1) >> GRUB_MM_ALIGN_LOG2) & (align - 1);
       if (extra)
 	extra = align - extra;
 
@@ -483,7 +483,8 @@ grub_realloc (void *ptr, grub_size_t size)
   if (! q)
     return q;
 
-  grub_memcpy (q, ptr, size);
+  /* We've already checked that p->size < n.  */
+  grub_memcpy (q, ptr, p->size << GRUB_MM_ALIGN_LOG2);
   grub_free (ptr);
   return q;
 }

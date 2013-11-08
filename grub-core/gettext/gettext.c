@@ -34,8 +34,6 @@ GRUB_MOD_LICENSE ("GPLv3+");
    http://www.gnu.org/software/autoconf/manual/gettext/MO-Files.html .
 */
 
-static struct grub_gettext_context main_context, secondary_context;
-
 static const char *(*grub_gettext_original) (const char *s);
 
 struct grub_gettext_msg
@@ -68,6 +66,8 @@ struct grub_gettext_context
   int grub_gettext_max_log;
   struct grub_gettext_msg *grub_gettext_msg_list;
 };
+
+static struct grub_gettext_context main_context, secondary_context;
 
 #define MO_MAGIC_NUMBER 		0x950412de
 
@@ -423,6 +423,10 @@ grub_gettext_init_ext (struct grub_gettext_context *ctx,
 
       grub_free (lang);
     }
+
+  if (locale[0] == 'e' && locale[1] == 'n'
+      && (locale[2] == '\0' || locale[2] == '_'))
+    grub_errno = err = GRUB_ERR_NONE;
   return err;
 }
 

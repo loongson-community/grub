@@ -1,3 +1,736 @@
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* b/grub-core/term/serial.c: Add option for enabling/disabling
+	RTS/CTS flow control.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/libgcrypt/cipher/idea.c (mul_inv): Remove signed
+	divisions.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/libgcrypt/mpi/mpih-div.c (_gcry_mpih_divrem):
+	Use grub_fatal rather than divide by zero.
+	* grub-core/lib/libgcrypt/mpi/mpi-pow.c (gcry_mpi_powm): Likewise.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/gui.h (grub_fixed_sfs_divide): Round rather than
+	truncate.
+	(grub_fixed_fsf_divide): Likewise.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/gfxmenu/gui_list.c (draw_scrollbar): Avoid
+	division by-zero and senseless negative divisions.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/gfxmenu/gui_circular_progress.c (circprog_paint): Avoid
+	division by-zero and senseless negative divisions.
+	(circprog_set_property): Don't accept negative num_ticks.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/gfxmenu/gui_progress_bar.c (draw_pixmap_bar): Avoid
+	division by-zero and senseless negative divisions.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Use elf_*_fbsd on kfreebsd.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/tests/div_test.c: New test.
+
+2013-11-08  Vladimir Testov  <vladimir.testov@rosalab.ru>
+
+	* grub-core/gfxmenu/gui_box.c: Updated to work with area status.
+	* grub-core/gfxmenu/gui_canvas.c: Likewise.
+	* grub-core/gfxmenu/view.c: Likewise.
+	* grub-core/video/fb/video_fb.c: Introduce new functions:
+	grub_video_set_area_status, grub_video_get_area_status,
+	grub_video_set_region, grub_video_get_region.
+	* grub-core/video/bochs.c: Likewise.
+	* grub-core/video/capture.c: Likewise.
+	* grub-core/video/video.c: Likewise.
+	* grub-core/video/cirrus.c: Likewise.
+	* grub-core/video/efi_gop.c: Likewise.
+	* grub-core/video/efi_uga.c: Likewise.
+	* grub-core/video/emu/sdl.c: Likewise.
+	* grub-core/video/radeon_fuloong2e.c: Likewise.
+	* grub-core/video/sis315pro.c: Likewise.
+	* grub-core/video/sm712.c: Likewise.
+	* grub-core/video/i386/pc/vbe.c: Likewise.
+	* grub-core/video/i386/pc/vga.c: Likewise.
+	* grub-core/video/ieee1275.c: Likewise.
+	* grub-core/video/i386/coreboot/cbfb.c: Likewise.
+	* include/grub/video.h: Likewise.
+	* include/grub/video_fb.h: Likewise.
+	* include/grub/fbfill.h: Updated render_target structure.
+	grub_video_rect_t viewport, region, area
+	int area_offset_x, area_offset_y, area_enabled
+	* include/grub/gui.h: New helper function
+	grub_video_bounds_inside_region.
+	* docs/grub-dev.texi: Added information about new functions.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/mm.c (grub_real_malloc): Use AND rather than MOD
+	for alignment.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/reed_solomon.c (grub_reed_solomon_recover): Add
+	missing attribute.
+	* grub-core/gdb/cstub.c (grub_gdb_trap): Likewise.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_divmod64): Don't fallback to
+	simple division on arm and ia64.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/arm/misc.S (__aeabi_unwind_cpp_pr0): Add dummy to
+	link with libgcc.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/symbol.h (FUNCTION), (VARIABLE): Fix precedence logic.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/symbol.h (FUNCTION), (VARIABLE) [__arm__]: Use % as
+	prefix symbol, not @.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* INSTALL: Add note about older gcc and clang.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* tests/util/grub-shell.in: Boot as hdd on ppc by default.
+
+2013-11-08  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot_mbi2.c (grub_multiboot_add_module): Fix
+	NULL pointer dereference.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/Makefile.am: Do not include libgcc.h when compiling with
+	clang.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/powerpc/dl.c: Add missing pragma to silence cast-align
+	warnings.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/net/net.c (grub_net_route_unregister): Remove unused
+	function.
+	* grub-core/loader/i386/xnu.c (hextoval): Likewise.
+	* grub-core/disk/geli.c (ascii2hex): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Run linker tests without -Werror.
+	Define TARGET_LDFLAGS_STATIC_LIBGCC and TARGET_LIBGCC.
+	Change all occurences of -static-libgcc resp -lgcc to
+	TARGET_LDFLAGS_STATIC_LIBGCC resp TARGET_LIBGCC.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Don't add -no-itegrated-as on clang on non-x86.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Allow compiling with clang (not really supported though).
+
+	* conf/Makefile.common (CFLAGS_PLATFORM): Don't add -mrtd -mregparm=3
+	unconditionally.
+	* configure.ac: Add -no-integrated-as when using clangfor asm files.
+	Add -mrtd -mregparm=3 on i386 when not using clang.
+	* grub-core/kern/misc.c (grub_memset): Add volatile when on clang.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/ieee1275/cmain.c: Add explicit attribute on asm
+	bindings.
+	* grub-core/lib/reed_solomon.c: Likewise.
+	* include/grub/i386/gdb.h: Likewise.
+	* include/grub/i386/pc/int.h: Likewise.
+	* include/grub/i386/pc/pxe.h: Likewise.
+	* include/grub/ieee1275/ieee1275.h: Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Import libgcrypt 1.5.3.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Don't add -Wcast-align on x86.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Add -freg-struct-return on all platforms that
+	support it.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* acinclude.m4: Use -Werror on parameter tests.
+	* configure.ac: Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* acinclude.m4: Add missing TARGET_CCASFLAGS on asm tests.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Check that -malign-loops works rather than assuming that
+	either -falign-loops or -malign-loops work.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Remove -fnested-functions. We don't need it anymore.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Prevent cflags leaking to subsequent tests by always
+	resetting cflags to target_cflags in target tests.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/parser.c (grub_parser_split_cmdline): Remove nested
+	function.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_vsnprintf_real): Remove nested functions.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/arg.c (grub_arg_parse): Remove nested function.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/normal/cmdline.c (grub_cmdline_get):
+	Remove nested functions.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* tests/test_sha512sum.in: Make it work on emu.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/normal/charset.c (bidi_line_wrap): Eliminate nested
+	functions.
+	(grub_bidi_line_logical_to_visual): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Remove vestiges of -Wunsafe-loop-optimisations.
+
+	* conf/Makefile.common (CFLAGS_GNULIB): Remove
+	-Wno-unsafe-loop-optimisations.
+	* grub-core/commands/legacycfg.c: Remove -Wunsafe-loop-optimisations
+	pragma.
+	* grub-core/io/gzio.c: Likewise.
+	* grub-core/script/parser.y: Likewise.
+	* grub-core/script/yylex.l: Likewise.
+	* util/grub-mkfont.c: Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mkfont.c (process_cursive): Remove nested function.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/misc.h (grub_dprintf): Use unnamed vararg.
+	(grub_boot_time): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/symbol.h (FUNCTION): Use @function rather than
+	"function".
+	(VARIABLE): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/net/bootp.c (OFFSET_OF): Explicitly cast to grub_size_t.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/net/bootp.c (set_env_limn_ro): Make pointer const.
+	(parse_dhcp_vendor): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mkimagexx.c (relocate_symbols): Remove unneeded brackets.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/gettext/gettext.c (main_context), (secondary_context):
+	Define after defining type and not before.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/zfs/zfscrypt.c (grub_ccm_decrypt): Return right error
+	type.
+	(grub_gcm_decrypt): Likewise.
+	(algo_decrypt): Likewise.
+	(grub_zfs_decrypt_real): Transform error type.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/disk/geli.c (geli_rekey): Fix error return type.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/disk/usbms.c (grub_usbms_cbi_cmd): Fix error type.
+	(grub_usbms_cbi_reset): Likewise.
+	(grub_usbms_bo_reset): Likewise.
+	(grub_usbms_reset): Likewise.
+	(grub_usbms_attach): Likewise.
+	(grub_usbms_transfer_cbi): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/io/lzopio.c (test_header): Simplify code and remove useless
+	"checksum = checksum;".
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/reiserfs.c (grub_reiserfs_iterate_dir): Fix type of
+	entry_type.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/commands/legacycfg.c (grub_cmd_legacy_kernel): Fix
+	BIOS disk check.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/bus/usb/ehci.c (grub_ehci_restore_hw): Return right enum
+	type.
+	(grub_ehci_fini_hw): Likewise.
+	* grub-core/bus/usb/usbhub.c (grub_usb_add_hub): Likewise.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/usb.h (grub_usb_controller_dev): Make portstatus
+	return grub_usb_err_t for cosistency. All users updated.
+
+2013-11-07  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/mkimage.c (SzAlloc): Use attribute unused rather than dubious
+	assigning to itself.
+
+2013-11-05  Gustavo Luiz Duarte  <gustavold@linux.vnet.ibm.com>
+2013-11-05  Paulo Flabiano Smorigo  <pfsmorigo@br.ibm.com>
+
+	Issue separate DNS queries for ipv4 and ipv6
+
+	Adding multiple questions on a single DNS query is not supportted by
+	most DNS servers. This patch issues two separate DNS queries
+	sequentially for ipv4 and then for ipv6.
+
+	Fixes: https://savannah.gnu.org/bugs/?39710
+
+	* grub-core/net/bootp.c (parse_dhcp_vendor): Add DNS option.
+	* grub-core/net/dns.c (grub_dns_qtype_id): New enum.
+	* (grub_net_dns_lookup): Now using separated dns packages.
+	* (grub_cmd_nslookup): Add error condition.
+	* (grub_cmd_list_dns): Print DNS option.
+	* (grub_cmd_add_dns): Add four parameters: --only-ipv4, --only-ipv6,
+	--prefer-ipv4, and --prefer-ipv6.
+	* include/grub/net.h (grub_dns_option_t): New enum.
+	* (grub_net_network_level_address): option added.
+
+2013-11-05  Vladimir Testov  <vladimir.testov@rosalab.ru>
+
+	* grub-core/video/fb/video_fb.c: Merge two blit functions
+	into one.
+
+2013-11-05  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/term/terminfo.c: Add sequences for home and end.
+
+2013-11-05  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/legacy_parse.c: Fix handling of hercules and add
+	graphics console.
+
+2013-11-05  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/video/i386/pc/vga.c: Fix double bufferring and
+	add mode 0x12.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* docs/grub.texi (Vendor power-on keys): Add XPS M1330M based on old
+	e-mail by Per Öberg.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/commands/i386/nthibr.c (GRUB_MOD_INIT): Fix typo in command
+	name.
+
+2013-11-04  Andrey Borzenkov <arvidjaar@gmail.com>
+
+	*  configure.ac: Explicitly disable emusdl, emuusb and emupci on non-
+	emu platforms.
+	* grub-core/Makefile.core.def: Enable emupci and emuucb only for emu.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* docs/grub.texi: Document usage of menuentry id.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* docs/grub.texi: Add few mentions about EFI, debug and videoinfo.
+
+2013-11-04  Peter Lustig <peter.lustig.7db@gmail.com>
+
+	* grub-core/commands/i386/nthibr.c: New command.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/tests/video_checksum.c: Add 2560x1440 mode to testing.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/term.h (grub_term_coordinate): Extend to 16-bit per
+	coordinate.
+
+2013-11-04  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Support GRUB_DISABLE_SUBMENU config.
+
+	Inspired by patch from Prarit Bhargava.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* docs/grub.texi: Mention RSA support.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/commands/verify.c: Add RSA support.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/disk/ahci.c (grub_ahci_pciinit): Detect ATAPI devices.
+	* grub-core/disk/ata.c (grub_ata_identify): Use atapi_identify if
+	device is known to be ATAPI.
+
+2013-11-03  Mike Frysinger <vapier>
+
+	* configure.ac: Don't add target-prefix.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/commands/loadenv.c (grub_cmd_save_env): Remove unset
+	variables.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/gettext/gettext.c (grub_gettext_init_ext): Ignore errors
+	if language is English.
+
+2013-11-03  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/osdep/linux/getroot.c: Fix cast-align problems.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Don't add -m32/-m64 on emu.
+
+2013-11-02  neil
+
+	* grub-core/osdep/linux/blocklist.c: Include linux/types.h for some
+	broken linux headers.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub.d/30_os-prober.in: Add unhiding of partition if on msdos.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/reed_solomon.c (grub_reed_solomon_recover): Don't do
+	Reed-Solomon recovery if more than half of redundancy info is 0.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mount.c: Handle symlinks to directories.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/fshelp.c (find_file): Save ctx->next when calling
+	find_file recursively for symlink.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* tests/util/grub-shell.in: Copy themes.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mkimagexx.c (locate_sections): Reject mislinked images.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Use 0x8000 for address instead of 8000.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/sparc64/ieee1275/linux.c (get_physbase): Fix
+	signature.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/disk/efi/efidisk.c (grub_efidisk_readwrite): Remove unused
+	variable.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac (TARGET_CFLAGS): Add -march=i386 on i386.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/hfspluscomp.c (hfsplus_read_compressed_real): Call
+	file_progress_read_hook.
+	* grub-core/fs/ntfscomp.c (hfsplus_read_compressed_real): Likewise.
+
+2013-11-02  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* conf/Makefile.common (CFLAGS_PLATFORM): Remove poisoning of float
+	and double.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/tar.c (grub_cpio_read): Add read_hook.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Rewrite blocklist functions in order to get progress when
+	reading large extents and decrease amount of blocklist hook calls.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/term/serial.c (options), (grub_cmd_serial): Fix handling
+	of SI suffixes.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Support --base-clock for serial command to handle weird cards with
+	non-standard base clock.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/ext2.c (grub_ext2_read_symlink): Use memcpy rather
+	strncpy.
+	* grub-core/fs/jfs.c (grub_jfs_lookup_symlink): Likewise.
+	* grub-core/kern/misc.c (grub_strncpy): Move from here ...
+	* include/grub/misc.h (grub_strncpy): ... to here. Make inline.
+	* grub-core/net/net.c (grub_net_addr_to_str): Use COMPILE_TIME_ASSERT
+	+ strcpy rather than strncpy.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/zfs/zfs.c (nvpair_name): Use correct type for size.
+	(check_pool_label): Likewise. Fixes overflow.
+	(nvlist_find_value): Fix comparison.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/misc.h (grub_strcat): Removed. All users changed to
+	more appropriate functions.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/efi/efi.c (grub_efi_get_filename): Avoid inefficient
+	realloc.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mkrescue.in: Do not use UUID search on EFI.
+
+2013-11-01  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/dl.c: Unify section-finding algorithm. Saves 30 bytes
+	on core size.
+
+2013-10-30  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/mm.c (grub_realloc): Don't copy more data than we have.
+
+2013-10-30  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/io/gzio.c (huft_build): Use zalloc for safety.
+	(initialize_tables): reset tl and td to NULL after freeing.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot_mbi2.c: Implement network tag.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot_mbi2.c: Add EFI memory map to the list
+	of supported tags.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot_mbi2.c: Implement EFI memory map.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot.c: Add support for multiboot kernels
+	quirks.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/i386/linux.c (allocate_pages): Allocate at least
+	a page in protected space.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/multiboot.c (grub_cmd_module): Don't attempt to
+	allocate space for zero-sized modules.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/xnu_resume.c (grub_xnu_resume): Reject empty images.
+
+2013-10-28  Francesco Lavra  <francescolavra.fl@gmail.com>
+
+	* grub-core/lib/fdt.c: Fix miscellaneous bugs.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/progress.c (grub_file_progress_hook_real): Add missing
+	safeguards. Fixes a crash with i386/pc/console.c.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* include/grub/emu/hostdisk.h: Add proper declaration for grub_host_init
+	and grub_hostfs_init.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/emu/hostdisk.c (grub_util_check_file_presence): Use
+	windows method on other platforms without good stat as well.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/osdep/linux/getroot.c: Add new btrfs defines.
+
+2013-10-28  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Make / in btrfs refer to real root, not the default volume.
+	Modify mkrelpath to work even if device is mounted with subvolid option.
+
+2013-10-28  Andrey Borzenkov <arvidjaar@gmail.com>
+
+	* Makefile.util.def: Add grub-core/kern/disk_common.c to library
+	extra_dist.
+	* grub-core/Makefile.core.def: Add kern/disk_common.c to disk module
+	extra_dist.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* util/grub-mkfont.c (main): Show error message when FT_Set_Pixel_Sizes
+	fails.
+
+2013-10-27  BVK Chaitanya  <bvk.groups@gmail.com>
+
+	* docs/autoiso.cfg: New file.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* configure.ac: Remove leftover COND_BUILD_GRUB_MKFONT and
+	COND_GRUB_PE2ELF conditions.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/loader/i386/bsd.c (grub_cmd_openbsd): Accept "sd", "cd",
+	"vnd", "rd" and "fd" disks.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Move grub_disk_write out of kernel into disk.mod.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_vsnprintf_real): Unify int and wchar
+	handling.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_abort): Make static
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_vsnprintf_real): Don't attempt to
+	transform invalid unicode codepoints.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/kern/misc.c (grub_vsnprintf_real): Remove needless explicit
+	\0 checking.
+
+2013-10-27  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/lib/legacy_parse.c: Add support for "nd" disk.
+
+2013-10-26  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Consolidate cpuid code.
+
+2013-10-26  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	Move cpuid code to cpuid.h and TSC code to tsc.c.
+
+2013-10-26  Grégoire Sutre  <gregoire.sutre@gmail.com>
+
+	* util/grub.d/00_header.in: Don't use LANG if it's not set.
+
+2013-10-26  Grégoire Sutre  <gregoire.sutre@gmail.com>
+
+	* util/grub-mkconfig.in: Replace $0 with $self.
+	* util/grub-reboot.in: Likewise.
+	* util/grub-set-default.in: Likewise.
+
+2013-10-26  BVK Chaitanya  <bvk.groups@gmail.com>
+
+	* docs/osdetect.cfg: New file.
+
+2013-10-26  BVK Chaitanya  <bvk.groups@gmail.com>
+
+	* tests/util/grub-shell.in: Add new --debug option.
+
+2013-10-26  BVK Chaitanya  <bvk.groups@gmail.com>
+
+	* tests/test_unset.in: New test.
+
+2013-10-26  BVK Chaitanya  <bvk.groups@gmail.com>
+
+	* tests/test_sha512sum.in: New test.
+
+2013-10-26  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/fs/iso9660.c: Replace strncat with memcpy.
+	* include/grub/misc.h: Remove strncat.
+	* grub-core/lib/posix_wrap/string.h: Likewise.
+
+2013-10-26  Vladimir Serbinenko  <phcoder@gmail.com>
+
+	* grub-core/net/tftp.c: Retransmit ack when rereceiving old packet.
+	Try to handle more than 0xFFFF packets.
+	Reported by: Bernhard Übelacker <bernhardu>.
+	He also spotted few overflows in first version of this patch.
+
 2013-10-26  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* tests/date_unit_test.c: New test.
@@ -533,11 +1266,6 @@
 	* grub-core/script/yylex.l: Fix LSQBR2 and RSQBR2. It's not
 	currently used so this doesn't really have any effect.
 	Reported by:  	Douglas Ray <dougray>
-
-2013-10-17  Vladimir Serbinenko  <phcoder@gmail.com>
-
-	* util/grub-mkstandalone.in: Remove needless copying since we already
-	pass the files to tar.
 
 2013-10-17  Vladimir Serbinenko  <phcoder@gmail.com>
 

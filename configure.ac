@@ -41,7 +41,9 @@ AC_CONFIG_AUX_DIR([build-aux])
 
 # Checks for host and target systems.
 AC_CANONICAL_HOST
+save_program_prefix="${program_prefix}"
 AC_CANONICAL_TARGET
+program_prefix="${save_program_prefix}"
 
 AM_INIT_AUTOMAKE()
 AC_PREREQ(2.60)
@@ -165,10 +167,12 @@ case "$target_cpu"-"$platform" in
   *) AC_MSG_ERROR([platform "$platform" is not supported for target CPU "$target_cpu"]) ;;
 esac
 
-case "$target_cpu" in
-  i386 | powerpc) target_m32=1 ;;
-  x86_64 | sparc64) target_m64=1 ;;
-esac
+if test x$platform != xemu ; then
+   case "$target_cpu" in
+	i386 | powerpc) target_m32=1 ;;
+	x86_64 | sparc64) target_m64=1 ;;
+   esac
+fi
 
 case "$target_os" in
   windows* | mingw32*) target_os=cygwin ;;
@@ -388,7 +392,7 @@ AC_SUBST([LIBUTIL])
 
 AC_CACHE_CHECK([whether -Wtrampolines work], [grub_cv_host_cc_wtrampolines], [
   SAVED_CFLAGS="$CFLAGS"
-  CFLAGS="$HOST_CFLAGS -Wtrampolines"
+  CFLAGS="$HOST_CFLAGS -Wtrampolines -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>
 int va_arg_func (int fixed, va_list args);]], [[]])],
       [grub_cv_host_cc_wtrampolines=yes],
@@ -470,25 +474,87 @@ AC_SUBST(TARGET_NMFLAGS_MINUS_P)
 AC_SUBST(TARGET_NMFLAGS_DEFINED_ONLY)
 
 # debug flags.
-WARN_FLAGS="-Wall -W -Wshadow -Wold-style-definition -Wpointer-arith -Wundef -Wextra -Wattributes -Wcast-align -Wchar-subscripts -Wcomment -Wdeprecated-declarations -Wdisabled-optimization -Wdiv-by-zero -Wendif-labels -Wfloat-equal -Wformat-extra-args -Wformat-security -Wformat-y2k -Wimplicit -Wimplicit-function-declaration -Wimplicit-int -Winit-self -Wint-to-pointer-cast -Winvalid-pch -Wmain -Wmissing-braces -Wmissing-field-initializers -Wmissing-format-attribute -Wmultichar -Wnonnull -Woverflow -Wparentheses -Wpointer-arith -Wpointer-to-int-cast -Wreturn-type -Wsequence-point -Wshadow -Wsign-compare -Wstrict-aliasing -Wswitch -Wtrigraphs -Wundef -Wunknown-pragmas -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var -Wwrite-strings -Wnested-externs -Wstrict-prototypes -Wpointer-sign"
-HOST_CFLAGS="$HOST_CFLAGS $WARN_FLAGS"
+WARN_FLAGS="-Wall -W -Wshadow -Wold-style-definition -Wpointer-arith -Wundef -Wextra -Wattributes -Wchar-subscripts -Wcomment -Wdeprecated-declarations -Wdisabled-optimization -Wdiv-by-zero -Wendif-labels -Wfloat-equal -Wformat-extra-args -Wformat-security -Wformat-y2k -Wimplicit -Wimplicit-function-declaration -Wimplicit-int -Winit-self -Wint-to-pointer-cast -Winvalid-pch -Wmain -Wmissing-braces -Wmissing-field-initializers -Wmissing-format-attribute -Wmultichar -Wnonnull -Woverflow -Wparentheses -Wpointer-arith -Wpointer-to-int-cast -Wreturn-type -Wsequence-point -Wshadow -Wsign-compare -Wstrict-aliasing -Wswitch -Wtrigraphs -Wundef -Wunknown-pragmas -Wunused -Wunused-function -Wunused-label -Wunused-parameter -Wunused-value  -Wunused-variable -Wvariadic-macros -Wvolatile-register-var -Wwrite-strings -Wnested-externs -Wstrict-prototypes -Wpointer-sign"
+HOST_CFLAGS="$HOST_CFLAGS $WARN_FLAGS -Wcast-align"
 TARGET_CFLAGS="$TARGET_CFLAGS $WARN_FLAGS -g -Wredundant-decls -Wmissing-prototypes -Wmissing-declarations"
 TARGET_CCASFLAGS="$TARGET_CCASFLAGS -g"
+
+if test "x$target_cpu" != xi386 && test "x$target_cpu" != xx86_64; then
+TARGET_CFLAGS="$TARGET_CFLAGS -Wcast-align"
+fi
+
+AC_CACHE_CHECK([if compiling with clang], [grub_cv_cc_target_clang]
+[AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([], [[
+#ifdef __clang__
+#error "is clang"
+#endif
+]])],
+[grub_cv_cc_target_clang=no], [grub_cv_cc_target_clang=yes])])
+
+# clang doesn't support .code16
+if test "x$grub_cv_cc_target_clang" = xyes && ( test "x$target_cpu" = xi386 || test "x$target_cpu" = xx86_64 ); then
+   TARGET_CCASFLAGS="$TARGET_CCASFLAGS -no-integrated-as"
+fi
+
+if test "x$target_cpu" = xi386 && test "x$platform" != xemu; then
+  TARGET_CFLAGS="$TARGET_CFLAGS -march=i386"
+fi
+
+if test "x$target_m32" = x1; then
+  # Force 32-bit mode.
+  TARGET_CFLAGS="$TARGET_CFLAGS -m32"
+  TARGET_CCASFLAGS="$TARGET_CCASFLAGS -m32"
+  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -m32"
+  TARGET_LDFLAGS="$TARGET_LDFLAGS -m32"
+  TARGET_MODULE_FORMAT="elf32"
+fi
+
+if test "x$target_m64" = x1; then
+  # Force 64-bit mode.
+  TARGET_CFLAGS="$TARGET_CFLAGS -m64"
+  TARGET_CCASFLAGS="$TARGET_CCASFLAGS -m64"
+  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -m64"
+  TARGET_LDFLAGS="$TARGET_LDFLAGS -m64"
+  TARGET_MODULE_FORMAT="elf64"
+fi
+
+if test "x$grub_cv_cc_target_clang" = xno && test "x$target_cpu" = xi386 && test "x$platform" != xemu && test "x$platform" != xefi; then
+   TARGET_CFLAGS="$TARGET_CFLAGS -mrtd -mregparm=3"
+fi
 
 # Force no alignment to save space on i386.
 if test "x$target_cpu" = xi386; then
   AC_CACHE_CHECK([whether -falign-loops works], [grub_cv_cc_falign_loop], [
-    CFLAGS="$CFLAGS -falign-loops=1"
+    CFLAGS="$TARGET_CFLAGS -falign-loops=1 -Werror"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
         [grub_cv_cc_falign_loop=yes],
 	[grub_cv_cc_falign_loop=no])
   ])
 
+  AC_CACHE_CHECK([whether -malign-loops works], [grub_cv_cc_malign_loop], [
+    CFLAGS="$TARGET_CFLAGS -malign-loops=1 -Werror"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+        [grub_cv_cc_malign_loop=yes],
+	[grub_cv_cc_malign_loop=no])
+  ])
+
   if test "x$grub_cv_cc_falign_loop" = xyes; then
     TARGET_CFLAGS="$TARGET_CFLAGS -falign-jumps=1 -falign-loops=1 -falign-functions=1"
-  else
+  elif test "x$grub_cv_cc_malign_loop" = xyes; then
     TARGET_CFLAGS="$TARGET_CFLAGS -malign-jumps=1 -malign-loops=1 -malign-functions=1"
   fi
+fi
+
+AC_CACHE_CHECK([whether -freg-struct-return works], [grub_cv_cc_freg_struct_return], [
+    CFLAGS="$TARGET_CFLAGS -freg-struct-return -Werror"
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+        [grub_cv_cc_freg_struct_return=yes],
+	[grub_cv_cc_freg_struct_return=no])
+])
+
+if test "x$grub_cv_cc_freg_struct_return" = xyes; then
+    TARGET_CFLAGS="$TARGET_CFLAGS -freg-struct-return"
 fi
 
 if ( test "x$target_cpu" = xi386 || test "x$target_cpu" = xx86_64 ) && test "x$platform" != xemu; then
@@ -502,12 +568,10 @@ fi
 # these and they just use up vital space. Restore the old compiler
 # behaviour.
 AC_CACHE_CHECK([whether -fno-dwarf2-cfi-asm works], [grub_cv_cc_fno_dwarf2_cfi_asm], [
-  SAVE_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS -fno-dwarf2-cfi-asm"
+  CFLAGS="$TARGET_CFLAGS -fno-dwarf2-cfi-asm"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
       [grub_cv_cc_fno_dwarf2_cfi_asm=yes],
       [grub_cv_cc_fno_dwarf2_cfi_asm=no])
-  CFLAGS="$SAVE_CFLAGS"
 ])
 
 if test "x$grub_cv_cc_fno_dwarf2_cfi_asm" = xyes; then
@@ -516,7 +580,7 @@ fi
 
 if test x"$target_os" = xcygwin; then
   AC_CACHE_CHECK([whether option -fno-reorder-functions works], grub_cv_cc_no_reorder_functions, [
-    CFLAGS="$CFLAGS -fno-reorder-functions"
+    CFLAGS="$TARGET_CFLAGS -fno-reorder-functions"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
 		      [grub_cv_cc_no_reorder_functions=yes],
 		      [grub_cv_cc_no_reorder_functions=no])
@@ -532,12 +596,10 @@ fi
 # these and they just use up vital space. Restore the old compiler
 # behaviour.
 AC_CACHE_CHECK([whether -fno-asynchronous-unwind-tables works], [grub_cv_cc_fno_asynchronous_unwind_tables], [
-  SAVE_CFLAGS="$CFLAGS"
-  CFLAGS="$CFLAGS -fno-dwarf2-cfi-asm"
+  CFLAGS="$TARGET_CFLAGS -fno-dwarf2-cfi-asm"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
       [grub_cv_cc_fno_asynchronous_unwind_tables=yes],
       [grub_cv_cc_fno_asynchronous_unwind_tables=no])
-  CFLAGS="$SAVE_CFLAGS"
 ])
 
 if test "x$grub_cv_cc_fno_asynchronous_unwind_tables" = xyes; then
@@ -546,9 +608,6 @@ fi
 
 grub_apple_target_cc
 if test x$grub_cv_apple_target_cc = xyes ; then
-  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -fnested-functions"
-
-  CFLAGS="$CFLAGS -fnested-functions"
   TARGET_APPLE_CC=1
   AC_CHECK_PROG([TARGET_OBJCONV], [objconv], [objconv], [])
   if test "x$TARGET_OBJCONV" = x ; then
@@ -612,12 +671,10 @@ if test x"$platform" = xefi ; then
 fi
 if test x"$efiemu_excuse" = x ; then
   AC_CACHE_CHECK([whether options required for efiemu work], grub_cv_cc_efiemu, [
-    SAVED_CFLAGS="$CFLAGS"
-    CFLAGS="$CFLAGS -m64 -mcmodel=large -mno-red-zone -nostdlib"
+    CFLAGS="$TARGET_CFLAGS -m64 -mcmodel=large -mno-red-zone -nostdlib"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
 		      [grub_cv_cc_efiemu=yes],
 		      [grub_cv_cc_efiemu=no])
-    CFLAGS="$SAVED_CFLAGS"
   ])
   if test x$grub_cv_cc_efiemu = xno; then
      efiemu_excuse="cannot compile with -m64 -mcmodel=large -mno-red-zone -nostdlib"
@@ -633,28 +690,10 @@ enable_efiemu=no
 fi
 AC_SUBST([enable_efiemu])
 
-if test "x$target_m32" = x1; then
-  # Force 32-bit mode.
-  TARGET_CFLAGS="$TARGET_CFLAGS -m32"
-  TARGET_CCASFLAGS="$TARGET_CCASFLAGS -m32"
-  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -m32"
-  TARGET_LDFLAGS="$TARGET_LDFLAGS -m32"
-  TARGET_MODULE_FORMAT="elf32"
-fi
-
-if test "x$target_m64" = x1; then
-  # Force 64-bit mode.
-  TARGET_CFLAGS="$TARGET_CFLAGS -m64"
-  TARGET_CCASFLAGS="$TARGET_CCASFLAGS -m64"
-  TARGET_CPPFLAGS="$TARGET_CPPFLAGS -m64"
-  TARGET_LDFLAGS="$TARGET_LDFLAGS -m64"
-  TARGET_MODULE_FORMAT="elf64"
-fi
-
 case "$target_os" in
   cygwin)
     ;;
-  freebsd)
+  freebsd | kfreebsd*-gnu)
     if test x"$target_cpu" = xi386; then
       TARGET_LDFLAGS="$TARGET_LDFLAGS -Wl,-melf_i386_fbsd"
     fi
@@ -691,8 +730,7 @@ esac
 if test "$target_cpu" = x86_64; then
   # Use large model to support 4G memory
   AC_CACHE_CHECK([whether option -mcmodel=large works], grub_cv_cc_mcmodel, [
-    SAVED_CFLAGS=$CFLAGS
-    CFLAGS="$CFLAGS -m64 -mcmodel=large"
+    CFLAGS="$TARGET_CFLAGS -m64 -mcmodel=large"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
 		      [grub_cv_cc_mcmodel=yes],
 		      [grub_cv_cc_mcmodel=no])
@@ -707,7 +745,7 @@ fi
 if test "$target_cpu"-"$platform" = x86_64-efi; then
   # EFI writes to stack below %rsp, we must not use the red zone
   AC_CACHE_CHECK([whether option -mno-red-zone works], grub_cv_cc_no_red_zone, [
-    CFLAGS="$CFLAGS -m64 -mno-red-zone"
+    CFLAGS="$TARGET_CFLAGS -m64 -mno-red-zone"
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
 		      [grub_cv_cc_no_red_zone=yes],
 		      [grub_cv_cc_no_red_zone=no])
@@ -761,47 +799,6 @@ if test "$target_cpu" = arm; then
   fi
 fi
 
-AC_ARG_ENABLE([werror],
-	      [AS_HELP_STRING([--disable-werror],
-                             [do not use -Werror when building GRUB])])
-if test x"$enable_werror" != xno ; then
-  TARGET_CFLAGS="$TARGET_CFLAGS -Werror"
-  HOST_CFLAGS="$HOST_CFLAGS -Werror"
-fi
-
-TARGET_CPP="$TARGET_CC -E"
-TARGET_CCAS=$TARGET_CC
-
-GRUB_TARGET_CPU="${target_cpu}"
-GRUB_PLATFORM="${platform}"
-
-AC_SUBST(GRUB_TARGET_CPU)
-AC_SUBST(GRUB_PLATFORM)
-
-AC_SUBST(TARGET_OBJCONV)
-AC_SUBST(TARGET_CPP)
-AC_SUBST(TARGET_CCAS)
-AC_SUBST(TARGET_OBJ2ELF)
-AC_SUBST(TARGET_APPLE_CC)
-AC_SUBST(TARGET_MODULE_FORMAT)
-
-AC_SUBST(TARGET_CFLAGS)
-AC_SUBST(TARGET_LDFLAGS)
-AC_SUBST(TARGET_CPPFLAGS)
-AC_SUBST(TARGET_CCASFLAGS)
-
-AC_SUBST(TARGET_IMG_LDSCRIPT)
-AC_SUBST(TARGET_IMG_LDFLAGS)
-AC_SUBST(TARGET_IMG_CFLAGS)
-AC_SUBST(TARGET_IMG_BASE_LDOPT)
-
-AC_SUBST(HOST_CFLAGS)
-AC_SUBST(HOST_LDFLAGS)
-AC_SUBST(HOST_CPPFLAGS)
-AC_SUBST(HOST_CCASFLAGS)
-
-AC_SUBST(BUILD_LIBM)
-
 # Set them to their new values for the tests below.
 CC="$TARGET_CC"
 if test "x$TARGET_APPLE_CC" = x1 ; then
@@ -810,17 +807,19 @@ else
 CFLAGS="$TARGET_CFLAGS -nostdlib -Wl,--defsym,___main=0x8100 -Wno-error"
 fi
 CPPFLAGS="$TARGET_CPPFLAGS"
-if test x$target_cpu = xi386 || test x$target_cpu = xx86_64 ; then
-LIBS=
+if test x$target_cpu = xi386 || test x$target_cpu = xx86_64 || test "x$grub_cv_cc_target_clang" = xyes ; then
+TARGET_LIBGCC=
 else
-LIBS=-lgcc
+TARGET_LIBGCC=-lgcc
 fi
+
+LIBS="$TARGET_LIBGCC"
 
 grub_ASM_USCORE
 if test x$grub_cv_asm_uscore = xyes; then
-CFLAGS="$CFLAGS -Wl,--defsym,_abort=_main"
+CFLAGS="$TARGET_CFLAGS -Wl,--defsym,_abort=_main"
 else
-CFLAGS="$CFLAGS -Wl,--defsym,abort=main"
+CFLAGS="$TARGET_CFLAGS -Wl,--defsym,abort=main"
 fi
 
 # Check for libgcc symbols
@@ -843,7 +842,7 @@ if test "x$target_cpu" = xi386; then
   if test "$platform" != emu && test "x$TARGET_APPLE_CC" != x1 ; then
     if test ! -z "$TARGET_IMG_LDSCRIPT"; then
       # Check symbols provided by linker script.
-      CFLAGS="$TARGET_CFLAGS -nostdlib ${TARGET_IMG_LDFLAGS_AC} ${TARGET_IMG_BASE_LDOPT},8000 -Wl,--defsym,___main=0x8100"
+      CFLAGS="$TARGET_CFLAGS -nostdlib ${TARGET_IMG_LDFLAGS_AC} ${TARGET_IMG_BASE_LDOPT},0x8000 -Wl,--defsym,___main=0x8100"
     fi
     grub_CHECK_BSS_START_SYMBOL
     grub_CHECK_END_SYMBOL
@@ -871,13 +870,11 @@ fi
 fi
 
 AC_CACHE_CHECK([whether -Wtrampolines work], [grub_cv_cc_wtrampolines], [
-  SAVED_CFLAGS="$CFLAGS"
-  CFLAGS="$TARGET_CFLAGS -Wtrampolines"
+  CFLAGS="$TARGET_CFLAGS -Wtrampolines -Werror"
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>
 int va_arg_func (int fixed, va_list args);]], [[]])],
       [grub_cv_cc_wtrampolines=yes],
       [grub_cv_cc_wtrampolines=no])
-  CFLAGS="$SAVED_CFLAGS"
 ])
 
 if test x"$grub_cv_cc_wtrampolines" = xyes ; then
@@ -1021,6 +1018,13 @@ fi
 AC_SUBST([enable_grub_emu_sdl])
 AC_SUBST([enable_grub_emu_usb])
 AC_SUBST([enable_grub_emu_pci])
+
+else
+
+# Ignore --enable-emu-* if platform is not emu
+enable_grub_emu_sdl=no
+enable_grub_emu_usb=no
+enable_grub_emu_pci=no
 fi
 
 AC_ARG_ENABLE([grub-mkfont],
@@ -1316,11 +1320,61 @@ AC_SUBST(PACKAGE)
 AC_SUBST(VERSION)
 AC_SUBST(NEED_REGISTER_FRAME_INFO)
 
+AC_ARG_ENABLE([werror],
+	      [AS_HELP_STRING([--disable-werror],
+                             [do not use -Werror when building GRUB])])
+if test x"$enable_werror" != xno ; then
+  TARGET_CFLAGS="$TARGET_CFLAGS -Werror"
+  HOST_CFLAGS="$HOST_CFLAGS -Werror"
+fi
+
+if test "x$grub_cv_cc_target_clang" = xno; then
+   TARGET_LDFLAGS_STATIC_LIBGCC="-static-libgcc"
+else
+   TARGET_LDFLAGS_STATIC_LIBGCC=
+fi
+
+TARGET_CPP="$TARGET_CC -E"
+TARGET_CCAS=$TARGET_CC
+
+GRUB_TARGET_CPU="${target_cpu}"
+GRUB_PLATFORM="${platform}"
+
+AC_SUBST(GRUB_TARGET_CPU)
+AC_SUBST(GRUB_PLATFORM)
+
+AC_SUBST(TARGET_OBJCONV)
+AC_SUBST(TARGET_LIBGCC)
+AC_SUBST(TARGET_LDFLAGS_STATIC_LIBGCC)
+AC_SUBST(TARGET_CPP)
+AC_SUBST(TARGET_CCAS)
+AC_SUBST(TARGET_OBJ2ELF)
+AC_SUBST(TARGET_APPLE_CC)
+AC_SUBST(TARGET_MODULE_FORMAT)
+
+AC_SUBST(TARGET_CFLAGS)
+AC_SUBST(TARGET_LDFLAGS)
+AC_SUBST(TARGET_CPPFLAGS)
+AC_SUBST(TARGET_CCASFLAGS)
+
+AC_SUBST(TARGET_IMG_LDSCRIPT)
+AC_SUBST(TARGET_IMG_LDFLAGS)
+AC_SUBST(TARGET_IMG_CFLAGS)
+AC_SUBST(TARGET_IMG_BASE_LDOPT)
+
+AC_SUBST(HOST_CFLAGS)
+AC_SUBST(HOST_LDFLAGS)
+AC_SUBST(HOST_CPPFLAGS)
+AC_SUBST(HOST_CCASFLAGS)
+
+AC_SUBST(BUILD_LIBM)
+
 #
 # Automake conditionals
 #
 
 AM_CONDITIONAL([COND_emu], [test x$platform = xemu])
+AM_CONDITIONAL([COND_clang], [test x$grub_cv_cc_target_clang = xyes])
 AM_CONDITIONAL([COND_i386_pc], [test x$target_cpu = xi386 -a x$platform = xpc])
 AM_CONDITIONAL([COND_i386_efi], [test x$target_cpu = xi386 -a x$platform = xefi])
 AM_CONDITIONAL([COND_ia64_efi], [test x$target_cpu = xia64 -a x$platform = xefi])
@@ -1355,10 +1409,8 @@ AM_CONDITIONAL([COND_GRUB_EMU_USB], [test x$enable_grub_emu_usb = xyes])
 AM_CONDITIONAL([COND_GRUB_EMU_SDL], [test x$enable_grub_emu_sdl = xyes])
 AM_CONDITIONAL([COND_GRUB_EMU_PCI], [test x$enable_grub_emu_pci = xyes])
 AM_CONDITIONAL([COND_GRUB_MKFONT], [test x$enable_grub_mkfont = xyes])
-AM_CONDITIONAL([COND_BUILD_GRUB_MKFONT], [test x$enable_build_grub_mkfont = xyes])
 AM_CONDITIONAL([COND_GRUB_MOUNT], [test x$enable_grub_mount = xyes])
 AM_CONDITIONAL([COND_HAVE_FONT_SOURCE], [test x$FONT_SOURCE != x])
-AM_CONDITIONAL([COND_GRUB_PE2ELF], [test x$TARGET_OBJ2ELF != x])
 AM_CONDITIONAL([COND_APPLE_CC], [test x$TARGET_APPLE_CC = x1])
 AM_CONDITIONAL([COND_ENABLE_EFIEMU], [test x$enable_efiemu = xyes])
 AM_CONDITIONAL([COND_ENABLE_CACHE_STATS], [test x$DISK_CACHE_STATS = x1])

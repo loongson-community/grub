@@ -701,6 +701,26 @@ you may run those commands directly to install GRUB, without using
 with the internals of GRUB. Installing a boot loader on a running OS may be
 extremely dangerous.
 
+On EFI systems for fixed disk install you have to mount EFI System Partition.
+If you mount it at @file{/boot/efi} then you don't need any special arguments:
+
+@example
+# @kbd{grub-install}
+@end example
+
+Otherwise you need to specify where your EFI System partition is mounted:
+
+@example
+# @kbd{grub-install --efi-directory=/mnt/efi}
+@end example
+
+For removable installs you have to use @option{--removable} and specify both
+@option{--boot-directory} and @option{--efi-directory}:
+
+@example
+# @kbd{grub-install --efi-directory=/mnt/usb --boot-directory=/mnt/usb/boot --removable}
+@end example
+
 @node Making a GRUB bootable CD-ROM
 @section Making a GRUB bootable CD-ROM
 
@@ -1234,14 +1254,14 @@ Valid keys in @file{/etc/default/grub} are as follows:
 @item GRUB_DEFAULT
 The default menu entry.  This may be a number, in which case it identifies
 the Nth entry in the generated menu counted from zero, or the title of a
-menu entry, or the special string @samp{saved}.  Using the title may be
+menu entry, or the special string @samp{saved}.  Using the id may be
 useful if you want to set a menu entry as the default even though there may
 be a variable number of entries before it.
 
 For example, if you have:
 
 @verbatim
-menuentry 'Example GNU/Linux distribution' --class gnu-linux {
+menuentry 'Example GNU/Linux distribution' --class gnu-linux --id example-gnu-linux {
 	...
 }
 @end verbatim
@@ -1249,8 +1269,12 @@ menuentry 'Example GNU/Linux distribution' --class gnu-linux {
 then you can make this the default using:
 
 @example
-GRUB_DEFAULT='Example GNU/Linux distribution'
+GRUB_DEFAULT=example-gnu-linux
 @end example
+
+Previously it was documented the way to use entry title. While this still
+works it's not recommended since titles often contain unstable device names
+and may be translated
 
 If you set this to @samp{saved}, then the default menu entry will be that
 saved by @samp{GRUB_SAVEDEFAULT}, @command{grub-set-default}, or
@@ -2447,6 +2471,8 @@ button.  @samp{GRUB_BUTTON_CMOS_ADDRESS} is vendor-specific and partially
 model-specific.  Values known to the GRUB team are:
 
 @table @key
+@item Dell XPS M1330M
+121:3
 @item Dell XPS M1530
 85:3
 @item Dell Latitude E4300
@@ -3088,7 +3114,8 @@ to go beyond the current 16 colors.
 This variable may be set to enable debugging output from various components
 of GRUB.  The value is a list of debug facility names separated by
 whitespace or @samp{,}, or @samp{all} to enable all available debugging
-output.
+output. The facility names are the first argument to grub_dprintf. Consult
+source for more details.
 
 
 @node default
@@ -3096,7 +3123,21 @@ output.
 
 If this variable is set, it identifies a menu entry that should be selected
 by default, possibly after a timeout (@pxref{timeout}).  The entry may be
-identified by number or by title.
+identified by number or by id.
+
+For example, if you have:
+
+@verbatim
+menuentry 'Example GNU/Linux distribution' --class gnu-linux --id example-gnu-linux {
+	...
+}
+@end verbatim
+
+then you can make this the default using:
+
+@example
+default=example-gnu-linux
+@end example
 
 If the entry is in a submenu, then it must be identified using the titles of
 each of the submenus starting from the top level followed by the number or
@@ -3136,7 +3177,8 @@ If this variable is set, it sets the resolution used on the @samp{gfxterm}
 graphical terminal.  Note that you can only use modes which your graphics
 card supports via VESA BIOS Extensions (VBE), so for example native LCD
 panel resolutions may not be available.  The default is @samp{auto}, which
-selects a platform-specific default that should look reasonable.
+selects a platform-specific default that should look reasonable. Supported
+modes can be listed by @samp{videoinfo} command in GRUB.
 
 The resolution may be specified as a sequence of one or more modes,
 separated by commas (@samp{,}) or semicolons (@samp{;}); each will be tried
@@ -3680,6 +3722,8 @@ you forget a command, you can run the command @command{help}
 * lsfonts::                     List loaded fonts
 * lsmod::                       Show loaded modules
 * md5sum::                      Compute or check MD5 hash
+* module::                      Load module for multiboot kernel
+* multiboot::                   Load multiboot compliant kernel
 * nativedisk::                  Switch to native disk drivers
 * normal::                      Enter normal mode
 * normal_exit::                 Exit from normal mode
@@ -4369,7 +4413,6 @@ List loaded fonts.
 Show list of loaded modules.
 @end deffn
 
-
 @node md5sum
 @subsection md5sum
 
@@ -4378,6 +4421,34 @@ Alias for @code{hashsum --hash md5 arg @dots{}}. See command @command{hashsum}
 (@pxref{hashsum}) for full description.
 @end deffn
 
+@node module
+@subsection module
+
+@deffn Command module [--nounzip] file [arguments]
+Load a module for multiboot kernel image.  The rest of the
+line is passed verbatim as the module command line.
+@end deffn
+
+@node multiboot
+@subsection multiboot
+
+@deffn Command multiboot [--quirk-bad-kludge] [--quirk-modules-after-kernel] file @dots{}
+Load a multiboot kernel image from @var{file}.  The rest of the
+line is passed verbatim as the @dfn{kernel command-line}.  Any module must
+be reloaded after using this command (@pxref{module}).
+
+Some kernels have known problems. You need to specify --quirk-* for those.
+--quirk-bad-kludge is a problem seen in several products that they include
+loading kludge information with invalid data in ELF file. GRUB prior to 0.97
+and some custom builds prefered ELF information while 0.97 and GRUB 2
+use kludge. Use this option to ignore kludge.
+Known affected systems: old Solaris, SkyOS.
+
+--quirk-modules-after-kernel is needed for kernels which load at relatively
+high address e.g. 16MiB mark and can't cope with modules stuffed between
+1MiB mark and beginning of the kernel.
+Known afftected systems: VMWare.
+@end deffn
 
 @node nativedisk
 @subsection nativedisk
@@ -5340,9 +5411,8 @@ may halt or otherwise impact the boot process.
 
 GRUB uses GPG-style detached signatures (meaning that a file
 @file{foo.sig} will be produced when file @file{foo} is signed), and
-currently supports the DSA signing algorithm.  Both 2048-bit and
-3072-bit keys are supported. A signing key can be generated as
-follows:
+currently supports the DSA and RSA signing algorithms. A signing key
+can be generated as follows:
 
 @example
 gpg --gen-key

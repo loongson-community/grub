@@ -62,11 +62,22 @@
 #define ARRAY_SIZE(array) (sizeof (array) / sizeof (array[0]))
 #define COMPILE_TIME_ASSERT(cond) switch (0) { case 1: case !(cond): ; }
 
-#define grub_dprintf(condition, fmt, args...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, fmt, ## args)
+#define grub_dprintf(condition, ...) grub_real_dprintf(GRUB_FILE, __LINE__, condition, __VA_ARGS__)
 
 void *EXPORT_FUNC(grub_memmove) (void *dest, const void *src, grub_size_t n);
 char *EXPORT_FUNC(grub_strcpy) (char *dest, const char *src);
-char *EXPORT_FUNC(grub_strncpy) (char *dest, const char *src, int c);
+
+static inline char *
+grub_strncpy (char *dest, const char *src, int c)
+{
+  char *p = dest;
+
+  while ((*p++ = *src++) != '\0' && --c)
+    ;
+
+  return dest;
+}
+
 static inline char *
 grub_stpcpy (char *dest, const char *src)
 {
@@ -85,42 +96,6 @@ static inline void *
 grub_memcpy (void *dest, const void *src, grub_size_t n)
 {
   return grub_memmove (dest, src, n);
-}
-
-static inline char *
-grub_strcat (char *dest, const char *src)
-{
-  char *p = dest;
-
-  while (*p)
-    p++;
-
-  while ((*p = *src) != '\0')
-    {
-      p++;
-      src++;
-    }
-
-  return dest;
-}
-
-static inline char *
-grub_strncat (char *dest, const char *src, int c)
-{
-  char *p = dest;
-
-  while (*p)
-    p++;
-
-  while (c-- && (*p = *src) != '\0')
-    {
-      p++;
-      src++;
-    }
-
-  *p = '\0';
-
-  return dest;
 }
 
 /* Prototypes for aliases.  */
@@ -394,7 +369,6 @@ char *EXPORT_FUNC(grub_xasprintf) (const char *fmt, ...)
      __attribute__ ((format (GNU_PRINTF, 1, 2))) WARN_UNUSED_RESULT;
 char *EXPORT_FUNC(grub_xvasprintf) (const char *fmt, va_list args) WARN_UNUSED_RESULT;
 void EXPORT_FUNC(grub_exit) (void) __attribute__ ((noreturn));
-void EXPORT_FUNC(grub_abort) (void) __attribute__ ((noreturn));
 grub_uint64_t EXPORT_FUNC(grub_divmod64) (grub_uint64_t n,
 					  grub_uint64_t d,
 					  grub_uint64_t *r);
@@ -490,9 +464,9 @@ extern struct grub_boot_time *EXPORT_VAR(grub_boot_time_head);
 void EXPORT_FUNC(grub_real_boot_time) (const char *file,
 				       const int line,
 				       const char *fmt, ...) __attribute__ ((format (GNU_PRINTF, 3, 4)));
-#define grub_boot_time(fmt, args...) grub_real_boot_time(GRUB_FILE, __LINE__, fmt, ## args)
+#define grub_boot_time(...) grub_real_boot_time(GRUB_FILE, __LINE__, __VA_ARGS__)
 #else
-#define grub_boot_time(fmt, args...) 
+#define grub_boot_time(...)
 #endif
 
 #define grub_max(a, b) (((a) > (b)) ? (a) : (b))

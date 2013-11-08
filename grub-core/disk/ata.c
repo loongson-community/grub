@@ -108,6 +108,9 @@ grub_ata_identify (struct grub_ata *dev)
   grub_uint16_t *info16;
   grub_err_t err;
 
+  if (dev->atapi)
+    return grub_atapi_identify (dev);
+
   info64 = grub_malloc (GRUB_DISK_SECTOR_SIZE);
   info32 = (grub_uint32_t *) info64;
   info16 = (grub_uint16_t *) info64;
@@ -129,7 +132,7 @@ grub_ata_identify (struct grub_ata *dev)
       grub_free (info16);
       grub_errno = GRUB_ERR_NONE;
       if ((sts & (GRUB_ATA_STATUS_BUSY | GRUB_ATA_STATUS_DRQ
-	  | GRUB_ATA_STATUS_ERR)) == GRUB_ATA_STATUS_ERR
+		   | GRUB_ATA_STATUS_ERR)) == GRUB_ATA_STATUS_ERR
 	  && (parms.taskfile.error & 0x04 /* ABRT */))
 	/* Device without ATA IDENTIFY, try ATAPI.  */
 	return grub_atapi_identify (dev);
@@ -285,7 +288,6 @@ grub_ata_readwrite (grub_disk_t disk, grub_disk_addr_t sector,
 
   if (addressing == GRUB_ATA_LBA48 && ((sector + size) >> 28) != 0)
     {
-      batch = 65536;
       if (ata->dma)
 	{
 	  cmd = GRUB_ATA_CMD_READ_SECTORS_DMA_EXT;
@@ -301,10 +303,6 @@ grub_ata_readwrite (grub_disk_t disk, grub_disk_addr_t sector,
     {
       if (addressing == GRUB_ATA_LBA48)
 	addressing = GRUB_ATA_LBA;
-      if (addressing != GRUB_ATA_CHS)
-	batch = 256;
-      else
-	batch = 1;
       if (ata->dma)
 	{
 	  cmd = GRUB_ATA_CMD_READ_SECTORS_DMA;
@@ -317,8 +315,10 @@ grub_ata_readwrite (grub_disk_t disk, grub_disk_addr_t sector,
 	}
     }
 
-  if (batch > (ata->maxbuffer >> ata->log_sector_size))
-    batch = (ata->maxbuffer >> ata->log_sector_size);
+  if (addressing != GRUB_ATA_CHS)
+    batch = 256;
+  else
+    batch = 1;
 
   while (nsectors < size)
     {
@@ -366,7 +366,7 @@ grub_ata_real_open (int id, int bus)
   struct grub_ata *ata;
   grub_ata_dev_t p;
 
-  ata = grub_malloc (sizeof (*ata));
+  ata = grub_zalloc (sizeof (*ata));
   if (!ata)
     return NULL;
   for (p = grub_ata_dev_list; p; p = p->next)
@@ -464,6 +464,10 @@ grub_ata_open (const char *name, grub_disk_t disk)
     return grub_error (GRUB_ERR_UNKNOWN_DEVICE, "not an ATA harddisk");
 
   disk->total_sectors = ata->size;
+  disk->max_agglomerate = (ata->maxbuffer >> (GRUB_DISK_CACHE_BITS + GRUB_DISK_SECTOR_BITS));
+  if (disk->max_agglomerate > (256U >> (GRUB_DISK_CACHE_BITS + GRUB_DISK_SECTOR_BITS - ata->log_sector_size)))
+    disk->max_agglomerate = (256U >> (GRUB_DISK_CACHE_BITS + GRUB_DISK_SECTOR_BITS - ata->log_sector_size));
+
   disk->log_sector_size = ata->log_sector_size;
 
   disk->id = grub_make_scsi_id (id, bus, 0);

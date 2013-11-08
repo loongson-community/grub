@@ -1,6 +1,6 @@
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 1999,2000,2001,2002,2003,2004,2005,2007,2008,2009  Free Software Foundation, Inc.
+ *  Copyright (C) 1999,2000,2001,2002,2003,2004,2005,2007,2008,2009,2010,2011,2012,2013  Free Software Foundation, Inc.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@
 #include <grub/video.h>
 #include <grub/acpi.h>
 #include <grub/i18n.h>
+#include <grub/net.h>
 
 #if defined (GRUB_MACHINE_EFI)
 #include <grub/efi/efi.h>
@@ -156,6 +157,8 @@ grub_multiboot_load (grub_file_t file, const char *filename)
 	      case MULTIBOOT_TAG_TYPE_EFI64:
 	      case MULTIBOOT_TAG_TYPE_ACPI_OLD:
 	      case MULTIBOOT_TAG_TYPE_ACPI_NEW:
+	      case MULTIBOOT_TAG_TYPE_NETWORK:
+	      case MULTIBOOT_TAG_TYPE_EFI_MMAP:
 		break;
 
 	      default:
@@ -295,9 +298,68 @@ acpiv2_size (void)
 #endif
 }
 
+#ifdef GRUB_MACHINE_EFI
+
+static grub_efi_uintn_t efi_mmap_size = 0;
+
+/* Find the optimal number of pages for the memory map. Is it better to
+   move this code to efi/mm.c?  */
+static void
+find_efi_mmap_size (void)
+{
+  efi_mmap_size = (1 << 12);
+  while (1)
+    {
+      int ret;
+      grub_efi_memory_descriptor_t *mmap;
+      grub_efi_uintn_t desc_size;
+      grub_efi_uintn_t cur_mmap_size = efi_mmap_size;
+
+      mmap = grub_malloc (cur_mmap_size);
+      if (! mmap)
+	return;
+
+      ret = grub_efi_get_memory_map (&cur_mmap_size, mmap, 0, &desc_size, 0);
+      grub_free (mmap);
+
+      if (ret < 0)
+	return;
+      else if (ret > 0)
+	break;
+
+      if (efi_mmap_size < cur_mmap_size)
+	efi_mmap_size = cur_mmap_size;
+      efi_mmap_size += (1 << 12);
+    }
+
+  /* Increase the size a bit for safety, because GRUB allocates more on
+     later, and EFI itself may allocate more.  */
+  efi_mmap_size += (3 << 12);
+
+  efi_mmap_size = ALIGN_UP (efi_mmap_size, 4096);
+}
+#endif
+
+static grub_size_t
+net_size (void)
+{
+  struct grub_net_network_level_interface *net;
+  grub_size_t ret = 0;
+
+  FOR_NET_NETWORK_LEVEL_INTERFACES(net)
+    if (net->dhcp_ack)
+      ret += ALIGN_UP (sizeof (struct multiboot_tag_network) + net->dhcp_acklen,
+		       MULTIBOOT_TAG_ALIGN);
+  return ret;
+}
+
 static grub_size_t
 grub_multiboot_get_mbi_size (void)
 {
+#ifdef GRUB_MACHINE_EFI
+  if (!efi_mmap_size)
+    find_efi_mmap_size ();    
+#endif
   return 2 * sizeof (grub_uint32_t) + sizeof (struct multiboot_tag)
     + (sizeof (struct multiboot_tag_string)
        + ALIGN_UP (cmdline_size, MULTIBOOT_TAG_ALIGN))
@@ -318,6 +380,11 @@ grub_multiboot_get_mbi_size (void)
     + ALIGN_UP (sizeof (struct multiboot_tag_old_acpi)
 		+ sizeof (struct grub_acpi_rsdp_v10), MULTIBOOT_TAG_ALIGN)
     + acpiv2_size ()
+    + net_size ()
+#ifdef GRUB_MACHINE_EFI
+    + ALIGN_UP (sizeof (struct multiboot_tag_efi_mmap)
+		+ efi_mmap_size, MULTIBOOT_TAG_ALIGN)
+#endif
     + sizeof (struct multiboot_tag_vbe) + MULTIBOOT_TAG_ALIGN - 1
     + sizeof (struct multiboot_tag_apm) + MULTIBOOT_TAG_ALIGN - 1;
 }
@@ -685,6 +752,22 @@ grub_multiboot_make_mbi (grub_uint32_t *target)
        / sizeof (grub_properly_aligned_t);
   }
 
+  {
+    struct grub_net_network_level_interface *net;
+
+    FOR_NET_NETWORK_LEVEL_INTERFACES(net)
+      if (net->dhcp_ack)
+	{
+	  struct multiboot_tag_network *tag
+	    = (struct multiboot_tag_network *) ptrorig;
+	  tag->type = MULTIBOOT_TAG_TYPE_NETWORK;
+	  tag->size = sizeof (struct multiboot_tag_network) + net->dhcp_acklen;
+	  grub_memcpy (tag->dhcpack, net->dhcp_ack, net->dhcp_acklen);
+	  ptrorig += ALIGN_UP (tag->size, MULTIBOOT_TAG_ALIGN)
+	    / sizeof (grub_properly_aligned_t);
+	}
+  }
+
   if (bootdev_set)
     {
       struct multiboot_tag_bootdev *tag
@@ -757,6 +840,28 @@ grub_multiboot_make_mbi (grub_uint32_t *target)
 	ptrorig += ALIGN_UP (tag->size, MULTIBOOT_TAG_ALIGN)
 	  / sizeof (grub_properly_aligned_t);
       }
+  }
+#endif
+
+#ifdef GRUB_MACHINE_EFI
+  {
+    struct multiboot_tag_efi_mmap *tag = (struct multiboot_tag_efi_mmap *) ptrorig;
+    grub_efi_uintn_t efi_desc_size;
+    grub_efi_uint32_t efi_desc_version;
+
+    tag->type = MULTIBOOT_TAG_TYPE_EFI_MMAP;
+    tag->size = sizeof (*tag) + efi_mmap_size;
+
+    err = grub_efi_finish_boot_services (&efi_mmap_size, tag->efi_mmap, NULL,
+					 &efi_desc_size, &efi_desc_version);
+    if (err)
+      return err;
+    tag->descr_size = efi_desc_size;
+    tag->descr_vers = efi_desc_version;
+    tag->size = sizeof (*tag) + efi_mmap_size;
+
+    ptrorig += ALIGN_UP (tag->size, MULTIBOOT_TAG_ALIGN)
+      / sizeof (grub_properly_aligned_t);
   }
 #endif
 
@@ -873,10 +978,7 @@ grub_multiboot_add_module (grub_addr_t start, grub_size_t size,
   if (modules_last)
     modules_last->next = newmod;
   else
-    {
-      modules = newmod;
-      modules_last->next = NULL;
-    }
+    modules = newmod;
   modules_last = newmod;
 
   modcnt++;

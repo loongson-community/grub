@@ -363,8 +363,6 @@ static ush mask_bits[] =
   0x01ff, 0x03ff, 0x07ff, 0x0fff, 0x1fff, 0x3fff, 0x7fff, 0xffff
 };
 
-#pragma GCC diagnostic ignored "-Wunsafe-loop-optimizations"
-
 #define NEEDBITS(n) do {while(k<(n)){b|=((ulg)get_byte(gzio))<<k;k+=8;}} while (0)
 #define DUMPBITS(n) do {b>>=(n);k-=(n);} while (0)
 
@@ -544,7 +542,7 @@ huft_build (unsigned *b,	/* code lengths in bits (all assumed <= BMAX) */
 	      z = 1 << j;	/* table entries for j-bit table */
 
 	      /* allocate and link in new table */
-	      q = (struct huft *) grub_malloc ((z + 1) * sizeof (struct huft));
+	      q = (struct huft *) grub_zalloc ((z + 1) * sizeof (struct huft));
 	      if (! q)
 		{
 		  if (h)
@@ -1118,6 +1116,8 @@ initialize_tables (grub_gzio_t gzio)
   /* Reset memory allocation stuff.  */
   huft_free (gzio->tl);
   huft_free (gzio->td);
+  gzio->tl = NULL;
+  gzio->td = NULL;
 }
 
 

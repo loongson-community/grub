@@ -34,30 +34,36 @@ grub_env_write_readonly (struct grub_env_var *var __attribute__ ((unused)),
 
 static void
 set_env_limn_ro (const char *intername, const char *suffix,
-		 char *value, grub_size_t len)
+		 const char *value, grub_size_t len)
 {
-  char c;
-  char *varname;
+  char *varname, *varvalue;
   char *ptr;
   varname = grub_xasprintf ("net_%s_%s", intername, suffix);
   if (!varname)
     return;
   for (ptr = varname; *ptr; ptr++)
     if (*ptr == ':')
-      *ptr = '_';    
-  c = value[len];
-  value[len] = 0;
-  grub_env_set (varname, value);
-  value[len] = c;
+      *ptr = '_';
+  varvalue = grub_malloc (len + 1);
+  if (!varvalue)
+    {
+      grub_free (varname);
+      return;
+    }
+
+  grub_memcpy (varvalue, value, len);
+  varvalue[len] = 0;
+  grub_env_set (varname, varvalue);
   grub_register_variable_hook (varname, 0, grub_env_write_readonly);
   grub_env_export (varname);
   grub_free (varname);
+  grub_free (varvalue);
 }
 
 static void
-parse_dhcp_vendor (const char *name, void *vend, int limit, int *mask)
+parse_dhcp_vendor (const char *name, const void *vend, int limit, int *mask)
 {
-  grub_uint8_t *ptr, *ptr0;
+  const grub_uint8_t *ptr, *ptr0;
 
   ptr = ptr0 = vend;
 
@@ -123,25 +129,26 @@ parse_dhcp_vendor (const char *name, void *vend, int limit, int *mask)
 		struct grub_net_network_level_address s;
 		s.type = GRUB_NET_NETWORK_LEVEL_PROTOCOL_IPV4;
 		s.ipv4 = grub_get_unaligned32 (ptr);
+		s.option = DNS_OPTION_PREFER_IPV4;
 		grub_net_add_dns_server (&s);
 		ptr += 4;
 	      }
 	  }
 	  continue;
 	case GRUB_NET_BOOTP_HOSTNAME:
-	  set_env_limn_ro (name, "hostname", (char *) ptr, taglength);
+	  set_env_limn_ro (name, "hostname", (const char *) ptr, taglength);
 	  break;
 
 	case GRUB_NET_BOOTP_DOMAIN:
-	  set_env_limn_ro (name, "domain", (char *) ptr, taglength);
+	  set_env_limn_ro (name, "domain", (const char *) ptr, taglength);
 	  break;
 
 	case GRUB_NET_BOOTP_ROOT_PATH:
-	  set_env_limn_ro (name, "rootpath", (char *) ptr, taglength);
+	  set_env_limn_ro (name, "rootpath", (const char *) ptr, taglength);
 	  break;
 
 	case GRUB_NET_BOOTP_EXTENSIONS_PATH:
-	  set_env_limn_ro (name, "extensionspath", (char *) ptr, taglength);
+	  set_env_limn_ro (name, "extensionspath", (const char *) ptr, taglength);
 	  break;
 
 	  /* If you need any other options please contact GRUB
@@ -152,7 +159,7 @@ parse_dhcp_vendor (const char *name, void *vend, int limit, int *mask)
     }
 }
 
-#define OFFSET_OF(x, y) ((grub_uint8_t *)((y)->x) - (grub_uint8_t *)(y))
+#define OFFSET_OF(x, y) ((grub_size_t)((grub_uint8_t *)((y)->x) - (grub_uint8_t *)(y)))
 
 struct grub_net_network_level_interface *
 grub_net_configure_by_dhcp_ack (const char *name,

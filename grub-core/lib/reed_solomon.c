@@ -52,8 +52,16 @@ typedef unsigned char grub_uint8_t;
 #include <grub/types.h>
 #include <grub/misc.h>
 #endif
+#ifdef __i386__
+#define REED_SOLOMON_ATTRIBUTE  __attribute__ ((regparm(3)))
+#else
+#define REED_SOLOMON_ATTRIBUTE
+#endif
 void
-grub_reed_solomon_recover (void *ptr_, grub_size_t s, grub_size_t rs);
+grub_reed_solomon_recover (void *ptr_, grub_size_t s, grub_size_t rs)
+  REED_SOLOMON_ATTRIBUTE;
+#else
+#define REED_SOLOMON_ATTRIBUTE
 #endif
 
 #define GF_SIZE 8
@@ -377,14 +385,21 @@ grub_reed_solomon_add_redundancy (void *buffer, grub_size_t data_size,
 }
 #endif
 
-void
+void REED_SOLOMON_ATTRIBUTE
 grub_reed_solomon_recover (void *ptr_, grub_size_t s, grub_size_t rs)
 {
   gf_single_t *ptr = ptr_;
   gf_single_t *rptr = ptr + s;
+  grub_uint8_t *cptr;
 
   /* Nothing to do.  */
   if (!rs)
+    return;
+
+  for (cptr = rptr + rs - 1; cptr >= rptr; cptr--)
+    if (*cptr)
+      break;
+  if (rptr + rs - 1 - cptr > (grub_ssize_t) rs / 2)
     return;
 
   init_powx ();

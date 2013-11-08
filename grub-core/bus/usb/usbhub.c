@@ -195,7 +195,7 @@ grub_usb_add_hub (grub_usb_device_t dev)
 
   rescan = 1;
 
-  return GRUB_ERR_NONE;
+  return GRUB_USB_ERR_NONE;
 }
 
 static void
@@ -203,7 +203,7 @@ attach_root_port (struct grub_usb_hub *hub, int portno,
 		  grub_usb_speed_t speed)
 {
   grub_usb_device_t dev;
-  grub_err_t err;
+  grub_usb_err_t err;
 
   grub_boot_time ("After detect_dev");
 

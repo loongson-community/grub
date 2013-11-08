@@ -24,6 +24,7 @@
 #include <grub/time.h>
 #include <grub/misc.h>
 #include <grub/i386/tsc.h>
+#include <grub/i386/cpuid.h>
 #include <grub/i386/pit.h>
 #include <grub/cpu/io.h>
 
@@ -34,6 +35,35 @@ static grub_uint64_t tsc_boot_time;
 /* We assume that the tick is less than 1 ms and hence this value fits
    in 32-bit.  */
 grub_uint32_t grub_tsc_rate;
+
+/* Read the TSC value, which increments with each CPU clock cycle. */
+static __inline grub_uint64_t
+grub_get_tsc (void)
+{
+  grub_uint32_t lo, hi;
+  grub_uint32_t a,b,c,d;
+
+  /* The CPUID instruction is a 'serializing' instruction, and
+     avoids out-of-order execution of the RDTSC instruction. */
+  grub_cpuid (0,a,b,c,d);
+  /* Read TSC value.  We cannot use "=A", since this would use
+     %rax on x86_64. */
+  __asm__ __volatile__ ("rdtsc":"=a" (lo), "=d" (hi));
+
+  return (((grub_uint64_t) hi) << 32) | lo;
+}
+
+static __inline int
+grub_cpu_is_tsc_supported (void)
+{
+  grub_uint32_t a,b,c,d;
+  if (! grub_cpu_is_cpuid_supported ())
+    return 0;
+
+  grub_cpuid(1,a,b,c,d);
+
+  return (d & (1 << 4)) != 0;
+}
 
 static void
 grub_pit_wait (grub_uint16_t tics)
@@ -63,7 +93,7 @@ grub_pit_wait (grub_uint16_t tics)
              GRUB_PIT_SPEAKER_PORT);
 }
 
-grub_uint64_t
+static grub_uint64_t
 grub_tsc_get_time_ms (void)
 {
   grub_uint64_t a = grub_get_tsc () - tsc_boot_time;

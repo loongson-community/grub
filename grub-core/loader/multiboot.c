@@ -131,12 +131,6 @@ grub_multiboot_boot (void)
   if (err)
     return err;
 
-#ifdef GRUB_MACHINE_EFI
-  err = grub_efi_finish_boot_services (NULL, NULL, NULL, NULL, NULL);
-  if (err)
-    return err;
-#endif
-
 #if defined (__i386__) || defined (__x86_64__)
   grub_relocator32_boot (grub_multiboot_relocator, state, 0);
 #else
@@ -159,6 +153,8 @@ grub_multiboot_unload (void)
 
   return GRUB_ERR_NONE;
 }
+
+static grub_uint64_t highest_load;
 
 #define MULTIBOOT_LOAD_ELF64
 #include "multiboot_elfxx.c"
@@ -240,6 +236,26 @@ grub_cmd_multiboot (grub_command_t cmd __attribute__ ((unused)),
 
   grub_loader_unset ();
 
+  highest_load = 0;
+
+#ifndef GRUB_USE_MULTIBOOT2
+  grub_multiboot_quirks = GRUB_MULTIBOOT_QUIRKS_NONE;
+
+  if (argc != 0 && grub_strcmp (argv[0], "--quirk-bad-kludge") == 0)
+    {
+      argc--;
+      argv++;
+      grub_multiboot_quirks |= GRUB_MULTIBOOT_QUIRK_BAD_KLUDGE;
+    }
+
+  if (argc != 0 && grub_strcmp (argv[0], "--quirk-modules-after-kernel") == 0)
+    {
+      argc--;
+      argv++;
+      grub_multiboot_quirks |= GRUB_MULTIBOOT_QUIRK_MODULES_AFTER_KERNEL;
+    }
+#endif
+
   if (argc == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("filename expected"));
 
@@ -290,6 +306,7 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
   grub_addr_t target;
   grub_err_t err;
   int nounzip = 0;
+  grub_uint64_t lowest_addr = 0;
 
   if (argc == 0)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("filename expected"));
@@ -315,11 +332,17 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
   if (! file)
     return grub_errno;
 
+#ifndef GRUB_USE_MULTIBOOT2
+  if (grub_multiboot_quirks & GRUB_MULTIBOOT_QUIRK_MODULES_AFTER_KERNEL)
+    lowest_addr = ALIGN_UP (highest_load + 1048576, 4096);
+#endif
+
   size = grub_file_size (file);
+  if (size)
   {
     grub_relocator_chunk_t ch;
     err = grub_relocator_alloc_chunk_align (grub_multiboot_relocator, &ch,
-					    0, (0xffffffff - size) + 1,
+					    lowest_addr, (0xffffffff - size) + 1,
 					    size, MULTIBOOT_MOD_ALIGN,
 					    GRUB_RELOCATOR_PREFERENCE_NONE, 0);
     if (err)
@@ -330,6 +353,11 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
     module = get_virtual_current_address (ch);
     target = get_physical_target_address (ch);
   }
+  else
+    {
+      module = 0;
+      target = 0;
+    }
 
   err = grub_multiboot_add_module (target, size, argc - 1, argv + 1);
   if (err)
@@ -338,7 +366,7 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
       return err;
     }
 
-  if (grub_file_read (file, module, size) != size)
+  if (size && grub_file_read (file, module, size) != size)
     {
       grub_file_close (file);
       if (!grub_errno)
@@ -348,7 +376,7 @@ grub_cmd_module (grub_command_t cmd __attribute__ ((unused)),
     }
 
   grub_file_close (file);
-  return GRUB_ERR_NONE;;
+  return GRUB_ERR_NONE;
 }
 
 static grub_command_t cmd_multiboot, cmd_module;

@@ -415,12 +415,6 @@ grub_net_route_register (struct grub_net_route *route)
 		  GRUB_AS_LIST (route));
 }
 
-static inline void
-grub_net_route_unregister (struct grub_net_route *route)
-{
-  grub_list_remove (GRUB_AS_LIST (route));
-}
-
 #define FOR_NET_ROUTES(var) for (var = grub_net_routes; var; var = var->next)
 
 static int
@@ -734,8 +728,8 @@ grub_net_addr_to_str (const grub_net_network_level_address_t *target, char *buf)
   switch (target->type)
     {
     case GRUB_NET_NETWORK_LEVEL_PROTOCOL_DHCP_RECV:
-      /* TRANSLATORS: it refers to the network address.  */
-      grub_strncpy (buf, "temporary", GRUB_NET_MAX_STR_ADDR_LEN);
+      COMPILE_TIME_ASSERT (sizeof ("temporary") < GRUB_NET_MAX_STR_ADDR_LEN);
+      grub_strcpy (buf, "temporary");
       return;
     case GRUB_NET_NETWORK_LEVEL_PROTOCOL_IPV6:
       {

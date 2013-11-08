@@ -65,7 +65,7 @@ argument () {
   shift
 
   if test $# -eq 0; then
-      gettext_printf "%s: option requires an argument -- \`%s'\n" "$0" "$opt" 1>&2
+      gettext_printf "%s: option requires an argument -- \`%s'\n" "$self" "$opt" 1>&2
       exit 1
   fi
   echo $1
@@ -215,7 +215,8 @@ export GRUB_DEFAULT \
   GRUB_INIT_TUNE \
   GRUB_SAVEDEFAULT \
   GRUB_ENABLE_CRYPTODISK \
-  GRUB_BADRAM
+  GRUB_BADRAM \
+  GRUB_DISABLE_SUBMENU
 
 if test "x${grub_cfg}" != "x"; then
   rm -f "${grub_cfg}.new"

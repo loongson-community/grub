@@ -6,18 +6,6 @@ export LC_COLLATE := C
 unexport LC_ALL
 
 # Platform specific options
-if COND_i386_pc
-  CFLAGS_PLATFORM += -mrtd -mregparm=3 -freg-struct-return
-endif
-if COND_i386_qemu
-  CFLAGS_PLATFORM += -mrtd -mregparm=3 -freg-struct-return
-endif
-if COND_i386_coreboot
-  CFLAGS_PLATFORM += -mrtd -mregparm=3 -freg-struct-return
-endif
-if COND_i386_ieee1275
-  CFLAGS_PLATFORM += -mrtd -mregparm=3 -freg-struct-return
-endif
 if COND_mips_loongson
   CFLAGS_PLATFORM += -mexplicit-relocs
   CPPFLAGS_PLATFORM = -DUSE_ASCII_FALLBACK
@@ -37,11 +25,6 @@ endif
 
 # Other options
 
-if ! COND_emu
-CFLAGS_PLATFORM += -Dfloat=__grub_poison
-CFLAGS_PLATFORM += -Ddouble=__grub_poison
-endif
-
 CPPFLAGS_DEFAULT = -DGRUB_FILE=\"$(subst $(srcdir)/,,$<)\"
 CPPFLAGS_DEFAULT += -I$(builddir)
 CPPFLAGS_DEFAULT += -I$(srcdir)
@@ -54,26 +37,10 @@ CPPFLAGS_DEFAULT += -I$(top_srcdir)/grub-core/lib/libgcrypt-grub/src/
 CCASFLAGS_DEFAULT = $(CPPFLAGS_DEFAULT) -DASM_FILE=1
 BUILD_CPPFLAGS += $(CPPFLAGS_DEFAULT)
 
-LDADD_KERNEL =
-
-if ! COND_i386_pc
-if ! COND_i386_efi
-if ! COND_i386_qemu
-if ! COND_i386_coreboot
-if ! COND_i386_multiboot
-if ! COND_i386_ieee1275
-if ! COND_x86_64_efi
-LDADD_KERNEL += -lgcc
-endif
-endif
-endif
-endif
-endif
-endif
-endif
+LDADD_KERNEL = $(TARGET_LIBGCC)
 
 CFLAGS_KERNEL = $(CFLAGS_CPU) $(CFLAGS_PLATFORM) -ffreestanding
-LDFLAGS_KERNEL = $(LDFLAGS_CPU) $(LDFLAGS_PLATFORM) -nostdlib $(TARGET_LDFLAGS_OLDMAGIC) -static-libgcc
+LDFLAGS_KERNEL = $(LDFLAGS_CPU) $(LDFLAGS_PLATFORM) -nostdlib $(TARGET_LDFLAGS_OLDMAGIC) $(TARGET_LDFLAGS_STATIC_LIBGCC)
 CPPFLAGS_KERNEL = $(CPPFLAGS_CPU) $(CPPFLAGS_PLATFORM) -DGRUB_KERNEL=1
 CCASFLAGS_KERNEL = $(CCASFLAGS_CPU) $(CCASFLAGS_PLATFORM)
 if COND_CYGWIN
@@ -107,13 +74,13 @@ grubconfdir = $(sysconfdir)/grub.d
 platformdir = $(pkglibdir)/$(target_cpu)-$(platform)
 starfielddir = $(pkgdatadir)/themes/starfield
 
-CFLAGS_GNULIB = -Wno-undef -Wno-sign-compare -Wno-unused -Wno-unused-parameter -Wno-redundant-decls -Wno-unreachable-code -Wno-conversion -Wno-old-style-definition -Wno-unsafe-loop-optimizations
+CFLAGS_GNULIB = -Wno-undef -Wno-sign-compare -Wno-unused -Wno-unused-parameter -Wno-redundant-decls -Wno-unreachable-code -Wno-conversion -Wno-old-style-definition
 CPPFLAGS_GNULIB = -I$(top_builddir)/grub-core/gnulib -I$(top_srcdir)/grub-core/gnulib
 
 CFLAGS_POSIX = -fno-builtin
 CPPFLAGS_POSIX = -I$(top_srcdir)/grub-core/lib/posix_wrap
 
-CFLAGS_GCRY = -Wno-error -Wno-missing-field-initializers -Wno-redundant-decls $(CFLAGS_POSIX)
+CFLAGS_GCRY = -Wno-error -Wno-missing-field-initializers -Wno-redundant-decls -Wno-undef $(CFLAGS_POSIX)
 CPPFLAGS_GCRY = -I$(top_srcdir)/grub-core/lib/libgcrypt_wrap $(CPPFLAGS_POSIX) -D_GCRYPT_IN_LIBGCRYPT=1 -I$(top_srcdir)/include/grub/gcrypt
 
 CPPFLAGS_EFIEMU = -I$(top_srcdir)/grub-core/efiemu/runtime

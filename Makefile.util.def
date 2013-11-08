@@ -9,11 +9,13 @@ library = {
   common = grub-core/kern/command.c;
   common = grub-core/kern/device.c;
   common = grub-core/kern/disk.c;
+  common = grub-core/lib/disk.c;
   common = util/getroot.c;
   common = grub-core/osdep/unix/getroot.c;
   common = grub-core/osdep/getroot.c;
   common = grub-core/osdep/devmapper/getroot.c;
   common = grub-core/osdep/relpath.c;
+  extra_dist = grub-core/kern/disk_common.c;
   extra_dist = grub-core/osdep/unix/relpath.c;
   extra_dist = grub-core/osdep/aros/relpath.c;
   extra_dist = grub-core/osdep/windows/relpath.c;
@@ -855,6 +857,18 @@ script = {
   testcase;
   name = grub_script_strcmp;
   common = tests/grub_script_strcmp.in;
+};
+
+script = {
+  testcase;
+  name = test_sha512sum;
+  common = tests/test_sha512sum.in;
+};
+
+script = {
+  testcase;
+  name = test_unset;
+  common = tests/test_unset.in;
 };
 
 script = {

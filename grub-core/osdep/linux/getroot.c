@@ -55,6 +55,7 @@
 #include <linux/raid/md_u.h>
 #include <grub/i18n.h>
 #include <grub/emu/exec.h>
+#include <grub/btrfs.h>
 
 #define LVM_DEV_MAPPER_STRING "/dev/mapper/"
 
@@ -78,6 +79,38 @@ struct btrfs_ioctl_fs_info_args
   grub_uint64_t reserved[124];
 };
 
+struct btrfs_ioctl_ino_lookup_args
+{
+  grub_uint64_t treeid;
+  grub_uint64_t objectid;
+  char name[4080];
+};
+
+struct btrfs_ioctl_search_key
+{
+  grub_uint64_t tree_id;
+  grub_uint64_t min_objectid;
+  grub_uint64_t max_objectid;
+  grub_uint64_t min_offset;
+  grub_uint64_t max_offset;
+  grub_uint64_t min_transid;
+  grub_uint64_t max_transid;
+  grub_uint32_t min_type;
+  grub_uint32_t max_type;
+  grub_uint32_t nr_items;
+  grub_uint32_t unused[9];
+};
+
+struct btrfs_ioctl_search_args {
+  struct btrfs_ioctl_search_key key;
+  grub_uint64_t buf[(4096 - sizeof(struct btrfs_ioctl_search_key))
+		    / sizeof (grub_uint64_t)];
+};
+
+#define BTRFS_IOC_TREE_SEARCH _IOWR(0x94, 17, \
+				   struct btrfs_ioctl_search_args)
+#define BTRFS_IOC_INO_LOOKUP _IOWR(0x94, 18, \
+				   struct btrfs_ioctl_ino_lookup_args)
 #define BTRFS_IOC_DEV_INFO _IOWR(0x94, 30, \
                                  struct btrfs_ioctl_dev_info_args)
 #define BTRFS_IOC_FS_INFO _IOR(0x94, 31, \
@@ -224,6 +257,114 @@ grub_find_root_devices_from_btrfs (const char *dir)
   return ret;
 }
 
+static char *
+get_btrfs_fs_prefix (const char *mount_path)
+{
+  struct btrfs_ioctl_ino_lookup_args args;
+  struct stat st;
+  int fd;
+  grub_uint64_t tree_id, inode_id;
+  char *ret = NULL;
+
+  fd = open (mount_path, O_RDONLY);
+	  
+  if (fd < 0)
+    return NULL;
+  memset (&args, 0, sizeof(args));
+  args.objectid = GRUB_BTRFS_TREE_ROOT_OBJECTID;
+  
+  if (ioctl (fd, BTRFS_IOC_INO_LOOKUP, &args) < 0)
+    return NULL;
+  tree_id = args.treeid;
+
+  if (fstat (fd, &st) < 0)
+    return NULL;
+  inode_id = st.st_ino;
+
+  while (tree_id != GRUB_BTRFS_ROOT_VOL_OBJECTID
+	 || inode_id != GRUB_BTRFS_TREE_ROOT_OBJECTID)
+    {
+      const char *name;
+      size_t namelen;
+      struct btrfs_ioctl_search_args sargs;
+      char *old;
+
+      memset (&sargs, 0, sizeof(sargs));
+
+      if (inode_id == GRUB_BTRFS_TREE_ROOT_OBJECTID)
+	{
+	  struct grub_btrfs_root_backref *br;
+
+	  sargs.key.tree_id = 1;
+	  sargs.key.min_objectid = tree_id;
+	  sargs.key.max_objectid = tree_id;
+
+	  sargs.key.min_offset = 0;
+	  sargs.key.max_offset = ~0ULL;
+	  sargs.key.min_transid = 0;
+	  sargs.key.max_transid = ~0ULL;
+	  sargs.key.min_type = GRUB_BTRFS_ITEM_TYPE_ROOT_BACKREF;
+	  sargs.key.max_type = GRUB_BTRFS_ITEM_TYPE_ROOT_BACKREF;
+
+	  sargs.key.nr_items = 1;
+
+	  if (ioctl (fd, BTRFS_IOC_TREE_SEARCH, &sargs) < 0)
+	    return NULL;
+
+	  if (sargs.key.nr_items == 0)
+	    return NULL;
+      
+	  tree_id = sargs.buf[2];
+	  br = (struct grub_btrfs_root_backref *) (sargs.buf + 4);
+	  inode_id = br->inode_id;
+	  name = br->name;
+	  namelen = br->n;
+	}
+      else
+	{
+	  struct grub_btrfs_inode_ref *ir;
+
+	  sargs.key.tree_id = tree_id;
+	  sargs.key.min_objectid = inode_id;
+	  sargs.key.max_objectid = inode_id;
+
+	  sargs.key.min_offset = 0;
+	  sargs.key.max_offset = ~0ULL;
+	  sargs.key.min_transid = 0;
+	  sargs.key.max_transid = ~0ULL;
+	  sargs.key.min_type = GRUB_BTRFS_ITEM_TYPE_INODE_REF;
+	  sargs.key.max_type = GRUB_BTRFS_ITEM_TYPE_INODE_REF;
+
+	  if (ioctl (fd, BTRFS_IOC_TREE_SEARCH, &sargs) < 0)
+	    return NULL;
+
+	  if (sargs.key.nr_items == 0)
+	    return NULL;
+
+	  inode_id = sargs.buf[2];
+
+	  ir = (struct grub_btrfs_inode_ref *) (sargs.buf + 4);
+	  name = ir->name;
+	  namelen = ir->n;
+	}
+      old = ret;
+      ret = xmalloc (namelen + (old ? strlen (old) : 0) + 2);
+      ret[0] = '/';
+      memcpy (ret + 1, name, namelen);
+      if (old)
+	{
+	  strcpy (ret + 1 + namelen, old);
+	  free (old);
+	}
+      else
+	ret[1+namelen] = '\0';
+    }
+  if (!ret)
+    return xstrdup ("/");
+  return ret;
+}
+
+
 char **
 grub_find_root_devices_from_mountinfo (const char *dir, char **relroot)
 {
@@ -332,6 +473,7 @@ grub_find_root_devices_from_mountinfo (const char *dir, char **relroot)
   for (i = entry_len - 1; i >= 0; i--)
     {
       char **ret = NULL;
+      char *fs_prefix = NULL;
       if (!*entries[i].device)
 	continue;
 
@@ -348,45 +490,52 @@ grub_find_root_devices_from_mountinfo (const char *dir, char **relroot)
 	  if (relroot)
 	    {
 	      if (!slash)
-		*relroot = xasprintf ("/@%s", entries[i].enc_root);
+		fs_prefix = xasprintf ("/@%s", entries[i].enc_root);
 	      else if (strchr (slash + 1, '@'))
-		*relroot = xasprintf ("/%s%s", slash + 1, entries[i].enc_root);
+		fs_prefix = xasprintf ("/%s%s", slash + 1, entries[i].enc_root);
 	      else
-		*relroot = xasprintf ("/%s@%s", slash + 1, entries[i].enc_root);
+		fs_prefix = xasprintf ("/%s@%s", slash + 1,
+				       entries[i].enc_root);
 	    }
 	}
       else if (grub_strcmp (entries[i].fstype, "btrfs") == 0)
 	{
 	  ret = grub_find_root_devices_from_btrfs (dir);
-	  if (relroot)
-	    {
-	      char *ptr;
-	      *relroot = xmalloc (strlen (entries[i].enc_root) +
-				  2 + strlen (dir));
-	      ptr = grub_stpcpy (*relroot, entries[i].enc_root);
-	      if (strlen (dir) > strlen (entries[i].enc_path))
-		{
-		  while (ptr > *relroot && *(ptr - 1) == '/')
-		    ptr--;
-		  if (dir[strlen (entries[i].enc_path)] != '/')
-		    *ptr++ = '/';
-		  ptr = grub_stpcpy (ptr, dir + strlen (entries[i].enc_path));
-		}
-	      *ptr = 0;
-	    }
+	  fs_prefix = get_btrfs_fs_prefix (entries[i].enc_path);
 	}
       if (!ret)
 	{
 	  ret = xmalloc (2 * sizeof (ret[0]));
 	  ret[0] = strdup (entries[i].device);
 	  ret[1] = 0;
-	  if (relroot)
-	    *relroot = strdup (entries[i].enc_root);
 	}
-	free (buf);
-	free (entries);
-	fclose (fp);
-	return ret;
+      if (!fs_prefix)
+	fs_prefix = entries[i].enc_root;
+      if (relroot)
+	{
+	  char *ptr;
+	  grub_size_t enc_root_len = strlen (fs_prefix);
+	  grub_size_t enc_path_len = strlen (entries[i].enc_path);
+	  grub_size_t dir_strlen = strlen (dir);
+	  *relroot = xmalloc (enc_root_len +
+			      2 + dir_strlen);
+	  ptr = grub_stpcpy (*relroot, fs_prefix);
+	  if (dir_strlen > enc_path_len)
+	    {
+	      while (ptr > *relroot && *(ptr - 1) == '/')
+		ptr--;
+	      if (dir[enc_path_len] != '/')
+		*ptr++ = '/';
+	      ptr = grub_stpcpy (ptr, dir + enc_path_len);
+	    }
+	  *ptr = 0;
+	}
+      if (fs_prefix != entries[i].enc_root)
+	free (fs_prefix);
+      free (buf);
+      free (entries);
+      fclose (fp);
+      return ret;
     }
 
   free (buf);
@@ -912,4 +1061,24 @@ grub_util_get_grub_dev_os (const char *os_dev)
     }
 
   return grub_dev;
+}
+
+char *
+grub_make_system_path_relative_to_its_root_os (const char *path)
+{
+  char *bind = NULL;
+  grub_size_t len;
+  grub_free (grub_find_root_devices_from_mountinfo (path, &bind));
+  if (bind && bind[0])
+    {
+      len = strlen (bind);
+      while (len > 0 && bind[len - 1] == '/')
+	{
+	  bind[len - 1] = '\0';
+	  len--;
+	}
+      return bind;
+    }
+  grub_free (bind);
+  return NULL;
 }

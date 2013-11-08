@@ -517,6 +517,7 @@ grub_cryptodisk_open (const char *name, grub_disk_t disk)
 
   disk->data = dev;
   disk->total_sectors = dev->total_length;
+  disk->max_agglomerate = GRUB_DISK_MAX_MAX_AGGLOMERATE;
   disk->id = dev->id;
   dev->ref++;
   return GRUB_ERR_NONE;
@@ -631,10 +632,16 @@ grub_cryptodisk_write (grub_disk_t disk, grub_disk_addr_t sector,
       return grub_crypto_gcry_error (gcry_err);
     }
 
-  err = grub_disk_write (dev->source_disk,
-			  (sector << (disk->log_sector_size
-				      - GRUB_DISK_SECTOR_BITS)) + dev->offset,
-			  0, size << disk->log_sector_size, tmp);
+  /* Since ->write was called so disk.mod is loaded but be paranoid  */
+  
+  if (grub_disk_write_weak)
+    err = grub_disk_write_weak (dev->source_disk,
+				(sector << (disk->log_sector_size
+					    - GRUB_DISK_SECTOR_BITS))
+				+ dev->offset,
+				0, size << disk->log_sector_size, tmp);
+  else
+    err = grub_error (GRUB_ERR_BUG, "disk.mod not loaded");
   grub_free (tmp);
   return err;
 }

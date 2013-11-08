@@ -424,9 +424,9 @@ image = {
   cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -DGRUB_EMBED_DECOMPRESSOR=1';
 
   objcopyflags = '-O binary';
-  mips_ldflags = '-static-libgcc -Wl,-Ttext,$(TARGET_DECOMPRESSOR_LINK_ADDR)';
-  ldadd = '-lgcc';
-  cflags = '-Wno-unreachable-code -static-libgcc';
+  mips_ldflags = '$(TARGET_LDFLAGS_STATIC_LIBGCC) -Wl,-Ttext,$(TARGET_DECOMPRESSOR_LINK_ADDR)';
+  ldadd = '$(TARGET_LIBGCC)';
+  cflags = '-Wno-unreachable-code $(TARGET_LDFLAGS_STATIC_LIBGCC)';
   enable = mips;
 };
 
@@ -438,9 +438,9 @@ image = {
   cppflags = '-DGRUB_EMBED_DECOMPRESSOR=1';
 
   objcopyflags = '-O binary';
-  mips_ldflags = '-static-libgcc -Wl,-Ttext,$(TARGET_DECOMPRESSOR_LINK_ADDR)';
-  ldadd = '-lgcc';
-  cflags = '-static-libgcc';
+  mips_ldflags = '$(TARGET_LDFLAGS_STATIC_LIBGCC) -Wl,-Ttext,$(TARGET_DECOMPRESSOR_LINK_ADDR)';
+  ldadd = '$(TARGET_LIBGCC)';
+  cflags = '$(TARGET_LDFLAGS_STATIC_LIBGCC)';
   enable = mips;
 };
 
@@ -458,7 +458,7 @@ image = {
   name = fwstart;
   mips_loongson = boot/mips/loongson/fwstart.S;
   objcopyflags = '-O binary';
-  ldflags = '-static-libgcc -lgcc -Wl,-N,-S,-Ttext,0xbfc00000,-Bstatic';
+  ldflags = '$(TARGET_LDFLAGS_STATIC_LIBGCC) $(TARGET_LIBGCC) -Wl,-N,-S,-Ttext,0xbfc00000,-Bstatic';
   enable = mips_loongson;
 };
 
@@ -466,8 +466,14 @@ image = {
   name = fwstart_fuloong2f;
   mips_loongson = boot/mips/loongson/fuloong2f.S;
   objcopyflags = '-O binary';
-  ldflags = '-static-libgcc -lgcc -Wl,-N,-S,-Ttext,0xbfc00000,-Bstatic';
+  ldflags = '$(TARGET_LDFLAGS_STATIC_LIBGCC) $(TARGET_LIBGCC) -Wl,-N,-S,-Ttext,0xbfc00000,-Bstatic';
   enable = mips_loongson;
+};
+
+module = {
+  name = disk;
+  common = lib/disk.c;
+  extra_dist = kern/disk_common.c;
 };
 
 module = {
@@ -506,6 +512,7 @@ module = {
 module = {
   name = emuusb;
   common = bus/usb/usb.c;
+  enable = emu;
   condition = COND_GRUB_EMU_USB;
 };
 
@@ -575,6 +582,7 @@ module = {
   common = bus/emu/pci.c;
   common = commands/lspci.c;
 
+  enable = emu;
   condition = COND_GRUB_EMU_PCI;
 };
 
@@ -583,6 +591,11 @@ module = {
   common = commands/arc/lsdev.c;
 
   enable = mips_arc;
+};
+
+module = {
+  name = check_nt_hiberfil;
+  common = commands/i386/nthibr.c;
 };
 
 library = {
@@ -1859,6 +1872,11 @@ module = {
 module = {
   name = setjmp_test;
   common = tests/setjmp_test.c;
+};
+
+module = {
+  name = div_test;
+  common = tests/div_test.c;
 };
 
 module = {
