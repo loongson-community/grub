@@ -163,6 +163,7 @@ kernel = {
 
   efi = disk/efi/efidisk.c;
   efi = kern/efi/efi.c;
+  efi = kern/efi/efi_core.c;
   efi = kern/efi/init.c;
   efi = kern/efi/mm.c;
   efi = term/efi/console.c;
@@ -416,12 +417,22 @@ image = {
 
 image = {
   name = xz_decompress;
+  ia64_efi = kern/ia64/efi/startup.S;
+  i386_efi = kern/i386/efi/startup.S;
+  x86_64_efi = kern/x86_64/efi/startup.S;
+  arm_efi = kern/arm/efi/startup.S;
+
   mips = boot/mips/startup_raw.S;
+  mips = boot/mips/scratch.c;
   common = boot/decompressor/minilib.c;
   common = boot/decompressor/xz.c;
   common = lib/xzembed/xz_dec_bcj.c;
   common = lib/xzembed/xz_dec_lzma2.c;
   common = lib/xzembed/xz_dec_stream.c;
+  efi = boot/efi/decompressor.c;
+  efi = kern/efi/efi_core.c;
+
+  x86_64_efi = kern/x86_64/efi/callwrap.S;
 
   cppflags = '-I$(srcdir)/lib/posix_wrap -I$(srcdir)/lib/xzembed -DGRUB_EMBED_DECOMPRESSOR=1';
 
@@ -430,6 +441,7 @@ image = {
   ldadd = '$(TARGET_LIBGCC)';
   cflags = '-Wno-unreachable-code $(TARGET_LDFLAGS_STATIC_LIBGCC)';
   enable = mips;
+  enable = efi;
 };
 
 image = {

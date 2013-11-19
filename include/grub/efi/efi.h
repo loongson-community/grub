@@ -77,7 +77,9 @@ extern void (*EXPORT_VAR(grub_efi_net_config)) (grub_efi_handle_t hnd,
 						char **device,
 						char **path);
 
-grub_addr_t grub_efi_modules_addr (void);
+int
+grub_efi_get_section (const char *name,
+		      grub_addr_t *start, grub_size_t *sz);
 
 void grub_efi_mm_init (void);
 void grub_efi_mm_fini (void);

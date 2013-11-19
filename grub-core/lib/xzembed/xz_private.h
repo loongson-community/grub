@@ -91,6 +91,10 @@ enum xz_ret xz_dec_bcj_run(struct xz_dec_bcj *s,
 		struct xz_dec_lzma2 *lzma2, struct xz_buf *b);
 
 /* Free the memory allocated for the BCJ filters. */
+#ifndef GRUB_EMBED_DECOMPRESSOR
 #define xz_dec_bcj_end(s) kfree(s)
+#else
+#define xz_dec_bcj_end(s)
+#endif
 
 #endif

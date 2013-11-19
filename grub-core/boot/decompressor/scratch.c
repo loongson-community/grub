@@ -1,6 +1,6 @@
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2009, 2010  Free Software Foundation, Inc.
+ *  Copyright (C) 2010,2013  Free Software Foundation, Inc.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -16,44 +16,19 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GRUB_POSIX_STDLIB_H
-#define GRUB_POSIX_STDLIB_H	1
-
-#include <grub/mm.h>
+#include <grub/types.h>
 #include <grub/misc.h>
+#include <grub/decompressor.h>
 
-#ifndef GRUB_EMBED_DECOMPRESSOR
-
-static inline void 
-free (void *ptr)
+void
+find_scratch (void *src, void *dst, unsigned long srcsize,
+	      unsigned long dstsize)
 {
-  grub_free (ptr);
+  if ((char *) src + srcsize > (char *) dst + dstsize)
+    grub_decompressor_scratch = (void *) ALIGN_UP ((grub_addr_t) src + srcsize,
+						   256);
+  else
+    grub_decompressor_scratch = (void *) ALIGN_UP ((grub_addr_t) dst + dstsize,
+						   256);
+  return;
 }
-
-static inline void *
-malloc (grub_size_t size)
-{
-  return grub_malloc (size);
-}
-
-static inline void *
-calloc (grub_size_t size, grub_size_t nelem)
-{
-  return grub_zalloc (size * nelem);
-}
-
-static inline void *
-realloc (void *ptr, grub_size_t size)
-{
-  return grub_realloc (ptr, size);
-}
-
-#endif
-
-static inline int
-abs (int c)
-{
-  return (c >= 0) ? c : -c;
-}
-
-#endif

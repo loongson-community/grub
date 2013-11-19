@@ -35,7 +35,6 @@ grub_efi_handle_t grub_efi_image_handle;
 grub_efi_system_table_t *grub_efi_system_table;
 
 static grub_efi_guid_t console_control_guid = GRUB_EFI_CONSOLE_CONTROL_GUID;
-static grub_efi_guid_t loaded_image_guid = GRUB_EFI_LOADED_IMAGE_GUID;
 static grub_efi_guid_t device_path_guid = GRUB_EFI_DEVICE_PATH_GUID;
 
 void *
@@ -94,28 +93,6 @@ grub_efi_locate_handle (grub_efi_locate_search_type_t search_type,
   return buffer;
 }
 
-void *
-grub_efi_open_protocol (grub_efi_handle_t handle,
-			grub_efi_guid_t *protocol,
-			grub_efi_uint32_t attributes)
-{
-  grub_efi_boot_services_t *b;
-  grub_efi_status_t status;
-  void *interface;
-
-  b = grub_efi_system_table->boot_services;
-  status = efi_call_6 (b->open_protocol, handle,
-		       protocol,
-		       &interface,
-		       grub_efi_image_handle,
-		       0,
-		       attributes);
-  if (status != GRUB_EFI_SUCCESS)
-    return 0;
-
-  return interface;
-}
-
 int
 grub_efi_set_text_mode (int on)
 {
@@ -143,23 +120,6 @@ void
 grub_efi_stall (grub_efi_uintn_t microseconds)
 {
   efi_call_1 (grub_efi_system_table->boot_services->stall, microseconds);
-}
-
-grub_efi_loaded_image_t *
-grub_efi_get_loaded_image (grub_efi_handle_t image_handle)
-{
-  return grub_efi_open_protocol (image_handle,
-				 &loaded_image_guid,
-				 GRUB_EFI_OPEN_PROTOCOL_GET_PROTOCOL);
-}
-
-void
-grub_exit (void)
-{
-  grub_efi_fini ();
-  efi_call_4 (grub_efi_system_table->boot_services->exit,
-              grub_efi_image_handle, GRUB_EFI_SUCCESS, 0, 0);
-  for (;;) ;
 }
 
 grub_err_t
@@ -258,53 +218,6 @@ grub_efi_get_variable (const char *var, const grub_efi_guid_t *guid,
   grub_free (data);
   return NULL;
 }
-
-#pragma GCC diagnostic ignored "-Wcast-align"
-
-/* Search the mods section from the PE32/PE32+ image. This code uses
-   a PE32 header, but should work with PE32+ as well.  */
-grub_addr_t
-grub_efi_modules_addr (void)
-{
-  grub_efi_loaded_image_t *image;
-  struct grub_pe32_header *header;
-  struct grub_pe32_coff_header *coff_header;
-  struct grub_pe32_section_table *sections;
-  struct grub_pe32_section_table *section;
-  struct grub_module_info *info;
-  grub_uint16_t i;
-
-  image = grub_efi_get_loaded_image (grub_efi_image_handle);
-  if (! image)
-    return 0;
-
-  header = image->image_base;
-  coff_header = &(header->coff_header);
-  sections
-    = (struct grub_pe32_section_table *) ((char *) coff_header
-					  + sizeof (*coff_header)
-					  + coff_header->optional_header_size);
-
-  for (i = 0, section = sections;
-       i < coff_header->num_sections;
-       i++, section++)
-    {
-      if (grub_strcmp (section->name, "mods") == 0)
-	break;
-    }
-
-  if (i == coff_header->num_sections)
-    return 0;
-
-  info = (struct grub_module_info *) ((char *) image->image_base
-				      + section->virtual_address);
-  if (info->magic != GRUB_MODULE_MAGIC)
-    return 0;
-
-  return (grub_addr_t) info;
-}
-
-#pragma GCC diagnostic error "-Wcast-align"
 
 char *
 grub_efi_get_filename (grub_efi_device_path_t *dp0)

@@ -31,7 +31,10 @@ grub_addr_t grub_modbase;
 void
 grub_efi_init (void)
 {
-  grub_modbase = grub_efi_modules_addr ();
+  if (!grub_efi_get_section ("mods", &grub_modbase, NULL)
+      || ((struct grub_module_info *) grub_modbase)->magic != GRUB_MODULE_MAGIC)
+    grub_modbase = 0;
+
   /* First of all, initialize the console so that GRUB can display
      messages.  */
   grub_console_init ();
