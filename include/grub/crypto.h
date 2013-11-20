@@ -260,6 +260,8 @@ struct grub_crypto_hmac_handle;
 
 const gcry_cipher_spec_t *
 grub_crypto_lookup_cipher_by_name (const char *name);
+const gcry_md_spec_t *
+grub_crypto_lookup_md_by_asn (const void *asn, grub_size_t asnlen);
 
 grub_crypto_cipher_handle_t
 grub_crypto_cipher_open (const struct gcry_cipher_spec *cipher);

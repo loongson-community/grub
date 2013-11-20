@@ -30,6 +30,7 @@
 #include <grub/env.h>
 #include <grub/kernel.h>
 #include <grub/extcmd.h>
+#include <grub/efi/pe32.h>
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
@@ -433,6 +434,356 @@ rsa_pad (gcry_mpi_t *hmpi, grub_uint8_t *hval,
 }
 
 static grub_err_t
+get (char *buf, grub_size_t size,
+     grub_file_t f, void *out,
+     grub_off_t off, grub_size_t sz)
+{
+  if (buf)
+    {
+      if (off > ~(grub_uint32_t) sz
+	  || off + sz > size)
+	return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+      grub_memcpy (out, buf + off, sz);
+      return GRUB_ERR_NONE;
+    }
+  if (grub_file_seek (f, off) == (grub_size_t) -1)
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+  if (grub_file_read (f, out, sz) != (grub_ssize_t) sz)
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+  return GRUB_ERR_NONE;
+}
+
+static grub_err_t
+read_len (char *buf, grub_size_t size,
+	  grub_file_t f, grub_off_t *curoff, grub_uint32_t *endoff)
+{
+  grub_uint8_t cb;
+  unsigned ss, rl;
+  grub_uint32_t v = 0;
+  grub_err_t err;
+
+  err = get (buf, size, f, &cb, (*curoff)++, 1);
+  if (err)
+    return err;
+  if (!(cb & 0x80))
+    {
+      *endoff = *curoff + (cb & 0x7f);
+      return GRUB_ERR_NONE;
+    }
+
+  ss = cb & 0x7f;
+  if (ss > 4)
+    rl = 4;
+  else
+    rl = ss;
+  *curoff += (ss - rl);
+  err = get (buf, size, f, (char *) &v + (4 - rl), *curoff,
+	     rl);
+  if (err)
+    return err;
+  *curoff += rl;
+  *endoff = *curoff + (grub_be_to_cpu32 (v) & 0x7fffff);
+  return GRUB_ERR_NONE;
+}
+
+#define MAX_FULLASN 128
+
+static grub_err_t
+grub_verify_pe_signature_real (char *buf, grub_size_t size,
+			       grub_file_t f,
+			       struct grub_public_key *pkey)
+{
+  grub_uint8_t mz[2];
+  const gcry_md_spec_t *hash;
+  grub_uint32_t coff_offset, opt_offset;
+  union
+  {
+    struct grub_pe32_optional_header o32;
+    struct grub_pe64_optional_header o64;
+  } opt_head;
+  struct grub_pe32_data_directory *certtab;
+  grub_err_t err;
+  void *context = NULL;
+  void *read_buf = NULL;
+  grub_uint8_t *hval;
+  grub_off_t curoff;
+  grub_uint8_t cb;
+  grub_uint8_t full_asn[MAX_FULLASN];
+  /*
+    hash as:
+    offs[0] - offs[1]
+    skip: checksum
+    offs[2] - offs[3]
+    skip: cert entry
+    offs[4] - offs[5]
+    skip: cert
+    offs[6] - offs[7]
+   */
+  grub_uint32_t offs[8];
+  grub_uint32_t endoff[5];
+  grub_uint32_t full_asn_offset, full_asn_offset_end;
+  grub_size_t i;
+
+  err = get (buf, size, f, mz, 0, 2);
+  if (err)
+    return err;
+
+  if (mz[0] != 'M' || mz[1] != 'Z')
+    goto fail;
+
+  err = get (buf, size, f, &coff_offset, 0x3c, 4);
+  if (err)
+    return err;  
+
+  opt_offset = grub_cpu_to_le32 (coff_offset) + sizeof (struct grub_pe32_coff_header) + 4;
+
+  err = get (buf, size, f, &opt_head, opt_offset, sizeof (opt_head));
+  if (err)
+    return err;  
+
+  grub_dprintf ("crypt", "opt_offset = %x\n", (int) opt_offset);
+
+  if (opt_head.o32.magic == grub_cpu_to_le16_compile_time (GRUB_PE32_PE32_MAGIC))
+    {
+      offs[1] = (char *) &opt_head.o32.checksum - (char *) &opt_head + opt_offset;
+      certtab = &opt_head.o32.certificate_table;
+    }
+  else if (opt_head.o64.magic == grub_cpu_to_le16_compile_time (GRUB_PE32_PE64_MAGIC))
+    {
+      offs[1] = (char *) &opt_head.o64.checksum - (char *) &opt_head + opt_offset;
+      certtab = &opt_head.o64.certificate_table;
+    }
+  else
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+
+  if (certtab->size == 0)
+    goto fail;
+
+  offs[0] = 0;
+  offs[2] = offs[1] + 4;
+  offs[3] = (char *) certtab - (char *) &opt_head + opt_offset;
+  offs[4] = offs[3] + sizeof (*certtab);
+  offs[5] = grub_le_to_cpu32 (certtab->rva);
+  offs[6] = offs[5] + grub_le_to_cpu32 (certtab->size);
+  offs[7] = buf ? size : grub_file_size (f);
+
+  /* Verify that offset sequence is valid.  */
+  for (i = 0; i < 7; i++)
+    if (offs[i + 1] < offs[i])
+      goto fail;
+
+  grub_dprintf ("crypt", "sig @%x+%x\n", (int)certtab->rva,
+		(int)certtab->size);
+
+
+  curoff = grub_le_to_cpu32 (certtab->rva) + 8;
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x30)
+    goto fail;
+
+  /* into. */
+  err = read_len (buf, size, f, &curoff, &endoff[0]);
+  if (err)
+    return err;
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x06)
+    goto fail;
+
+  /* skip.  */
+  err = read_len (buf, size, f, &curoff, &endoff[1]);
+  if (err)
+    return err;
+
+  curoff = endoff[1];
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0xa0)
+    goto fail;
+
+  /* into. */
+  err = read_len (buf, size, f, &curoff, &endoff[1]);
+  if (err)
+    return err;
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x30)
+    goto fail;
+
+  /* into. */
+  err = read_len (buf, size, f, &curoff, &endoff[2]);
+  if (err)
+    return err;
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x02)
+    goto fail;
+
+  /* skip */
+  err = read_len (buf, size, f, &curoff, &endoff[2]);
+  if (err)
+    return err;
+
+  curoff = endoff[2];
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x31)
+    goto fail;
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x0f)
+    goto fail;
+
+  err = read_len (buf, size, f, &curoff, &endoff[3]);
+  if (err)
+    return err;
+
+  curoff = endoff[3];
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x03)
+    goto fail;
+
+  err = read_len (buf, size, f, &curoff, &endoff[3]);
+  if (err)
+    return err;
+
+  curoff = endoff[3];
+
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0xa0)
+    goto fail;
+
+  err = read_len (buf, size, f, &curoff, &endoff[3]);
+  if (err)
+    return err;
+
+  curoff = endoff[3];
+
+  grub_dprintf ("crypt", "off: %x\n",
+		(int)curoff - grub_le_to_cpu32 (certtab->rva));
+
+  /* At this point we have the full ASN at current offset */
+  full_asn_offset = curoff;
+  err = get (buf, size, f, &cb, curoff++, 1);
+  if (err)
+    return err;
+
+  if (cb != 0x30)
+    goto fail;
+
+  err = read_len (buf, size, f, &curoff, &endoff[3]);
+  if (err)
+    return err;
+
+  curoff = endoff[3];
+  full_asn_offset_end = curoff;
+
+  grub_dprintf ("crypt", "off: %x\n",
+		(int)full_asn_offset_end - grub_le_to_cpu32 (certtab->rva));
+
+  if (full_asn_offset_end - full_asn_offset > MAX_FULLASN)
+    goto fail;
+
+  err = get (buf, size, f, full_asn, full_asn_offset,
+	     full_asn_offset_end - full_asn_offset);
+  if (err)
+    return err;
+
+  hash = grub_crypto_lookup_md_by_asn (full_asn,
+				       full_asn_offset_end - full_asn_offset);
+  if (!hash)
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, "hash not loaded");
+
+  if (hash->asnlen + hash->mdlen != full_asn_offset_end - full_asn_offset)
+    goto fail;
+
+  context = grub_zalloc (hash->contextsize);
+  if (!context)
+    goto fail;
+
+  hash->init (context);
+
+  if (buf)
+    {
+      for (i = 0; i <= 3; i++)
+	hash->write (context, buf + offs[2 * i],
+		     offs[2 * i + 1] - offs[2 * i]);
+    }
+  else
+    {
+      read_buf = grub_malloc (READBUF_SIZE);
+      for (i = 0; i <= 3; i++)
+	{
+	  grub_size_t rem;
+	  grub_ssize_t r;
+	  if (grub_file_seek (f, offs[2 * i]) == (grub_size_t) -1)
+	    goto fail;
+	  rem = offs[2 * i + 1] - offs[2 * i];
+	  COMPILE_TIME_ASSERT (sizeof (rem) >= sizeof (offs[0]));
+	  while (rem)
+	    {
+	      r = grub_file_read (f, read_buf,
+				  rem < READBUF_SIZE ? rem : READBUF_SIZE);
+	      if (r < 0)
+		goto fail;
+	      if (r == 0)
+		break;
+	      hash->write (context, read_buf, r);
+	      rem -= r;
+	    }
+	  if (rem)
+	    goto fail;
+	}
+    }
+
+  hash->final (context);
+  hval = hash->read (context);
+
+  if (grub_memcmp (full_asn + hash->asnlen, 
+		   hval, hash->mdlen) != 0)
+    goto fail;
+  for (i = 0; i < hash->mdlen; i++)
+    grub_printf ("%02x ", hval[i]);
+  grub_printf ("\n");
+
+  (void) pkey;
+
+  return GRUB_ERR_NONE;
+ fail:
+  grub_free (context);
+  grub_free (read_buf);
+  return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+}
+
+static grub_err_t
 grub_verify_signature_real (char *buf, grub_size_t size,
 			    grub_file_t f, grub_file_t sig,
 			    struct grub_public_key *pkey)
@@ -530,6 +881,8 @@ grub_verify_signature_real (char *buf, grub_size_t size,
 	hash->write (context, readbuf, r);
 	rem -= r;
       }
+    if (rem)
+      goto fail;
     hash->write (context, &v, sizeof (v));
     s = 0xff;
     hash->write (context, &s, sizeof (s));
@@ -804,6 +1157,57 @@ grub_cmd_verify_signature (grub_extcmd_context_t ctxt,
   return err;
 }
 
+static grub_err_t
+grub_cmd_verify_pe_signature (grub_extcmd_context_t ctxt,
+			      int argc, char **args)
+{
+  grub_file_t f = NULL;
+  grub_err_t err = GRUB_ERR_NONE;
+  struct grub_public_key *pk = NULL;
+
+  grub_dprintf ("crypt", "alive\n");
+
+  if (argc < 1)
+    return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("one argument expected"));
+
+  grub_dprintf ("crypt", "alive\n");
+
+  if (argc > 1)
+    {
+      grub_file_t pkf;
+      pkf = grub_file_open (args[1],
+			    GRUB_FILE_TYPE_PUBLIC_KEY
+			    | GRUB_FILE_TYPE_NO_DECOMPRESS
+			    | (ctxt->state[OPTION_SKIP_SIG].set
+			       ? GRUB_FILE_TYPE_SKIP_SIGNATURE
+			       : 0));
+      if (!pkf)
+	return grub_errno;
+      pk = grub_load_public_key (pkf);
+      if (!pk)
+	{
+	  grub_file_close (pkf);
+	  return grub_errno;
+	}
+      grub_file_close (pkf);
+    }
+
+  f = grub_file_open (args[0], GRUB_FILE_TYPE_VERIFY_SIGNATURE);
+  if (!f)
+    {
+      err = grub_errno;
+      goto fail;
+    }
+
+  err = grub_verify_pe_signature_real (0, 0, f, pk);
+ fail:
+  if (f)
+    grub_file_close (f);
+  if (pk)
+    free_pk (pk);
+  return err;
+}
+
 static int sec = 0;
 
 static grub_ssize_t
@@ -848,13 +1252,6 @@ grub_pubkey_open (grub_file_t io, enum grub_file_type type)
   fsuf = grub_malloc (grub_strlen (io->name) + sizeof (".sig"));
   if (!fsuf)
     return NULL;
-  ptr = grub_stpcpy (fsuf, io->name);
-  grub_memcpy (ptr, ".sig", sizeof (".sig"));
-
-  sig = grub_file_open (fsuf, GRUB_FILE_TYPE_SIGNATURE);
-  grub_free (fsuf);
-  if (!sig)
-    return NULL;
 
   ret = grub_malloc (sizeof (*ret));
   if (!ret)
@@ -883,8 +1280,26 @@ grub_pubkey_open (grub_file_t io, enum grub_file_type type)
       return NULL;
     }
 
-  err = grub_verify_signature_real (ret->data, ret->size, 0, sig, NULL);
-  grub_file_close (sig);
+  ptr = grub_stpcpy (fsuf, io->name);
+  grub_memcpy (ptr, ".sig", sizeof (".sig"));
+
+  sig = grub_file_open (fsuf, GRUB_FILE_TYPE_SIGNATURE);
+  grub_free (fsuf);
+  if (!sig)
+    grub_errno = GRUB_ERR_NONE;
+
+  if (sig)
+    {
+      err = grub_verify_signature_real (ret->data, ret->size, 0, sig, NULL);
+      grub_file_close (sig);
+      if (err == GRUB_ERR_BAD_SIGNATURE)
+	{
+	  grub_errno = GRUB_ERR_NONE;
+	  err = grub_verify_pe_signature_real (ret->data, ret->size, 0, 0);
+	}
+    }
+  else
+    err = grub_verify_pe_signature_real (ret->data, ret->size, 0, 0);
   if (err)
     return NULL;
   io->device = 0;
@@ -965,6 +1380,10 @@ GRUB_MOD_INIT(verify)
   cmd = grub_register_extcmd ("verify_detached", grub_cmd_verify_signature, 0,
 			      N_("[-s|--skip-sig] FILE SIGNATURE_FILE [PUBKEY_FILE]"),
 			      N_("Verify detached signature."),
+			      options);
+  cmd = grub_register_extcmd ("verify_pe", grub_cmd_verify_pe_signature, 0,
+			      N_("[-s|--skip-sig] FILE [PUBKEY_FILE]"),
+			      N_("Verify PE signature."),
 			      options);
   cmd_trust = grub_register_extcmd ("trust", grub_cmd_trust, 0,
 				     N_("[-s|--skip-sig] PUBKEY_FILE"),

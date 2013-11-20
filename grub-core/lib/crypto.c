@@ -150,6 +150,27 @@ grub_crypto_lookup_md_by_name (const char *name)
     }
 }
 
+const gcry_md_spec_t *
+grub_crypto_lookup_md_by_asn (const void *asn, grub_size_t asnlen)
+{
+  const gcry_md_spec_t *md;
+  int first = 1;
+  while (1)
+    {
+      for (md = grub_digests; md; md = md->next)
+	if (md->asnlen
+	    && (grub_size_t) md->asnlen <= asnlen
+	    && grub_memcmp (asn, md->asnoid, md->asnlen) == 0)
+	  return md;
+      if (grub_crypto_autoload_hook && first)
+	/* FIXME */
+	grub_crypto_autoload_hook ("sha256");
+      else
+	return NULL;
+      first = 0;
+    }
+}
+
 const gcry_cipher_spec_t *
 grub_crypto_lookup_cipher_by_name (const char *name)
 {
