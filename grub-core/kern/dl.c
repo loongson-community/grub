@@ -653,7 +653,7 @@ grub_dl_load_file (const char *filename)
   void *core = 0;
   grub_dl_t mod = 0;
 
-  file = grub_file_open (filename);
+  file = grub_file_open (filename, GRUB_FILE_TYPE_GRUB_MODULE);
   if (! file)
     return 0;
 

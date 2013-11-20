@@ -639,7 +639,7 @@ grub_cmd_acpi (struct grub_extcmd_context *ctxt, int argc, char **args)
       grub_size_t size;
       char *buf;
 
-      file = grub_file_open (args[i]);
+      file = grub_file_open (args[i], GRUB_FILE_TYPE_ACPI_TABLE);
       if (! file)
 	{
 	  free_tables ();

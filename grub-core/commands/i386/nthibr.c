@@ -39,7 +39,7 @@ grub_cmd_nthibr (grub_command_t cmd __attribute__ ((unused)),
   if (argc != 1)
     return grub_error (GRUB_ERR_BAD_ARGUMENT, N_("one argument expected"));
 
-  hibr_file = grub_file_open (args[0]);
+  hibr_file = grub_file_open (args[0], GRUB_FILE_TYPE_FILE_ID);
   if (!hibr_file)
     return grub_errno;
 

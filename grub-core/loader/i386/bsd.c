@@ -1448,7 +1448,7 @@ grub_bsd_load (int argc, char *argv[])
       goto fail;
     }
 
-  file = grub_file_open (argv[0]);
+  file = grub_file_open (argv[0], GRUB_FILE_TYPE_BSD_KERNEL);
   if (!file)
     goto fail;
 
@@ -1525,7 +1525,7 @@ grub_cmd_freebsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
 	  if (err)
 	    return err;
 
-	  file = grub_file_open (argv[0]);
+	  file = grub_file_open (argv[0], GRUB_FILE_TYPE_BSD_KERNEL);
 	  if (! file)
 	    return grub_errno;
 
@@ -1682,7 +1682,7 @@ grub_cmd_netbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
 	{
 	  grub_file_t file;
 
-	  file = grub_file_open (argv[0]);
+	  file = grub_file_open (argv[0], GRUB_FILE_TYPE_BSD_KERNEL);
 	  if (! file)
 	    return grub_errno;
 
@@ -1791,7 +1791,7 @@ grub_cmd_freebsd_loadenv (grub_command_t cmd __attribute__ ((unused)),
       goto fail;
     }
 
-  file = grub_file_open (argv[0]);
+  file = grub_file_open (argv[0], GRUB_FILE_TYPE_FREEBSD_ENV);
   if ((!file) || (!file->size))
     goto fail;
 
@@ -1892,7 +1892,7 @@ grub_cmd_freebsd_module (grub_command_t cmd __attribute__ ((unused)),
       return 0;
     }
 
-  file = grub_file_open (argv[0]);
+  file = grub_file_open (argv[0], GRUB_FILE_TYPE_FREEBSD_MODULE);
   if ((!file) || (!file->size))
     goto fail;
 
@@ -1943,7 +1943,7 @@ grub_netbsd_module_load (char *filename, grub_uint32_t type)
   void *src;
   grub_err_t err;
 
-  file = grub_file_open (filename);
+  file = grub_file_open (filename, GRUB_FILE_TYPE_NETBSD_MODULE);
   if ((!file) || (!file->size))
     goto fail;
 
@@ -2029,7 +2029,7 @@ grub_cmd_freebsd_module_elf (grub_command_t cmd __attribute__ ((unused)),
       return 0;
     }
 
-  file = grub_file_open (argv[0]);
+  file = grub_file_open (argv[0], GRUB_FILE_TYPE_FREEBSD_MODULE_ELF);
   if (!file)
     return grub_errno;
   if (!file->size)
@@ -2065,7 +2065,7 @@ grub_cmd_openbsd_ramdisk (grub_command_t cmd __attribute__ ((unused)),
   if (!openbsd_ramdisk.max_size)
     return grub_error (GRUB_ERR_BAD_OS, "your kOpenBSD doesn't support ramdisk");
 
-  file = grub_file_open (args[0]);
+  file = grub_file_open (args[0], GRUB_FILE_TYPE_OPENBSD_RAMDISK);
   if (! file)
     return grub_errno;
 

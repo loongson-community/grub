@@ -180,7 +180,7 @@ read_config_file (const char *config)
     }
 
   /* Try to open the config file.  */
-  file = grub_file_open (config);
+  file = grub_file_open (config, GRUB_FILE_TYPE_CONFIG);
   if (! file)
     return 0;
 
