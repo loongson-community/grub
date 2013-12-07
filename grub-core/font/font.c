@@ -111,42 +111,64 @@ static struct grub_font null_font;
 static grub_uint8_t font_loader_initialized;
 
 #if HAVE_FONT_SOURCE
-static struct grub_font_glyph *ascii_font_glyph[0x80];
+static struct grub_font_glyph *ascii_font_glyph[ASCII_NUM];
+static struct grub_font_glyph *arrows_font_glyph[ARROWS_NUM];
+static struct grub_font_glyph *lines_font_glyph[LINES_NUM];
+
+static void
+init_fallback (struct grub_font_glyph **glyphs, const unsigned char *stored,
+	       grub_uint32_t len)
+{
+  grub_uint32_t current;
+  for (current = 0; current < len; current++)
+    {
+      glyphs[current] =
+	grub_malloc (sizeof (struct grub_font_glyph) + ASCII_BITMAP_SIZE);
+      if (!glyphs[current])
+	{
+	  grub_errno = GRUB_ERR_NONE;
+	  continue;
+	}
+
+      glyphs[current]->width = 8;
+      glyphs[current]->height = 16;
+      glyphs[current]->offset_x = 0;
+      glyphs[current]->offset_y = -2;
+      glyphs[current]->device_width = 8;
+      glyphs[current]->font = NULL;
+
+      grub_memcpy (glyphs[current]->bitmap,
+		   &stored[current * ASCII_BITMAP_SIZE],
+		   ASCII_BITMAP_SIZE);
+    }
+}
 #endif
 
 static struct grub_font_glyph *
 ascii_glyph_lookup (grub_uint32_t code)
 {
 #if HAVE_FONT_SOURCE
-  static int ascii_failback_initialized = 0;
+  static int ascii_fallback_initialized = 0;
+  struct grub_font_glyph **p;
 
-  if (code >= 0x80)
+  if (code < ASCII_NUM)
+    p = &ascii_font_glyph[code];
+  else if (code >= ARROWS_START && code < ARROWS_START + ARROWS_NUM)
+    p = &arrows_font_glyph[code - ARROWS_START];
+  else if (code >= LINES_START && code < LINES_START + LINES_NUM)
+    p = &lines_font_glyph[code - LINES_START];
+  else
     return NULL;
 
-  if (ascii_failback_initialized == 0)
+  if (ascii_fallback_initialized == 0)
     {
-      int current;
-      for (current = 0; current < 0x80; current++)
-	{
-	  ascii_font_glyph[current] =
-	    grub_malloc (sizeof (struct grub_font_glyph) + ASCII_BITMAP_SIZE);
-
-	  ascii_font_glyph[current]->width = 8;
-	  ascii_font_glyph[current]->height = 16;
-	  ascii_font_glyph[current]->offset_x = 0;
-	  ascii_font_glyph[current]->offset_y = -2;
-	  ascii_font_glyph[current]->device_width = 8;
-	  ascii_font_glyph[current]->font = NULL;
-
-	  grub_memcpy (ascii_font_glyph[current]->bitmap,
-		       &ascii_bitmaps[current * ASCII_BITMAP_SIZE],
-		       ASCII_BITMAP_SIZE);
-	}
-
-      ascii_failback_initialized = 1;
+      init_fallback (ascii_font_glyph, ascii_bitmaps, ASCII_NUM);
+      init_fallback (arrows_font_glyph, arrows_bitmaps, ARROWS_NUM);
+      init_fallback (lines_font_glyph, lines_bitmaps, LINES_NUM);
+      ascii_fallback_initialized = 1;
     }
 
-  return ascii_font_glyph[code];
+  return *p;
 #else
   (void) code;
   return NULL;

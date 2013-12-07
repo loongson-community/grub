@@ -126,61 +126,90 @@ add_glyph (FT_UInt glyph_idx, FT_Face face,
 }
 
 static void
+write_code (FILE *file, FT_Face face, unsigned int char_code)
+{
+  FT_UInt glyph_idx;
+  struct grub_glyph_info glyph;
+
+  glyph_idx = FT_Get_Char_Index (face, char_code);
+  if (!glyph_idx)
+    {
+      fprintf (stderr, "grub-gen-asciih: error: couldn't retrieve code %x",
+	       (unsigned) char_code);
+      exit (1);
+    }
+  add_glyph (glyph_idx, face, char_code, &glyph);
+
+  if (glyph.width == 8 && glyph.height == 16
+      && glyph.x_ofs == 0 && glyph.y_ofs == 0)
+    {
+      int row;
+      for (row = 0; row < 16; row++)
+	fprintf (file, "0x%02x, ", glyph.bitmap[row]);
+    }
+  else
+    {
+      unsigned char glph[16];
+      int p = 0, mask = 0x80;
+      int row, col;
+      int dy = 12 - glyph.height - glyph.y_ofs;
+      for (row = 0; row < 16; row++)
+	glph[row] = 0;
+      for (row = 0; row < glyph.height; row++)
+	for (col = 0; col < glyph.width; col++)
+	  {
+	    int val = glyph.bitmap[p] & mask;
+	    mask >>= 1;
+	    if (mask == 0)
+	      {
+		mask = 0x80;
+		p++;
+	      }
+	    if (val && dy + row >= 0
+		&& dy + row < 16
+		&& glyph.x_ofs + col >= 0
+		&& glyph.x_ofs + col < 8)
+	      glph[dy + row] |= 1 << (7 - (glyph.x_ofs + col));
+	  }
+      for (row = 0; row < 16; row++)
+	fprintf (file, "0x%02x, ", glph[row]);
+    }
+  fprintf (file, "\n");
+  free (glyph.bitmap);
+}
+
+
+static void
 write_font_ascii_bitmap (FILE *file, FT_Face face)
 {
-  struct grub_glyph_info glyph;
   int char_code;
 
   fprintf (file, "/* THIS CHUNK OF BYTES IS AUTOMATICALLY GENERATED */\n");
-  fprintf (file, "unsigned char ascii_bitmaps[] =\n");
+  fprintf (file, "#define ASCII_START 0\n");
+  fprintf (file, "#define ASCII_NUM 128\n");
+  fprintf (file, "static unsigned char ascii_bitmaps[] =\n");
   fprintf (file, "{\n");
 
   for (char_code = 0; char_code <= 0x7f; char_code++)
-    {
-      FT_UInt glyph_idx;
-      
-      glyph_idx = FT_Get_Char_Index (face, char_code);
-      if (!glyph_idx)
-	return;
-      add_glyph (glyph_idx, face, char_code, &glyph);
+    write_code (file, face, char_code);
+  fprintf (file, "};\n");
 
-      if (glyph.width == 8 && glyph.height == 16
-	  && glyph.x_ofs == 0 && glyph.y_ofs == 0)
-	{
-	  int row;
-	  for (row = 0; row < 16; row++)
-	    fprintf (file, "0x%02x, ", glyph.bitmap[row]);
-	}
-      else
-	{
-	  unsigned char glph[16];
-	  int p = 0, mask = 0x80;
-	  int row, col;
-	  int dy = 12 - glyph.height - glyph.y_ofs;
-	  for (row = 0; row < 16; row++)
-	    glph[row] = 0;
-	  for (row = 0; row < glyph.height; row++)
-	    for (col = 0; col < glyph.width; col++)
-	      {
-		int val = glyph.bitmap[p] & mask;
-		mask >>= 1;
-		if (mask == 0)
-		  {
-		    mask = 0x80;
-		    p++;
-		  }
-		if (val && dy + row >= 0
-		    && dy + row < 16
-		    && glyph.x_ofs + col >= 0
-		    && glyph.x_ofs + col < 8)
-		  glph[dy + row] |= 1 << (7 - (glyph.x_ofs + col));
-	      }
-	  for (row = 0; row < 16; row++)
-	    fprintf (file, "0x%02x, ", glph[row]);
-	}
-      fprintf (file, "\n");
-      free (glyph.bitmap);
-    }
+  fprintf (file, "#define ARROWS_START 0x2190\n");
+  fprintf (file, "#define ARROWS_NUM 4\n");
+  fprintf (file, "static unsigned char arrows_bitmaps[] =\n");
+  fprintf (file, "{\n");
+
+  for (char_code = 0x2190; char_code <= 0x2193; char_code++)
+    write_code (file, face, char_code);
+  fprintf (file, "};\n");
+
+  fprintf (file, "#define LINES_START 0x2501\n");
+  fprintf (file, "#define LINES_NUM 0x1b\n");
+  fprintf (file, "static unsigned char lines_bitmaps[] =\n");
+  fprintf (file, "{\n");
+
+  for (char_code = 0x2501; char_code <= 0x251b; char_code++)
+    write_code (file, face, char_code);
   fprintf (file, "};\n");
 }
 
