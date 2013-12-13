@@ -602,6 +602,21 @@ u32     | size = 8          |
 
 If this tag is present modules must be page aligned.
 
+@node EFI boot services
+@subsection EFI boot services
+
+@example
+@group
+        +-------------------+
+u16     | type = 7          |
+u16     | flags             |
+u32     | size = 8          |
+        +-------------------+
+@end group
+@end example
+
+This tag indicates that payload supports starting without
+terminating boot services
 
 @node Machine state
 @section MIPS machine state
@@ -1142,6 +1157,18 @@ u32     | descriptor version|
 
 This tag contains EFI memory map as per EFI specification.
 
+
+@subsection EFI boot services not terminated
+@example
+@group
+        +-------------------+
+u32     | type = 18         |
+u32     | size = 8          |
+        +-------------------+
+@end group
+@end example
+
+This tag indicates ExitBootServices wasn't called
 
 @node Examples
 @chapter Examples
