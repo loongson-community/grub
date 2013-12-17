@@ -487,6 +487,8 @@ offset in the OS image file at which to start loading is defined by the
 offset at which the header was found, minus (header_addr -
 load_addr). load_addr must be less than or equal to header_addr.
 
+Special value -1 means that the file must be loaded from its beginning.
+
 @item load_end_addr
 Contains the physical address of the end of the data
 segment. (load_end_addr - load_addr) specifies how much data to load.
