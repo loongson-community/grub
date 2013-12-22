@@ -21,6 +21,7 @@
 #include <grub/util/install.h>
 #include <grub/util/misc.h>
 #include <grub/emu/config.h>
+#include <grub/greffs.h>
 
 #include <string.h>
 
@@ -34,7 +35,6 @@ static char *output_image;
 static char **files;
 static int nfiles;
 const struct grub_install_image_target_desc *format;
-static FILE *memdisk;
 
 enum
   {
@@ -116,90 +116,55 @@ struct argp argp = {
   NULL, help_filter, NULL
 };
 
-/* tar support */
-#define MAGIC	"ustar"
-struct head
+struct file_desc
 {
-  char name[100];
-  char mode[8];
-  char uid[8];
-  char gid[8];
-  char size[12];
-  char mtime[12];
-  char chksum[8];
-  char typeflag;
-  char linkname[100];
-  char magic[6];
-  char version[2];
-  char uname[32];
-  char gname[32];
-  char devmajor[8];
-  char devminor[8];
-  char prefix[155];
-  char pad[12];
-} GRUB_PACKED;
+  char *name;
+  char *source;
+  grub_size_t size;
+  grub_size_t mtime;
+};
+static struct file_desc *file_descs;
+static size_t n_file_descs, alloc_file_descs;
 
-static void
-write_zeros (unsigned rsz)
+static inline void
+canonicalize (char *name)
 {
-  char buf[512];
-
-  memset (buf, 0, 512);
-  fwrite (buf, 1, rsz, memdisk);
-}
-
-static void
-write_pad (unsigned sz)
-{
-  write_zeros ((~sz + 1) & 511);
-}
-
-static void
-set_tar_value (char *field, grub_uint32_t val,
-	       unsigned len)
-{
-  unsigned i;
-  for (i = 0; i < len - 1; i++)
-    field[len - 2 - i] = '0' + ((val >> (3 * i)) & 7);
-}
-
-static void
-compute_checksum (struct head *hd)
-{
-  unsigned int chk = 0;
-  unsigned char *ptr;
-  memset (hd->chksum, ' ', 8);
-  for (ptr = (unsigned char *) hd; ptr < (unsigned char *) (hd + 1); ptr++)
-    chk += *ptr;
-  set_tar_value (hd->chksum, chk, 8);
+  char *iptr, *optr;
+  for (iptr = name, optr = name; *iptr; )
+    {
+      while (*iptr == '/')
+	iptr++;
+      if (iptr[0] == '.' && (iptr[1] == '/' || iptr[1] == 0))
+	{
+	  iptr += 2;
+	  continue;
+	}
+      if (iptr[0] == '.' && iptr[1] == '.' && (iptr[2] == '/' || iptr[2] == 0))
+	{
+	  iptr += 3;
+	  if (optr == name)
+	    continue;
+	  for (optr -= 2; optr >= name && *optr != '/'; optr--);
+	  optr++;
+	  continue;
+	}
+      while (*iptr && *iptr != '/')
+	*optr++ = *iptr++;
+      if (*iptr)
+	*optr++ = *iptr++;
+    }
+  *optr = 0;
 }
 
 static void
 add_tar_file (const char *from,
 	      const char *to)
 {
-  char *tcn;
-  const char *iptr;
-  char *optr;
-  struct head hd;
   grub_util_fd_t in;
-  ssize_t r;
-  grub_uint32_t mtime = 0;
-  grub_uint32_t size;
-
-  COMPILE_TIME_ASSERT (sizeof (hd) == 512);
+  size_t idx;
 
   if (grub_util_is_special_file (from))
     return;
-
-  mtime = grub_util_get_mtime (from);
-
-  optr = tcn = xmalloc (strlen (to) + 1);
-  for (iptr = to; *iptr == '/'; iptr++);
-  for (; *iptr; iptr++)
-    if (!(iptr[0] == '/' && iptr[1] == '/'))
-      *optr++ = *iptr;
-  *optr = '\0';
 
   if (grub_util_is_directory (from))
     {
@@ -221,69 +186,138 @@ add_tar_file (const char *from,
 	  free (fp);
 	}
       grub_util_fd_closedir (d);
-      free (tcn);
       return;
     }
 
-  if (optr - tcn > 99)
+  idx = n_file_descs++;
+  if (idx >= alloc_file_descs)
     {
-      memset (&hd, 0, sizeof (hd));
-      memcpy (hd.name, tcn, 99);
-      memcpy (hd.mode, "0000600", 7);
-      memcpy (hd.uid, "0001750", 7);
-      memcpy (hd.gid, "0001750", 7);
-
-      set_tar_value (hd.size, optr - tcn, 12);
-      set_tar_value (hd.mtime, mtime, 12);
-      hd.typeflag = 'L';
-      memcpy (hd.magic, "ustar  ", 7);
-      memcpy (hd.uname, "grub", 4);
-      memcpy (hd.gname, "grub", 4);
-
-      compute_checksum (&hd);
-
-      fwrite (&hd, 1, sizeof (hd), memdisk);
-      fwrite (tcn, 1, optr - tcn, memdisk);
-
-      write_pad (optr - tcn);
+      alloc_file_descs = 2 * n_file_descs;
+      file_descs = xrealloc (file_descs, alloc_file_descs
+			     * sizeof (file_descs[0]));
     }
 
   in = grub_util_fd_open (from, GRUB_UTIL_FD_O_RDONLY);
   if (!GRUB_UTIL_FD_IS_VALID (in))
     grub_util_error (_("cannot open `%s': %s"), from, grub_util_fd_strerror ());
 
+  file_descs[idx].name = xstrdup (to);
+  file_descs[idx].source = xstrdup (from);
+  canonicalize (file_descs[idx].name);
+  file_descs[idx].mtime = grub_util_get_mtime (from);
+  file_descs[idx].size = grub_util_get_fd_size (in, from, NULL);
+
+  grub_util_fd_close (in);
+}
+
+static int
+filecmp (const void *p1, const void *p2)
+{
+  const struct file_desc *a = p1, *b = p2;
+
+  /* Don't use strcmp, it's buggy on some systems.  */
+  return grub_strcmp (a->name, b->name);
+}
+
+static void
+write_memdisk (char *memdisk_img)
+{
+  FILE *memdisk;
+  struct grub_greffs_header head;
+  struct grub_greffs_inode inode;
+  size_t total_strlen = 0, i;
+  size_t name_pad = 0;
+  grub_uint32_t file_offset;
+
+  qsort (file_descs, n_file_descs, sizeof (file_descs[0]), filecmp);
+
+  for (i = 0; i < n_file_descs; i++)
+    total_strlen += grub_strlen (file_descs[i].name);
+  name_pad = ALIGN_UP (total_strlen, 4) - total_strlen;
+  total_strlen += name_pad;
+
+  grub_memcpy (head.magic, GRUB_GREFFS_MAGIC, sizeof (head.magic));
+  head.nfiles = grub_cpu_to_le32 (n_file_descs);
+  head.inodes_offset = grub_cpu_to_le32 (sizeof (head)
+					 + sizeof (grub_uint32_t)
+					 * (n_file_descs + 1));
+  head.string_ptrs_offset = grub_cpu_to_le32 (sizeof (head));
+
+  memdisk = grub_util_fopen (memdisk_img, "wb");
+  if (!memdisk)
+    grub_util_error (_("Can't create file: %s"), strerror (errno));
+
+  fwrite (&head, 1, sizeof (head), memdisk);
+
+  grub_uint32_t curname = sizeof (head) + sizeof (grub_uint32_t)
+    * (n_file_descs + 1) + sizeof (inode) * n_file_descs;
+  for (i = 0; i <= n_file_descs; i++)
+    {
+      grub_uint32_t curname_le = grub_cpu_to_le32 (curname);
+      fwrite (&curname_le, 1, sizeof (curname_le), memdisk);
+      if (i != n_file_descs)
+	curname += grub_strlen (file_descs[i].name);
+    }
+
+  file_offset = sizeof (head) + sizeof (grub_uint32_t)
+    * (n_file_descs + 1) + sizeof (inode) * n_file_descs + total_strlen;
+  for (i = 0; i < n_file_descs; i++)
+    {
+      inode.start = grub_cpu_to_le32 (file_offset);
+      inode.size = grub_cpu_to_le32 (file_descs[i].size);
+      inode.mtime = grub_cpu_to_le32 (file_descs[i].mtime);
+      inode.type = 0;
+      fwrite (&inode, 1, sizeof (inode), memdisk);
+      file_offset += file_descs[i].size;
+    }
+
+  for (i = 0; i < n_file_descs; i++)
+    fwrite (file_descs[i].name, 1, grub_strlen (file_descs[i].name), memdisk);
+
   if (!grub_install_copy_buffer)
     grub_install_copy_buffer = xmalloc (GRUB_INSTALL_COPY_BUFFER_SIZE);
 
-  size = grub_util_get_fd_size (in, from, NULL);
+  grub_memset (grub_install_copy_buffer, 0, 4);
+  fwrite (grub_install_copy_buffer, 1, name_pad, memdisk);
 
-  memset (&hd, 0, sizeof (hd));
-  memcpy (hd.name, tcn, optr - tcn < 99 ? optr - tcn : 99);
-  memcpy (hd.mode, "0000600", 7);
-  memcpy (hd.uid, "0001750", 7);
-  memcpy (hd.gid, "0001750", 7);
-
-  set_tar_value (hd.size, size, 12);
-  set_tar_value (hd.mtime, mtime, 12);
-  hd.typeflag = '0';
-  memcpy (hd.magic, "ustar  ", 7);
-  memcpy (hd.uname, "grub", 4);
-  memcpy (hd.gname, "grub", 4);
-
-  compute_checksum (&hd);
-
-  fwrite (&hd, 1, sizeof (hd), memdisk);
- 
-  while (1)
+  for (i = 0; i < n_file_descs; i++)
     {
-      r = grub_util_fd_read (in, grub_install_copy_buffer, GRUB_INSTALL_COPY_BUFFER_SIZE);
-      if (r <= 0)
-	break;
-      fwrite (grub_install_copy_buffer, 1, r, memdisk);
-    }
-  grub_util_fd_close (in);
+      grub_util_fd_t in;
+      size_t remaining = file_descs[i].size;
+      in = grub_util_fd_open (file_descs[i].source, GRUB_UTIL_FD_O_RDONLY);
+      if (!GRUB_UTIL_FD_IS_VALID (in))
+	grub_util_error (_("cannot open `%s': %s"),
+			 file_descs[i].source, grub_util_fd_strerror ());
+ 
+      while (remaining)
+	{
+	  size_t toread = remaining;
+	  ssize_t r;
+	  if (remaining > GRUB_INSTALL_COPY_BUFFER_SIZE)
+	    toread = GRUB_INSTALL_COPY_BUFFER_SIZE;
+	  r = grub_util_fd_read (in, grub_install_copy_buffer, toread);
+	  if (r <= 0)
+	    break;
+	  fwrite (grub_install_copy_buffer, 1, r, memdisk);
+	  if (r >= remaining)
+	    remaining = 0;
+	  else
+	    remaining -= r; 
+	}
+      grub_util_fd_close (in);
 
-  write_pad (size);
+      grub_memset (grub_install_copy_buffer, 0, GRUB_INSTALL_COPY_BUFFER_SIZE);
+      while (remaining)
+	{
+	  size_t toread = remaining;
+	  if (remaining > GRUB_INSTALL_COPY_BUFFER_SIZE)
+	    toread = GRUB_INSTALL_COPY_BUFFER_SIZE;
+	  fwrite (grub_install_copy_buffer, 1, toread, memdisk);
+	  remaining -= toread; 
+	}
+    }
+
+  fclose (memdisk);
 }
 
 int
@@ -319,8 +353,6 @@ main (int argc, char *argv[])
 
   char *memdisk_img = grub_util_make_temporary_file ();
 
-  memdisk = grub_util_fopen (memdisk_img, "wb");
-
   add_tar_file (memdisk_dir, "");
   for (i = 0; i < nfiles; i++)
     {
@@ -341,14 +373,12 @@ main (int argc, char *argv[])
 	to++;
       add_tar_file (from, to);
     }
-  write_zeros (512);
 
-  fclose (memdisk);
-
+  write_memdisk (memdisk_img);
   grub_util_unlink_recursive (memdisk_dir);
 
   grub_install_push_module ("memdisk");
-  grub_install_push_module ("tar");
+  grub_install_push_module ("greffs");
 
   grub_install_make_image_wrap (grub_install_source_directory,
 				"(memdisk)/boot/grub", output_image,
@@ -356,5 +386,6 @@ main (int argc, char *argv[])
 				grub_util_get_target_name (format), 0);
 
   grub_util_unlink (memdisk_img);
+
   return 0;
 }

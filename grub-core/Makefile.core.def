@@ -1400,6 +1400,11 @@ module = {
 };
 
 module = {
+  name = greffs;
+  common = fs/greffs.c;
+};
+
+module = {
   name = udf;
   common = fs/udf.c;
 };

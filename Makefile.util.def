@@ -119,6 +119,7 @@ library = {
   common = grub-core/fs/sfs.c;
   common = grub-core/fs/squash4.c;
   common = grub-core/fs/tar.c;
+  common = grub-core/fs/greffs.c;
   common = grub-core/fs/udf.c;
   common = grub-core/fs/ufs2.c;
   common = grub-core/fs/ufs.c;
