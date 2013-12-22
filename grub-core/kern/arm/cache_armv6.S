@@ -42,3 +42,11 @@ FUNCTION(grub_arm_main_id)
 FUNCTION(grub_arm_cache_type)
 	mrc 	p15, 0, r0, c0, c0, 1
 	bx lr
+
+FUNCTION(grub_arm_cache_enable)
+	mrc	p15, 0, r0, c1, c0, 0
+	orr	r0, r0, #(1 << 12)
+	orr	r0, r0, #(1 << 2)
+	orr	r0, r0, #(1 << 0)
+	mcr	p15, 0, r0, c1, c0, 0
+	bx	lr

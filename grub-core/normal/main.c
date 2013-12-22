@@ -230,12 +230,18 @@ read_lists (const char *val)
 {
   if (! grub_no_modules)
     {
+      grub_boot_time ("Reading commands");
       read_command_list (val);
+      grub_boot_time ("Reading filesystems");
       read_fs_list (val);
+      grub_boot_time ("Reading crypto");
       read_crypto_list (val);
+      grub_boot_time ("Reading terminal");
       read_terminal_list (val);
     }
+  grub_boot_time ("Reading gettext");
   grub_gettext_reread_prefix (val);
+  grub_boot_time ("Lists reread");
 }
 
 static char *

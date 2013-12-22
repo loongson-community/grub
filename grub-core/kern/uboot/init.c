@@ -83,6 +83,8 @@ rpi_timer_ms (void)
 }
 #endif
 
+void grub_arm_cache_enable (void);
+
 void
 grub_machine_init (void)
 {
@@ -100,6 +102,10 @@ grub_machine_init (void)
       /* Try to print an error message */
       grub_uboot_puts ("invalid U-Boot API version\n");
     }
+
+#ifdef __arm__
+  grub_arm_cache_enable ();
+#endif
 
   /* Initialize the console so that GRUB can display messages.  */
   grub_console_init_early ();

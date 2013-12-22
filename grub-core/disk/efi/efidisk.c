@@ -654,6 +654,7 @@ grub_efidisk_get_device_handle (grub_disk_t disk)
 
     case 'h':
       /* If this is the whole disk, just return its own data.  */
+      grub_printf ("parent handle = %p\n", d->handle);
       if (! disk->partition)
 	return d->handle;
 
@@ -664,13 +665,24 @@ grub_efidisk_get_device_handle (grub_disk_t disk)
 	struct grub_efidisk_data *c;
 
 	devices = make_devices ();
-	FOR_CHILDREN (c, devices)
+	grub_efi_print_device_path (d->device_path);
+	for (c = devices; c; c = c->next)
 	  {
 	    grub_efi_hard_drive_device_path_t *hd;
 
 	    hd = (grub_efi_hard_drive_device_path_t *) c->last_device_path;
 
-	    if ((GRUB_EFI_DEVICE_PATH_TYPE (c->last_device_path)
+	    grub_efi_print_device_path (c->device_path);
+	    grub_printf ("part %d = %x, %x, %x, %x, %x, %x\n",
+			 is_child (c, d),
+			 (int) GRUB_EFI_DEVICE_PATH_TYPE (c->last_device_path),
+			 (int) GRUB_EFI_DEVICE_PATH_SUBTYPE (c->last_device_path),
+			 (int) hd->partition_start, (int) hd->partition_size,
+			 (int) grub_partition_get_start (disk->partition),
+			 (int) grub_partition_get_len (disk->partition));
+
+	    if (is_child (c, d)
+		&& (GRUB_EFI_DEVICE_PATH_TYPE (c->last_device_path)
 		 == GRUB_EFI_MEDIA_DEVICE_PATH_TYPE)
 		&& (GRUB_EFI_DEVICE_PATH_SUBTYPE (c->last_device_path)
 		    == GRUB_EFI_HARD_DRIVE_DEVICE_PATH_SUBTYPE)

@@ -249,7 +249,8 @@ grub_cmd_chainloader (grub_command_t cmd __attribute__ ((unused)),
 
   if (! dp)
     {
-      grub_error (GRUB_ERR_BAD_DEVICE, "not a valid root device");
+      grub_error (GRUB_ERR_BAD_DEVICE, "not a valid root device (%p, %p)",
+		  dev_handle, dp);
       goto fail;
     }
 

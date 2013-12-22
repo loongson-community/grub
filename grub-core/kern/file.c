@@ -67,6 +67,8 @@ grub_file_open (const char *name)
   const char *file_name;
   grub_file_filter_id_t filter;
 
+  grub_boot_time ("Opening '%s'", name);
+
   device_name = grub_file_get_device_name (name);
   if (grub_errno)
     goto fail;
