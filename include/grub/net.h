@@ -279,6 +279,7 @@ struct grub_net_network_level_interface
   grub_net_interface_flags_t flags;
   struct grub_net_bootp_packet *dhcp_ack;
   grub_size_t dhcp_acklen;
+  grub_uint16_t vlantag;
   void *data;
 };
 
@@ -536,5 +537,7 @@ extern char *grub_net_default_server;
 
 #define GRUB_NET_TRIES 40
 #define GRUB_NET_INTERVAL 400
+
+#define VLANTAG_IDENTIFIER 0x8100
 
 #endif /* ! GRUB_NET_HEADER */

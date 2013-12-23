@@ -1,5 +1,22 @@
 2013-12-23  Paulo Flabiano Smorigo  <pfsmorigo@br.ibm.com>
 
+	Add Virtual LAN support.
+
+	This patch adds support for virtual LAN (VLAN) tagging. VLAN tagging allows
+	multiple VLANs in a bridged network to share the same physical network link
+	but maintain isolation:
+
+	http://en.wikipedia.org/wiki/IEEE_802.1Q
+
+	* grub-core/net/ethernet.c: Add check, get, and set vlan tag id.
+	* grub-core/net/drivers/ieee1275/ofnet.c: Get vlan tag id from bootargs.
+	* grub-core/net/arp.c: Add check.
+	* grub-core/net/ip.c: Likewise.
+	* include/grub/net/arp.h: Add vlantag attribute.
+	* include/grub/net/ip.h: Likewise.
+
+2013-12-23  Paulo Flabiano Smorigo  <pfsmorigo@br.ibm.com>
+
 	Add bootargs parser for open firmware.
 
 	It enables net boot even when there is no bootp/dhcp server.
