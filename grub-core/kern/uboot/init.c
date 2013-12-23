@@ -108,7 +108,7 @@ grub_machine_init (void)
   /* Enumerate memory and initialize the memory management system. */
   grub_uboot_mm_init ();
 
-  /* Shold be earlier but it needs memalign.  */
+  /* Should be earlier but it needs memalign.  */
 #ifdef __arm__
   grub_arm_enable_caches_mmu ();
 #endif

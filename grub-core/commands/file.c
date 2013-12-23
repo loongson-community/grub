@@ -48,6 +48,8 @@ static const struct grub_arg_option options[] = {
    N_("Check if FILE can be used as x86 multiboot2 kernel"), 0, 0},
   {"is-arm-linux", 0, 0,
    N_("Check if FILE is ARM Linux"), 0, 0},
+  {"is-arm64-linux", 0, 0,
+   N_("Check if FILE is ARM64 Linux"), 0, 0},
   {"is-ia64-linux", 0, 0,
    N_("Check if FILE is IA64 Linux"), 0, 0},
   {"is-mips-linux", 0, 0,
@@ -82,6 +84,8 @@ static const struct grub_arg_option options[] = {
    N_("Check if FILE is x86_64 EFI file"), 0, 0},
   {"is-ia64-efi", 0, 0,
    N_("Check if FILE is IA64 EFI file"), 0, 0},
+  {"is-arm64-efi", 0, 0,
+   N_("Check if FILE is ARM64 EFI file"), 0, 0},
   {"is-arm-efi", 0, 0,
    N_("Check if FILE is ARM EFI file"), 0, 0},
   {"is-hibernated-hiberfil", 0, 0,
@@ -105,6 +109,7 @@ enum
   IS_MULTIBOOT,
   IS_MULTIBOOT2,
   IS_ARM_LINUX,
+  IS_ARM64_LINUX,
   IS_IA64_LINUX,
   IS_MIPS_LINUX,
   IS_MIPSEL_LINUX,
@@ -121,6 +126,7 @@ enum
   IS_32_EFI,
   IS_64_EFI,
   IS_IA_EFI,
+  IS_ARM64_EFI,
   IS_ARM_EFI,
   IS_HIBERNATED,
   IS_XNU64,
@@ -377,14 +383,40 @@ grub_cmd_file (grub_extcmd_context_t ctxt, int argc, char **args)
       }
     case IS_ARM_LINUX:
       {
-	grub_uint32_t sig;
+	grub_uint32_t sig, sig_pi;
+	if (grub_file_read (file, &sig_pi, 4) != 4)
+	  break;
+	/* Raspberry pi.  */
+	if (sig_pi == grub_cpu_to_le32_compile_time (0xea000006))
+	  {
+	    ret = 1;
+	    break;
+	  }
+
 	if (grub_file_seek (file, 0x24) == (grub_size_t) -1)
 	  break;
 	if (grub_file_read (file, &sig, 4) != 4)
 	  break;
-	if (sig != grub_cpu_to_le32_compile_time (0x016f2818))
+	if (sig == grub_cpu_to_le32_compile_time (0x016f2818))
+	  {
+	    ret = 1;
+	    break;
+	  }
+	break;
+      }
+    case IS_ARM64_LINUX:
+      {
+	grub_uint32_t sig;
+
+	if (grub_file_seek (file, 0x38) == (grub_size_t) -1)
 	  break;
-	ret = 1;
+	if (grub_file_read (file, &sig, 4) != 4)
+	  break;
+	if (sig == grub_cpu_to_le32_compile_time (0x644d5241))
+	  {
+	    ret = 1;
+	    break;
+	  }
 	break;
       }
     case IS_PAE_DOMU ... IS_DOM0:
@@ -535,6 +567,7 @@ grub_cmd_file (grub_extcmd_context_t ctxt, int argc, char **args)
     case IS_32_EFI:
     case IS_64_EFI:
     case IS_IA_EFI:
+    case IS_ARM64_EFI:
     case IS_ARM_EFI:
       {
 	char signature[4];
@@ -573,11 +606,15 @@ grub_cmd_file (grub_extcmd_context_t ctxt, int argc, char **args)
 	    && coff_head.machine !=
 	    grub_cpu_to_le16_compile_time (GRUB_PE32_MACHINE_IA64))
 	  break;
+	if (type == IS_ARM64_EFI
+	    && coff_head.machine !=
+	    grub_cpu_to_le16_compile_time (GRUB_PE32_MACHINE_ARM64))
+	  break;
 	if (type == IS_ARM_EFI
 	    && coff_head.machine !=
 	    grub_cpu_to_le16_compile_time (GRUB_PE32_MACHINE_ARMTHUMB_MIXED))
 	  break;
-	if (type == IS_64_EFI || type == IS_64_EFI)
+	if (type == IS_IA_EFI || type == IS_64_EFI || type == IS_ARM64_EFI)
 	  {
 	    struct grub_pe64_optional_header o64;
 	    if (grub_file_read (file, &o64, sizeof (o64)) != sizeof (o64))
