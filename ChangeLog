@@ -1,5 +1,29 @@
 2013-12-22  Vladimir Serbinenko  <phcoder@gmail.com>
 
+	* grub-core/kern/arm/cache.c (grub_arm_disable_caches_mmu): Use v6
+	algorithm on v5.
+
+	Suggested by: Leif Lindholm.
+
+2013-12-22  Andrey Borzenkov <arvidjaar@gmail.com>
+
+	* util/grub-mkconfig.in: Fix Xen platform conditions.
+
+2013-12-22  Andrey Borzenkov <arvidjaar@gmail.com>
+
+	* util/grub-mkrescue.c: Split single help message string in several
+	strings used in previous shell version.
+
+2013-12-22  Leif Lindholm <leif.lindholm@linaro.org>
+
+	Add arm64 Linux loader.
+
+2013-12-22  Leif Lindholm <leif.lindholm@linaro.org>
+
+	Add grub_fdt_create_empty_tree() and grub_fdt_set_prop64().
+
+2013-12-22  Vladimir Serbinenko  <phcoder@gmail.com>
+
 	Add module loading and parsing boot time checkpoints.
 
 2013-12-22  Vladimir Serbinenko  <phcoder@gmail.com>
