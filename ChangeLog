@@ -1,3 +1,10 @@
+2013-12-23  Paulo Flabiano Smorigo  <pfsmorigo@br.ibm.com>
+
+	Add grub_env_set_net_property function.
+
+	* grub-core/net/bootp.c: Remove set_env_limn_ro.
+	* grub-core/net/net.c: Add grub_env_set_net_property.
+
 2013-12-18  Vladimir Serbinenko  <phcoder@gmail.com>
 
 	* configure.ac: Set version to 2.02~beta1.
