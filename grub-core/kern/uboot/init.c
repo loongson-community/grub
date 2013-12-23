@@ -31,6 +31,7 @@
 #include <grub/uboot/uboot.h>
 #include <grub/uboot/api_public.h>
 #include <grub/cpu/system.h>
+#include <grub/cache.h>
 
 extern char __bss_start[];
 extern char _end[];
@@ -83,8 +84,6 @@ rpi_timer_ms (void)
 }
 #endif
 
-void grub_arm_cache_enable (void);
-
 void
 grub_machine_init (void)
 {
@@ -103,15 +102,16 @@ grub_machine_init (void)
       grub_uboot_puts ("invalid U-Boot API version\n");
     }
 
-#ifdef __arm__
-  grub_arm_cache_enable ();
-#endif
-
   /* Initialize the console so that GRUB can display messages.  */
   grub_console_init_early ();
 
   /* Enumerate memory and initialize the memory management system. */
   grub_uboot_mm_init ();
+
+  /* Shold be earlier but it needs memalign.  */
+#ifdef __arm__
+  grub_arm_enable_caches_mmu ();
+#endif
 
   grub_dprintf ("init", "__bss_start: %p\n", __bss_start);
   grub_dprintf ("init", "_end: %p\n", _end);
