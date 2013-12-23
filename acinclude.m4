@@ -272,14 +272,11 @@ rm -f conftest*])
 
 if test "x$grub_cv_i386_asm_prefix_requirement" = xyes; then
   grub_tmp_addr32="addr32"
-  grub_tmp_data32="data32"
 else
   grub_tmp_addr32="addr32;"
-  grub_tmp_data32="data32;"
 fi
 
 ADDR32=$grub_tmp_addr32
-DATA32=$grub_tmp_data32
 
 AC_MSG_RESULT([$grub_cv_i386_asm_prefix_requirement])])
 
