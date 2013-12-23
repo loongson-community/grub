@@ -280,6 +280,12 @@
   { 0xb1b621d5, 0xf19c, 0x41a5, \
       { 0x83, 0x0b, 0xd9, 0x15, 0x2c, 0x69, 0xaa, 0xe0 } \
   }
+
+#define GRUB_EFI_VENDOR_APPLE_GUID \
+  { 0x2B0585EB, 0xD8B8, 0x49A9,	\
+      { 0x8B, 0x8C, 0xE2, 0x1B, 0x01, 0xAE, 0xF2, 0xB7 } \
+  }
+
 struct grub_efi_sal_system_table
 {
   grub_uint32_t signature;
@@ -814,14 +820,6 @@ struct grub_efi_uart_device_path
 typedef struct grub_efi_uart_device_path grub_efi_uart_device_path_t;
 
 #define GRUB_EFI_VENDOR_MESSAGING_DEVICE_PATH_SUBTYPE	10
-
-struct grub_efi_vendor_messaging_device_path
-{
-  grub_efi_device_path_t header;
-  grub_efi_packed_guid_t vendor_guid;
-  grub_efi_uint8_t vendor_defined_data[0];
-} GRUB_PACKED;
-typedef struct grub_efi_vendor_messaging_device_path grub_efi_vendor_messaging_device_path_t;
 
 /* Media Device Path.  */
 #define GRUB_EFI_MEDIA_DEVICE_PATH_TYPE			4
