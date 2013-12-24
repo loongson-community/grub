@@ -292,4 +292,4 @@ LOCAL(fail):
 err_int15_msg:
 	.ascii	"move memory fails\0"
 
-	.org _start - data_start + CODE_SECTORS * 512
+	.org (CODE_SECTORS + 1) * 512
