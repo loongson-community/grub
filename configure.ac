@@ -538,10 +538,31 @@ AC_COMPILE_IFELSE(
 # on arm clang doesn't support .arch directive
 # on mips clang doesn't support privilegied instructions, doubleword store/load
 # and crashes with hand-written assembly
-if test "x$grub_cv_cc_target_clang" = xyes && ( test "x$target_cpu" = xi386 \
-   || test "x$target_cpu" = xx86_64 || test "x$target_cpu" = xarm \
+if test "x$grub_cv_cc_target_clang" = xyes && ( test "x$target_cpu" = xarm \
    || test "x$target_cpu" = xmips || test "x$target_cpu" = xmipsel ); then
    TARGET_CCASFLAGS="$TARGET_CCASFLAGS -no-integrated-as"
+fi
+
+if test "x$grub_cv_cc_target_clang" = xyes && ( test "x$target_cpu" = xi386 \
+   || test "x$target_cpu" = xx86_64  ); then
+AC_CACHE_CHECK([if clang can handle .code16], [grub_cv_cc_target_clang_code16]
+[
+CFLAGS="$TARGET_CCASFLAGS"
+AC_COMPILE_IFELSE(
+[AC_LANG_PROGRAM([], [[
+   asm volatile (".code16\n"
+                 "xorw %ax, %ax\n"
+#ifdef __x86_64__
+		 ".code64\n"
+#else
+		 ".code32\n"
+#endif
+                 );
+]])],
+[grub_cv_cc_target_clang_code16=yes], [grub_cv_cc_target_clang_code16=no])])
+   if test x$grub_cv_cc_target_clang_code16 = xno ; then
+     TARGET_CCASFLAGS="$TARGET_CCASFLAGS -no-integrated-as"
+   fi
 fi
 
 if test "x$grub_cv_cc_target_clang" = xyes && test "x$target_cpu" = xpowerpc; then
