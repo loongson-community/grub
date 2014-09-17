@@ -1045,7 +1045,7 @@ else
 CFLAGS="$TARGET_CFLAGS -nostdlib -Wno-error"
 fi
 CPPFLAGS="$TARGET_CPPFLAGS"
-if test x$target_cpu = xi386 || test x$target_cpu = xx86_64 || test "x$grub_cv_cc_target_clang" = xyes ; then
+if test x$target_cpu = xi386 || test x$target_cpu = xx86_64 || test x$target_cpu = xpowerpc || test "x$grub_cv_cc_target_clang" = xyes; then
 TARGET_LIBGCC=
 else
 TARGET_LIBGCC=-lgcc
@@ -1063,8 +1063,10 @@ fi
 CFLAGS="$TARGET_CFLAGS -nostdlib $DEFSYM"
 fi
 
-# Check for libgcc symbols
-AC_CHECK_FUNCS(__bswapsi2 __bswapdi2 __ashldi3 __ashrdi3 __lshrdi3 __ucmpdi2 _restgpr_14_x)
+if ! test x$target_cpu = xpowerpc; then
+  # Check for libgcc symbols
+  AC_CHECK_FUNCS(__bswapsi2 __bswapdi2 __ashldi3 __ashrdi3 __lshrdi3 __ucmpdi2 _restgpr_14_x)
+fi
 
 if test "x$TARGET_APPLE_LINKER" = x1 ; then
 CFLAGS="$TARGET_CFLAGS -nostdlib -static"
@@ -1629,7 +1631,7 @@ if test x"$enable_werror" != xno ; then
   HOST_CFLAGS="$HOST_CFLAGS -Werror"
 fi
 
-if test "x$grub_cv_cc_target_clang" = xno; then
+if test "x$grub_cv_cc_target_clang" = xno && test x$target_cpu != xpowerpc; then
    TARGET_LDFLAGS_STATIC_LIBGCC="-static-libgcc"
 else
    TARGET_LDFLAGS_STATIC_LIBGCC=
