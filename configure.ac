@@ -119,6 +119,7 @@ if test "x$with_platform" = x; then
     x86_64-*) platform=pc ;;
     powerpc-*) platform=ieee1275 ;;
     powerpc64-*) platform=ieee1275 ;;
+    powerpc64le-*) platform=ieee1275 ;;
     sparc64-*) platform=ieee1275 ;;
     mipsel-*) platform=loongson ;;
     mips-*) platform=arc ;;
@@ -141,6 +142,7 @@ case "$target_cpu"-"$platform" in
   x86_64-none) ;;
   x86_64-*) target_cpu=i386 ;;
   powerpc64-ieee1275) target_cpu=powerpc ;;
+  powerpc64le-ieee1275) target_cpu=powerpc ;;
 esac
 
 # Check if the platform is supported, make final adjustments.
@@ -592,6 +594,12 @@ fi
 
 if test "x$target_cpu" = xi386 && test "x$platform" != xemu; then
   TARGET_CFLAGS="$TARGET_CFLAGS -march=i386"
+fi
+
+if test x$target_cpu = xpowerpc && test x$ac_cv_c_bigendian = xno; then
+  TARGET_CFLAGS="$TARGET_CFLAGS -mbig-endian"
+  TARGET_CCASFLAGS="$TARGET_CCASFLAGS -mbig-endian"
+  TARGET_LDFLAGS="$TARGET_LDFLAGS -static -mbig-endian"
 fi
 
 if test "x$target_m32" = x1; then
