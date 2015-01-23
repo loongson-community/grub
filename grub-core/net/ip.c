@@ -225,12 +225,13 @@ handle_dgram (struct grub_net_buff *nb,
 	      grub_net_ip_protocol_t proto,
 	      const grub_net_network_level_address_t *source,
 	      const grub_net_network_level_address_t *dest,
+              grub_uint16_t vlantag_vid,
 	      grub_uint8_t ttl)
 {
   struct grub_net_network_level_interface *inf = NULL;
   grub_err_t err;
   int multicast = 0;
-  
+
   /* DHCP needs special treatment since we don't know IP yet.  */
   {
     struct udphdr *udph;
@@ -290,6 +291,13 @@ handle_dgram (struct grub_net_buff *nb,
 	&& grub_net_addr_cmp (&inf->address, dest) == 0
 	&& grub_net_hwaddr_cmp (&inf->hwaddress, hwaddress) == 0)
       break;
+
+    /* Check vlantag id */
+    if (inf->card == card &&
+        ((inf->vlantag.set && vlantag_vid != inf->vlantag.vid) ||
+         (!inf->vlantag.set && vlantag_vid != 0)))
+        continue;
+
     /* Solicited node multicast.  */
     if (inf->card == card
 	&& inf->address.type == GRUB_NET_NETWORK_LEVEL_PROTOCOL_IPV6
@@ -378,7 +386,8 @@ static grub_err_t
 grub_net_recv_ip4_packets (struct grub_net_buff *nb,
 			   struct grub_net_card *card,
 			   const grub_net_link_level_address_t *hwaddress,
-			   const grub_net_link_level_address_t *src_hwaddress)
+			   const grub_net_link_level_address_t *src_hwaddress,
+                           grub_uint16_t vlantag_vid)
 {
   struct iphdr *iph = (struct iphdr *) nb->data;
   grub_err_t err;
@@ -453,7 +462,7 @@ grub_net_recv_ip4_packets (struct grub_net_buff *nb,
       dest.ipv4 = iph->dest;
 
       return handle_dgram (nb, card, src_hwaddress, hwaddress, iph->protocol,
-			   &source, &dest, iph->ttl);
+			   &source, &dest, vlantag_vid, iph->ttl);
     }
 
   for (prev = &reassembles, rsm = *prev; rsm; prev = &rsm->next, rsm = *prev)
@@ -589,7 +598,7 @@ grub_net_recv_ip4_packets (struct grub_net_buff *nb,
       dest.ipv4 = dst;
 
       return handle_dgram (ret, card, src_hwaddress,
-			   hwaddress, proto, &source, &dest,
+			   hwaddress, proto, &source, &dest, vlantag_vid,
 			   ttl);
     }
 }
@@ -644,7 +653,8 @@ static grub_err_t
 grub_net_recv_ip6_packets (struct grub_net_buff *nb,
 			   struct grub_net_card *card,
 			   const grub_net_link_level_address_t *hwaddress,
-			   const grub_net_link_level_address_t *src_hwaddress)
+			   const grub_net_link_level_address_t *src_hwaddress,
+                           grub_uint16_t vlantag_vid)
 {
   struct ip6hdr *iph = (struct ip6hdr *) nb->data;
   grub_err_t err;
@@ -695,21 +705,24 @@ grub_net_recv_ip6_packets (struct grub_net_buff *nb,
   grub_memcpy (dest.ipv6, &iph->dest, sizeof (dest.ipv6));
 
   return handle_dgram (nb, card, src_hwaddress, hwaddress, iph->protocol,
-		       &source, &dest, iph->ttl);
+		       &source, &dest, vlantag_vid, iph->ttl);
 }
 
 grub_err_t
 grub_net_recv_ip_packets (struct grub_net_buff *nb,
 			  struct grub_net_card *card,
 			  const grub_net_link_level_address_t *hwaddress,
-			  const grub_net_link_level_address_t *src_hwaddress)
+			  const grub_net_link_level_address_t *src_hwaddress,
+                          grub_uint16_t vlantag_vid)
 {
   struct iphdr *iph = (struct iphdr *) nb->data;
 
   if ((iph->verhdrlen >> 4) == 4)
-    return grub_net_recv_ip4_packets (nb, card, hwaddress, src_hwaddress);
+    return grub_net_recv_ip4_packets (nb, card, hwaddress, src_hwaddress,
+                                      vlantag_vid);
   if ((iph->verhdrlen >> 4) == 6)
-    return grub_net_recv_ip6_packets (nb, card, hwaddress, src_hwaddress);
+    return grub_net_recv_ip6_packets (nb, card, hwaddress, src_hwaddress,
+                                      vlantag_vid);
   grub_dprintf ("net", "Bad IP version: %d\n", (iph->verhdrlen >> 4));
   grub_netbuff_free (nb);
   return GRUB_ERR_NONE;

@@ -18,6 +18,7 @@
 
 #include <grub/misc.h>
 #include <grub/mm.h>
+#include <grub/env.h>
 #include <grub/net/ethernet.h>
 #include <grub/net/ip.h>
 #include <grub/net/arp.h>
@@ -56,10 +57,16 @@ send_ethernet_packet (struct grub_net_network_level_interface *inf,
 {
   struct etherhdr *eth;
   grub_err_t err;
+  grub_uint8_t etherhdr_size;
 
-  COMPILE_TIME_ASSERT (sizeof (*eth) < GRUB_NET_MAX_LINK_HEADER_SIZE);
+  etherhdr_size = sizeof (*eth);
+  COMPILE_TIME_ASSERT (sizeof (*eth) + 4 < GRUB_NET_MAX_LINK_HEADER_SIZE);
 
-  err = grub_netbuff_push (nb, sizeof (*eth));
+  /* Increase ethernet header in case of vlantag */
+  if (inf->vlantag.set)
+    etherhdr_size += 4;
+
+  err = grub_netbuff_push (nb, etherhdr_size);
   if (err)
     return err;
   eth = (struct etherhdr *) nb->data;
@@ -76,6 +83,21 @@ send_ethernet_packet (struct grub_net_network_level_interface *inf,
 	return err;
       inf->card->opened = 1;
     }
+
+  /* Check and add a vlan-tag if needed. */
+  if (inf->vlantag.set)
+    {
+      grub_uint32_t vlantag;
+      vlantag = grub_cpu_to_be32 ((VLANTAG_IDENTIFIER << 16) | inf->vlantag.vid);
+
+      /* Move eth type to the right */
+      grub_memcpy ((char *) nb->data + etherhdr_size - 2,
+                   (char *) nb->data + etherhdr_size - 6, 2);
+
+      /* Add the tag in the middle */
+      grub_memcpy ((char *) nb->data + etherhdr_size - 6, &vlantag, 4);
+    }
+
   return inf->card->driver->send (inf->card, nb);
 }
 
@@ -90,10 +112,26 @@ grub_net_recv_ethernet_packet (struct grub_net_buff *nb,
   grub_net_link_level_address_t hwaddress;
   grub_net_link_level_address_t src_hwaddress;
   grub_err_t err;
+  grub_uint8_t etherhdr_size = sizeof (*eth);
+  grub_uint16_t vlantag_vid = 0;
+
+  /* Check if a vlan-tag is present. If so, the ethernet header is 4 bytes */
+  /* longer than the original one. The vlantag id is extracted and the header */
+  /* is reseted to the original size. */
+  if (grub_get_unaligned16 (nb->data + etherhdr_size - 2) ==
+      grub_cpu_to_be16_compile_time (VLANTAG_IDENTIFIER))
+    {
+      vlantag_vid = grub_be_to_cpu16 (grub_get_unaligned16 (nb->data +
+                                                      etherhdr_size)) & 0x1fff;
+      etherhdr_size += 4;
+      /* Move eth type to the original position */
+      grub_memcpy((char *) nb->data + etherhdr_size - 6,
+                  (char *) nb->data + etherhdr_size - 2, 2);
+    }
 
   eth = (struct etherhdr *) nb->data;
   type = grub_be_to_cpu16 (eth->type);
-  err = grub_netbuff_pull (nb, sizeof (*eth));
+  err = grub_netbuff_pull (nb, etherhdr_size);
   if (err)
     return err;
 
@@ -121,13 +159,14 @@ grub_net_recv_ethernet_packet (struct grub_net_buff *nb,
     {
       /* ARP packet. */
     case GRUB_NET_ETHERTYPE_ARP:
-      grub_net_arp_receive (nb, card);
+      grub_net_arp_receive (nb, card, vlantag_vid);
       grub_netbuff_free (nb);
       return GRUB_ERR_NONE;
       /* IP packet.  */
     case GRUB_NET_ETHERTYPE_IP:
     case GRUB_NET_ETHERTYPE_IP6:
-      return grub_net_recv_ip_packets (nb, card, &hwaddress, &src_hwaddress);
+      return grub_net_recv_ip_packets (nb, card, &hwaddress, &src_hwaddress,
+                                       vlantag_vid);
     }
   grub_netbuff_free (nb);
   return GRUB_ERR_NONE;
