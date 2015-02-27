@@ -81,11 +81,11 @@ grub_net_arp_send_request (struct grub_net_network_level_interface *inf,
     return err;
 
   arp_header = (struct arphdr *) nb.data;
-  arp_header->hrd = grub_cpu_to_be16 (GRUB_NET_ARPHRD_ETHERNET);
+  arp_header->hrd = grub_cpu_to_be16_compile_time (GRUB_NET_ARPHRD_ETHERNET);
   arp_header->hln = 6;
   arp_header->pro = grub_cpu_to_be16 (etherpro);
   arp_header->pln = addrlen;
-  arp_header->op = grub_cpu_to_be16 (ARP_REQUEST);
+  arp_header->op = grub_cpu_to_be16_compile_time (ARP_REQUEST);
   aux = (grub_uint8_t *) arp_header + sizeof (*arp_header);
   /* Sender hardware address.  */
   grub_memcpy (aux, &inf->hwaddress.mac, 6);
@@ -110,7 +110,8 @@ grub_net_arp_send_request (struct grub_net_network_level_interface *inf,
 	return GRUB_ERR_NONE;
       pending_req = proto_addr->ipv4;
       have_pending = 0;
-      grub_net_poll_cards (GRUB_NET_INTERVAL, &have_pending);
+      grub_net_poll_cards (GRUB_NET_INTERVAL + (i * GRUB_NET_INTERVAL_ADDITION),
+                           &have_pending);
       if (grub_net_link_layer_resolve_check (inf, proto_addr))
 	return GRUB_ERR_NONE;
       nb.data = nbd;

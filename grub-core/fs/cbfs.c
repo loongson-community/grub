@@ -74,8 +74,7 @@ grub_cbfs_find_file (struct grub_archelp_data *data, char **name,
       (void) mtime;
       offset = grub_be_to_cpu32 (hd.offset);
 
-      if (mode)
-	*mode = GRUB_ARCHELP_ATTR_FILE | GRUB_ARCHELP_ATTR_NOTIME;
+      *mode = GRUB_ARCHELP_ATTR_FILE | GRUB_ARCHELP_ATTR_NOTIME;
 
       namesize = offset;
       if (namesize >= sizeof (hd))
@@ -144,10 +143,13 @@ static struct grub_archelp_data *
 grub_cbfs_mount (grub_disk_t disk)
 {
   struct cbfs_file hd;
-  struct grub_archelp_data *data;
+  struct grub_archelp_data *data = NULL;
   grub_uint32_t ptr;
   grub_off_t header_off;
   struct cbfs_header head;
+
+  if (grub_disk_get_size (disk) == GRUB_DISK_SIZE_UNKNOWN)
+    goto fail;
 
   if (grub_disk_read (disk, grub_disk_get_size (disk) - 1,
 		      GRUB_DISK_SECTOR_SIZE - sizeof (ptr),
@@ -193,6 +195,7 @@ grub_cbfs_mount (grub_disk_t disk)
   return data;
 
 fail:
+  grub_free (data);
   grub_error (GRUB_ERR_BAD_FS, "not a cbfs filesystem");
   return 0;
 }

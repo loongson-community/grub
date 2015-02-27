@@ -70,8 +70,8 @@ struct grub_ieee1275_devalias
 };
 
 extern void (*EXPORT_VAR(grub_ieee1275_net_config)) (const char *dev,
-						     char **device,
-						     char **path,
+                                                     char **device,
+                                                     char **path,
                                                      char *bootargs);
 
 /* Maps a device alias to a pathname.  */

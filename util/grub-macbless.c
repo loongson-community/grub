@@ -45,7 +45,11 @@
 #include <sys/stat.h>
 
 #define _GNU_SOURCE	1
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 #include "progname.h"
 
@@ -88,6 +92,8 @@ bless (const char *path, int x86)
   free (filebuf_via_grub);
   free (filebuf_via_sys);
   free (drive_name);
+  free (devices);
+  grub_device_close (dev);
 }
 
 static struct argp_option options[] = {

@@ -384,7 +384,7 @@ grub_cmd_dhcpopt (struct grub_command *cmd __attribute__ ((unused)),
       else
 	{
 	  char valn[64];
-	  grub_printf (valn, sizeof (valn), "%lld\n", (unsigned long long) val);
+	  grub_snprintf (valn, sizeof (valn), "%lld\n", (unsigned long long) val);
 	  return grub_env_set (args[0], valn);
 	}
       return GRUB_ERR_NONE;
@@ -522,8 +522,8 @@ grub_cmd_bootp (struct grub_command *cmd __attribute__ ((unused)),
 	  grub_netbuff_push (nb, sizeof (*udph));
 
 	  udph = (struct udphdr *) nb->data;
-	  udph->src = grub_cpu_to_be16 (68);
-	  udph->dst = grub_cpu_to_be16 (67);
+	  udph->src = grub_cpu_to_be16_compile_time (68);
+	  udph->dst = grub_cpu_to_be16_compile_time (67);
 	  udph->chksum = 0;
 	  udph->len = grub_cpu_to_be16 (nb->tail - nb->data);
 	  target.type = GRUB_NET_NETWORK_LEVEL_PROTOCOL_IPV4;

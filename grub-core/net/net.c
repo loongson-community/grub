@@ -306,7 +306,7 @@ grub_net_ipv6_get_link_local (struct grub_net_card *card,
     return NULL;
 
   addr.type = GRUB_NET_NETWORK_LEVEL_PROTOCOL_IPV6;
-  addr.ipv6[0] = grub_cpu_to_be64 (0xfe80ULL << 48);
+  addr.ipv6[0] = grub_cpu_to_be64_compile_time (0xfe80ULL << 48);
   addr.ipv6[1] = grub_net_ipv6_get_id (hwaddr);
 
   FOR_NET_NETWORK_LEVEL_INTERFACES (inf)
@@ -380,12 +380,14 @@ grub_cmd_ipv6_autoconf (struct grub_command *cmd __attribute__ ((unused)),
 
   for (interval = 200; interval < 10000; interval *= 2)
     {
-      /* FIXME: send router solicitation.  */
       int done = 1;
       for (j = 0; j < ncards; j++)
 	{
 	  if (slaacs[j]->slaac_counter)
 	    continue;
+	  err = grub_net_icmp6_send_router_solicit (ifaces[j]);
+	  if (err)
+	    err = GRUB_ERR_NONE;
 	  done = 0;
 	}
       if (done)
@@ -1453,7 +1455,7 @@ receive_packets (struct grub_net_card *card, int *stop_condition)
 	}
       card->opened = 1;
     }
-  while (1)
+  while (received < 100)
     {
       /* Maybe should be better have a fixed number of packets for each card
 	 and just mark them as used and not used.  */ 
@@ -1596,8 +1598,9 @@ grub_net_fs_read_real (grub_file_t file, char *buf, grub_size_t len)
       if (!net->eof)
 	{
 	  try++;
-	  grub_net_poll_cards (GRUB_NET_INTERVAL, &net->stall);
-	}
+	  grub_net_poll_cards (GRUB_NET_INTERVAL +
+                               (try * GRUB_NET_INTERVAL_ADDITION), &net->stall);
+        }
       else
 	return total;
     }

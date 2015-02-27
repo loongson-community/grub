@@ -234,7 +234,8 @@ grub_bsd_add_meta_ptr (grub_uint32_t type, void **ptr, grub_uint32_t len)
     {
       struct bsd_tag *p;
       for (p = tags;
-	   p->type != (FREEBSD_MODINFO_METADATA | FREEBSD_MODINFOMD_KERNEND);
+	   p && p->type != (FREEBSD_MODINFO_METADATA
+			    | FREEBSD_MODINFOMD_KERNEND);
 	   p = p->next);
 
       if (p)
@@ -1082,7 +1083,7 @@ grub_netbsd_add_boot_disk_and_wedge (void)
 
     grub_crypto_hash (GRUB_MD_MD5, hash,
 		      buf.raw, GRUB_DISK_SECTOR_SIZE);
-    memcpy (biw.matchhash, hash, 16);
+    grub_memcpy (biw.matchhash, hash, 16);
 
     grub_bsd_add_meta (NETBSD_BTINFO_BOOTWEDGE, &biw, sizeof (biw));
   }
@@ -1100,7 +1101,7 @@ grub_netbsd_add_boot_disk_and_wedge (void)
 	bid.labelsector = partmapsector;
 	bid.label.type = buf.label.type;
 	bid.label.checksum = buf.label.checksum;
-	memcpy (bid.label.packname, buf.label.packname, 16);
+	grub_memcpy (bid.label.packname, buf.label.packname, 16);
       }
     else
       {
@@ -1144,6 +1145,14 @@ grub_netbsd_boot (void)
   err = grub_netbsd_add_modules ();
   if (err)
     return err;
+
+#ifdef GRUB_MACHINE_EFI
+  err = grub_bsd_add_meta (NETBSD_BTINFO_EFI,
+			   &grub_efi_system_table,
+			   sizeof (grub_efi_system_table));
+  if (err)
+    return err;
+#endif
 
   {
     struct bsd_tag *tag;
@@ -1646,6 +1655,7 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
 
       serial.device = (GRUB_OPENBSD_COM_MAJOR << 8) | port;
       serial.speed = speed;
+      serial.addr = grub_ns8250_hw_get_port (port);
 	  
       grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE, &serial, sizeof (serial));
       bootflags |= OPENBSD_RB_SERCONS;
@@ -1656,6 +1666,7 @@ grub_cmd_openbsd (grub_extcmd_context_t ctxt, int argc, char *argv[])
 
       grub_memset (&serial, 0, sizeof (serial));
       serial.device = (GRUB_OPENBSD_VGA_MAJOR << 8);
+      serial.addr = 0xffffffff;
       grub_bsd_add_meta (OPENBSD_BOOTARG_CONSOLE, &serial, sizeof (serial));
       bootflags &= ~OPENBSD_RB_SERCONS;
     }

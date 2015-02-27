@@ -110,20 +110,23 @@ grub_crypto_pcbc_decrypt (grub_crypto_cipher_handle_t cipher,
 {
   grub_uint8_t *inptr, *outptr, *end;
   grub_uint8_t ivt[GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE];
-  if (cipher->cipher->blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
-    return GPG_ERR_INV_ARG;
+  grub_size_t blocksize;
   if (!cipher->cipher->decrypt)
     return GPG_ERR_NOT_SUPPORTED;
-  if (size % cipher->cipher->blocksize != 0)
+  blocksize = cipher->cipher->blocksize;
+  if (blocksize == 0 || (((blocksize - 1) & blocksize) != 0)
+      || ((size & (blocksize - 1)) != 0))
+    return GPG_ERR_INV_ARG;
+  if (blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
     return GPG_ERR_INV_ARG;
   end = (grub_uint8_t *) in + size;
   for (inptr = in, outptr = out; inptr < end;
-       inptr += cipher->cipher->blocksize, outptr += cipher->cipher->blocksize)
+       inptr += blocksize, outptr += blocksize)
     {
-      grub_memcpy (ivt, inptr, cipher->cipher->blocksize);
+      grub_memcpy (ivt, inptr, blocksize);
       cipher->cipher->decrypt (cipher->ctx, outptr, inptr);
-      grub_crypto_xor (outptr, outptr, iv, cipher->cipher->blocksize);
-      grub_crypto_xor (iv, ivt, outptr, cipher->cipher->blocksize);
+      grub_crypto_xor (outptr, outptr, iv, blocksize);
+      grub_crypto_xor (iv, ivt, outptr, blocksize);
     }
   return GPG_ERR_NO_ERROR;
 }
@@ -135,20 +138,23 @@ grub_crypto_pcbc_encrypt (grub_crypto_cipher_handle_t cipher,
 {
   grub_uint8_t *inptr, *outptr, *end;
   grub_uint8_t ivt[GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE];
-  if (cipher->cipher->blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
-    return GPG_ERR_INV_ARG;
-  if (!cipher->cipher->decrypt)
+  grub_size_t blocksize;
+  if (!cipher->cipher->encrypt)
     return GPG_ERR_NOT_SUPPORTED;
-  if (size % cipher->cipher->blocksize != 0)
+  blocksize = cipher->cipher->blocksize;
+  if (blocksize > GRUB_CRYPTO_MAX_CIPHER_BLOCKSIZE)
+    return GPG_ERR_INV_ARG;
+  if (blocksize == 0 || (((blocksize - 1) & blocksize) != 0)
+      || ((size & (blocksize - 1)) != 0))
     return GPG_ERR_INV_ARG;
   end = (grub_uint8_t *) in + size;
   for (inptr = in, outptr = out; inptr < end;
-       inptr += cipher->cipher->blocksize, outptr += cipher->cipher->blocksize)
+       inptr += blocksize, outptr += blocksize)
     {
-      grub_memcpy (ivt, inptr, cipher->cipher->blocksize);
-      grub_crypto_xor (outptr, outptr, iv, cipher->cipher->blocksize);
+      grub_memcpy (ivt, inptr, blocksize);
+      grub_crypto_xor (outptr, outptr, iv, blocksize);
       cipher->cipher->encrypt (cipher->ctx, outptr, inptr);
-      grub_crypto_xor (iv, ivt, outptr, cipher->cipher->blocksize);
+      grub_crypto_xor (iv, ivt, outptr, blocksize);
     }
   return GPG_ERR_NO_ERROR;
 }
@@ -372,11 +378,13 @@ grub_cryptodisk_endecrypt (struct grub_cryptodisk *dev,
 	  break;
 	case GRUB_CRYPTODISK_MODE_ECB:
 	  if (do_encrypt)
-	    grub_crypto_ecb_encrypt (dev->cipher, data + i, data + i,
-				     (1U << dev->log_sector_size));
+	    err = grub_crypto_ecb_encrypt (dev->cipher, data + i, data + i,
+					   (1U << dev->log_sector_size));
 	  else
-	    grub_crypto_ecb_decrypt (dev->cipher, data + i, data + i,
-				     (1U << dev->log_sector_size));
+	    err = grub_crypto_ecb_decrypt (dev->cipher, data + i, data + i,
+					   (1U << dev->log_sector_size));
+	  if (err)
+	    return err;
 	  break;
 	default:
 	  return GPG_ERR_NOT_IMPLEMENTED;
@@ -762,25 +770,26 @@ grub_cryptodisk_cheat_insert (grub_cryptodisk_t newdev, const char *name,
 
 void
 grub_util_cryptodisk_get_abstraction (grub_disk_t disk,
-				      void (*cb) (const char *val))
+				      void (*cb) (const char *val, void *data),
+				      void *data)
 {
   grub_cryptodisk_t dev = (grub_cryptodisk_t) disk->data;
 
-  cb ("cryptodisk");
-  cb (dev->modname);
+  cb ("cryptodisk", data);
+  cb (dev->modname, data);
 
   if (dev->cipher)
-    cb (dev->cipher->cipher->modname);
+    cb (dev->cipher->cipher->modname, data);
   if (dev->secondary_cipher)
-    cb (dev->secondary_cipher->cipher->modname);
+    cb (dev->secondary_cipher->cipher->modname, data);
   if (dev->essiv_cipher)
-    cb (dev->essiv_cipher->cipher->modname);
+    cb (dev->essiv_cipher->cipher->modname, data);
   if (dev->hash)
-    cb (dev->hash->modname);
+    cb (dev->hash->modname, data);
   if (dev->essiv_hash)
-    cb (dev->essiv_hash->modname);
+    cb (dev->essiv_hash->modname, data);
   if (dev->iv_hash)
-    cb (dev->iv_hash->modname);
+    cb (dev->iv_hash->modname, data);
 }
 
 const char *

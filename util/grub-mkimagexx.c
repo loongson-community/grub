@@ -1379,7 +1379,7 @@ SUFFIX (locate_sections) (const char *kernel_path,
 		!= image_target->link_addr)
 	      {
 		char *msg
-		  = grub_xasprintf (_("`%s' is miscompiled: it's start address is 0x%llx"
+		  = grub_xasprintf (_("`%s' is miscompiled: its start address is 0x%llx"
 				      " instead of 0x%llx: ld.gold bug?"),
 				    kernel_path,
 				    (unsigned long long) grub_host_to_target_addr (s->sh_addr),
@@ -1539,6 +1539,8 @@ SUFFIX (load_image) (const char *kernel_path, size_t *exec_size,
 	    symtab_section = s;
 	    break;
 	  }
+      if (! symtab_section)
+	grub_util_error ("%s", _("no symbol table"));
 
 #ifdef MKIMAGE_ELF32
       if (image_target->elf_target == EM_ARM)
@@ -1577,8 +1579,6 @@ SUFFIX (load_image) (const char *kernel_path, size_t *exec_size,
 	}
 #endif
 
-      if (! symtab_section)
-	grub_util_error ("%s", _("no symbol table"));
     }
   else
     {

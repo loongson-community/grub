@@ -57,14 +57,20 @@ legacy_file (const char *filename)
 
   file = grub_file_open (filename);
   if (! file)
-    return grub_errno;
+    {
+      grub_free (suffix);
+      return grub_errno;
+    }
 
   menu = grub_env_get_menu ();
   if (! menu)
     {
       menu = grub_zalloc (sizeof (*menu));
       if (! menu)
-	return grub_errno;
+	{
+	  grub_free (suffix);
+	  return grub_errno;
+	}
 
       grub_env_set_menu (menu);
     }
@@ -77,6 +83,7 @@ legacy_file (const char *filename)
       if (!buf && grub_errno)
 	{
 	  grub_file_close (file);
+	  grub_free (suffix);
 	  return grub_errno;
 	}
 
@@ -173,6 +180,8 @@ legacy_file (const char *filename)
       if (!args)
 	{
 	  grub_file_close (file);
+	  grub_free (suffix);
+	  grub_free (entrysrc);
 	  return grub_errno;
 	}
       args[0] = entryname;
@@ -376,6 +385,8 @@ grub_cmd_legacy_kernel (struct grub_command *mycmd __attribute__ ((unused)),
 	      if (part && grub_strcmp (part->partmap->name, "msdos") == 0)
 		bsd_slice = part->number;
 	    }
+	  if (dev)
+	    grub_device_close (dev);
 	}
 	
 	/* k*BSD didn't really work well with grub-legacy.  */
@@ -580,7 +591,7 @@ check_password_md5_real (const char *entered,
   GRUB_MD_MD5->write (ctx, entered, enteredlen);
   digest = GRUB_MD_MD5->read (ctx);
   GRUB_MD_MD5->final (ctx);
-  memcpy (alt_result, digest, MD5_HASHLEN);
+  grub_memcpy (alt_result, digest, MD5_HASHLEN);
   
   GRUB_MD_MD5->init (ctx);
   GRUB_MD_MD5->write (ctx, entered, enteredlen);
@@ -596,7 +607,7 @@ check_password_md5_real (const char *entered,
 
   for (i = 0; i < 1000; i++)
     {
-      memcpy (alt_result, digest, 16);
+      grub_memcpy (alt_result, digest, 16);
 
       GRUB_MD_MD5->init (ctx);
       if ((i & 1) != 0)

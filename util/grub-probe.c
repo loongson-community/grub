@@ -46,7 +46,12 @@
 #include <assert.h>
 
 #define _GNU_SOURCE	1
+
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 #include "progname.h"
 
@@ -72,17 +77,67 @@ enum {
   PRINT_DISK
 };
 
+static const char *targets[] =
+  {
+    [PRINT_FS]                 = "fs",
+    [PRINT_FS_UUID]            = "fs_uuid",
+    [PRINT_FS_LABEL]           = "fs_label",
+    [PRINT_DRIVE]              = "drive",
+    [PRINT_DEVICE]             = "device",
+    [PRINT_PARTMAP]            = "partmap",
+    [PRINT_ABSTRACTION]        = "abstraction",
+    [PRINT_CRYPTODISK_UUID]    = "cryptodisk_uuid",
+    [PRINT_HINT_STR]           = "hints_string",
+    [PRINT_BIOS_HINT]          = "bios_hints",
+    [PRINT_IEEE1275_HINT]      = "ieee1275_hints",
+    [PRINT_BAREMETAL_HINT]     = "baremetal_hints",
+    [PRINT_EFI_HINT]           = "efi_hints",
+    [PRINT_ARC_HINT]           = "arc_hints",
+    [PRINT_COMPATIBILITY_HINT] = "compatibility_hint",
+    [PRINT_MSDOS_PARTTYPE]     = "msdos_parttype",
+    [PRINT_GPT_PARTTYPE]       = "gpt_parttype",
+    [PRINT_ZERO_CHECK]         = "zero_check",
+    [PRINT_DISK]               = "disk",
+  };
+
 static int print = PRINT_FS;
 static unsigned int argument_is_device = 0;
 
-static void
-do_print (const char *x)
+static char *
+get_targets_string (void)
 {
-  grub_printf ("%s ", x);
+  char **arr = xmalloc (sizeof (targets));
+  int len = 0;
+  char *str;
+  char *ptr;
+  unsigned i;
+
+  memcpy (arr, targets, sizeof (targets));
+  qsort (arr, ARRAY_SIZE (targets), sizeof (char *), grub_qsort_strcmp);
+  for (i = 0; i < ARRAY_SIZE (targets); i++)
+    len += grub_strlen (targets[i]) + 2;
+  ptr = str = xmalloc (len);
+  for (i = 0; i < ARRAY_SIZE (targets); i++)
+    {
+      ptr = grub_stpcpy (ptr, arr[i]);
+      *ptr++ = ',';
+      *ptr++ = ' ';
+    }
+  ptr[-2] = '\0';
+  free (arr);
+
+  return str;
 }
 
 static void
-probe_partmap (grub_disk_t disk)
+do_print (const char *x, void *data)
+{
+  char delim = *(const char *) data;
+  grub_printf ("%s%c", x, delim);
+}
+
+static void
+probe_partmap (grub_disk_t disk, char delim)
 {
   grub_partition_t part;
   grub_disk_memberlist_t list = NULL, tmp;
@@ -93,10 +148,10 @@ probe_partmap (grub_disk_t disk)
     }
 
   for (part = disk->partition; part; part = part->parent)
-    printf ("%s ", part->partmap->name);
+    printf ("%s%c", part->partmap->name, delim);
 
   if (disk->dev->id == GRUB_DISK_DEVICE_DISKFILTER_ID)
-    grub_diskfilter_get_partmap (disk, do_print);
+    grub_diskfilter_get_partmap (disk, do_print, &delim);
 
   /* In case of LVM/RAID, check the member devices as well.  */
   if (disk->dev->memberlist)
@@ -105,7 +160,7 @@ probe_partmap (grub_disk_t disk)
     }
   while (list)
     {
-      probe_partmap (list->disk);
+      probe_partmap (list->disk, delim);
       tmp = list->next;
       free (list);
       list = tmp;
@@ -113,7 +168,7 @@ probe_partmap (grub_disk_t disk)
 }
 
 static void
-probe_cryptodisk_uuid (grub_disk_t disk)
+probe_cryptodisk_uuid (grub_disk_t disk, char delim)
 {
   grub_disk_memberlist_t list = NULL, tmp;
 
@@ -124,7 +179,7 @@ probe_cryptodisk_uuid (grub_disk_t disk)
     }
   while (list)
     {
-      probe_cryptodisk_uuid (list->disk);
+      probe_cryptodisk_uuid (list->disk, delim);
       tmp = list->next;
       free (list);
       list = tmp;
@@ -132,7 +187,7 @@ probe_cryptodisk_uuid (grub_disk_t disk)
   if (disk->dev->id == GRUB_DISK_DEVICE_CRYPTODISK_ID)
     {
       const char *uu = grub_util_cryptodisk_get_uuid (disk);
-      grub_printf ("%s ", uu);
+      grub_printf ("%s%c", uu, delim);
     }
 }
 
@@ -156,7 +211,7 @@ probe_raid_level (grub_disk_t disk)
 }
 
 static void
-probe_abstraction (grub_disk_t disk)
+probe_abstraction (grub_disk_t disk, char delim)
 {
   grub_disk_memberlist_t list = NULL, tmp;
   int raid_level;
@@ -165,7 +220,7 @@ probe_abstraction (grub_disk_t disk)
     list = disk->dev->memberlist (disk);
   while (list)
     {
-      probe_abstraction (list->disk);
+      probe_abstraction (list->disk, delim);
 
       tmp = list->next;
       free (list);
@@ -175,26 +230,26 @@ probe_abstraction (grub_disk_t disk)
   if (disk->dev->id == GRUB_DISK_DEVICE_DISKFILTER_ID
       && (grub_memcmp (disk->name, "lvm/", sizeof ("lvm/") - 1) == 0 ||
 	  grub_memcmp (disk->name, "lvmid/", sizeof ("lvmid/") - 1) == 0))
-    printf ("lvm ");
+    printf ("lvm%c", delim);
 
   if (disk->dev->id == GRUB_DISK_DEVICE_DISKFILTER_ID
       && grub_memcmp (disk->name, "ldm/", sizeof ("ldm/") - 1) == 0)
-    printf ("ldm ");
+    printf ("ldm%c", delim);
 
   if (disk->dev->id == GRUB_DISK_DEVICE_CRYPTODISK_ID)
-    grub_util_cryptodisk_get_abstraction (disk, do_print);
+    grub_util_cryptodisk_get_abstraction (disk, do_print, &delim);
 
   raid_level = probe_raid_level (disk);
   if (raid_level >= 0)
     {
-      printf ("diskfilter ");
+      printf ("diskfilter%c", delim);
       if (disk->dev->raidname)
-	printf ("%s ", disk->dev->raidname (disk));
+	printf ("%s%c", disk->dev->raidname (disk), delim);
     }
   if (raid_level == 5)
-    printf ("raid5rec ");
+    printf ("raid5rec%c", delim);
   if (raid_level == 6)
-    printf ("raid6rec ");
+    printf ("raid6rec%c", delim);
 }
 
 static void
@@ -240,6 +295,7 @@ probe (const char *path, char **device_names, char delim)
 	    }
 	  printf ("%s", disk);
 	  putchar (delim);
+	  free (disk);
 	}
       return;
     }
@@ -441,6 +497,7 @@ probe (const char *path, char **device_names, char delim)
 	{
 	  grub_util_fprint_full_disk_name (stdout, dev->disk->name, dev);
 	  putchar (delim);
+	  grub_device_close (dev);
 	  continue;
 	}
 
@@ -487,7 +544,7 @@ probe (const char *path, char **device_names, char delim)
       if (print == PRINT_IEEE1275_HINT)
 	{
 	  const char *osdev = grub_util_biosdisk_get_osdev (dev->disk);
-	  const char *ofpath = grub_util_devname_to_ofpath (osdev);
+	  char *ofpath = grub_util_devname_to_ofpath (osdev);
 	  const char *map;
 
 	  map = grub_util_biosdisk_get_compatibility_hint (dev->disk);
@@ -505,6 +562,7 @@ probe (const char *path, char **device_names, char delim)
 	      strcpy (p, ofpath);
 	      grub_util_fprint_full_disk_name (stdout, tmp, dev);
 	      free (tmp);
+	      free (ofpath);
 	      putchar (delim);
 	    }
 
@@ -576,16 +634,14 @@ probe (const char *path, char **device_names, char delim)
 
       if (print == PRINT_ABSTRACTION)
 	{
-	  probe_abstraction (dev->disk);
-	  putchar (delim);
+	  probe_abstraction (dev->disk, delim);
 	  grub_device_close (dev);
 	  continue;
 	}
 
       if (print == PRINT_CRYPTODISK_UUID)
 	{
-	  probe_cryptodisk_uuid (dev->disk);
-	  putchar (delim);
+	  probe_cryptodisk_uuid (dev->disk, delim);
 	  grub_device_close (dev);
 	  continue;
 	}
@@ -593,8 +649,7 @@ probe (const char *path, char **device_names, char delim)
       if (print == PRINT_PARTMAP)
 	{
 	  /* Check if dev->disk itself is contained in a partmap.  */
-	  probe_partmap (dev->disk);
-	  putchar (delim);
+	  probe_partmap (dev->disk, delim);
 	  grub_device_close (dev);
 	  continue;
 	}
@@ -655,11 +710,13 @@ static struct argp_option options[] = {
    N_("given argument is a system device, not a path"), 0},
   {"device-map",  'm', N_("FILE"), 0,
    N_("use FILE as the device map [default=%s]"), 0},
-  {"target",  't', "(fs|fs_uuid|fs_label|drive|device|partmap|abstraction|cryptodisk_uuid|msdos_parttype)", 0,
-   N_("print filesystem module, GRUB drive, system device, partition map module, abstraction module or cryptographic container UUID [default=fs]"), 0},
+  {"target",  't', N_("TARGET"), 0, 0, 0},
   {"verbose",     'v', 0,      0, N_("print verbose messages."), 0},
+  {0, '0', 0, 0, N_("separate items in output using ASCII NUL characters"), 0},
   { 0, 0, 0, 0, 0, 0 }
 };
+
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
 
 static char *
 help_filter (int key, const char *text, void *input __attribute__ ((unused)))
@@ -669,10 +726,22 @@ help_filter (int key, const char *text, void *input __attribute__ ((unused)))
       case 'm':
         return xasprintf (text, DEFAULT_DEVICE_MAP);
 
+      case 't':
+	{
+	  char *ret, *t = get_targets_string ();
+
+	  ret = xasprintf ("%s\n%s %s [default=%s]", _("print TARGET"),
+			    _("available targets:"), t, targets[print]);
+	  free (t);
+	  return ret;
+	}
+
       default:
         return (char *) text;
     }
 }
+
+#pragma GCC diagnostic error "-Wformat-nonliteral"
 
 struct arguments
 {
@@ -704,46 +773,18 @@ argp_parser (int key, char *arg, struct argp_state *state)
       break;
 
     case 't':
-      if (!strcmp (arg, "fs"))
-	print = PRINT_FS;
-      else if (!strcmp (arg, "fs_uuid"))
-	print = PRINT_FS_UUID;
-      else if (!strcmp (arg, "fs_label"))
-	print = PRINT_FS_LABEL;
-      else if (!strcmp (arg, "drive"))
-	print = PRINT_DRIVE;
-      else if (!strcmp (arg, "device"))
-	print = PRINT_DEVICE;
-      else if (!strcmp (arg, "partmap"))
-	print = PRINT_PARTMAP;
-      else if (!strcmp (arg, "abstraction"))
-	print = PRINT_ABSTRACTION;
-      else if (!strcmp (arg, "cryptodisk_uuid"))
-	print = PRINT_CRYPTODISK_UUID;
-      else if (!strcmp (arg, "msdos_parttype"))
-	print = PRINT_MSDOS_PARTTYPE;
-      else if (!strcmp (arg, "gpt_parttype"))
-	print = PRINT_GPT_PARTTYPE;
-      else if (!strcmp (arg, "hints_string"))
-	print = PRINT_HINT_STR;
-      else if (!strcmp (arg, "bios_hints"))
-	print = PRINT_BIOS_HINT;
-      else if (!strcmp (arg, "ieee1275_hints"))
-	print = PRINT_IEEE1275_HINT;
-      else if (!strcmp (arg, "baremetal_hints"))
-	print = PRINT_BAREMETAL_HINT;
-      else if (!strcmp (arg, "efi_hints"))
-	print = PRINT_EFI_HINT;
-      else if (!strcmp (arg, "arc_hints"))
-	print = PRINT_ARC_HINT;
-      else if (!strcmp (arg, "compatibility_hint"))
-	print = PRINT_COMPATIBILITY_HINT;
-      else if (strcmp (arg, "zero_check") == 0)
-	print = PRINT_ZERO_CHECK;
-      else if (!strcmp (arg, "disk"))
-	print = PRINT_DISK;
-      else
-	argp_usage (state);
+      {
+	int i;
+
+	for (i = PRINT_FS; i < ARRAY_SIZE (targets); i++)
+	  if (strcmp (arg, targets[i]) == 0)
+	    {
+	      print = i;
+	      break;
+	    }
+	if (i == ARRAY_SIZE (targets))
+	  argp_usage (state);
+      }
       break;
 
     case '0':
@@ -845,11 +886,7 @@ main (int argc, char *argv[])
   else
     probe (arguments.devices[0], NULL, delim);
 
-  if (!arguments.zero_delim && (print == PRINT_BIOS_HINT
-				|| print == PRINT_IEEE1275_HINT
-				|| print == PRINT_BAREMETAL_HINT
-				|| print == PRINT_EFI_HINT
-				|| print == PRINT_ARC_HINT))
+  if (delim == ' ')
     putchar ('\n');
 
   /* Free resources.  */

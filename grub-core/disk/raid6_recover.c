@@ -34,9 +34,9 @@ static unsigned powx_inv[256];
 static const grub_uint8_t poly = 0x1d;
 
 static void
-grub_raid_block_mulx (unsigned mul, char *buf, int size)
+grub_raid_block_mulx (unsigned mul, char *buf, grub_size_t size)
 {
-  int i;
+  grub_size_t i;
   grub_uint8_t *p;
 
   p = (grub_uint8_t *) buf;
@@ -61,6 +61,16 @@ grub_raid6_init_table (void)
       else
 	cur <<= 1;
     }
+}
+
+static unsigned
+mod_255 (unsigned x)
+{
+  while (x > 0xff)
+    x = (x >> 8) + (x & 0xff);
+  if (x == 0xff)
+    return 0;
+  return x;
 }
 
 static grub_err_t
@@ -162,11 +172,11 @@ grub_raid6_recover (struct grub_diskfilter_segment *array, int disknr, int p,
 
       grub_crypto_xor (qbuf, qbuf, buf, size);
 
-      c = ((255 ^ bad1)
-	   + (255 ^ powx_inv[(powx[bad2 + (bad1 ^ 255)] ^ 1)])) % 255;
+      c = mod_255((255 ^ bad1)
+		  + (255 ^ powx_inv[(powx[bad2 + (bad1 ^ 255)] ^ 1)]));
       grub_raid_block_mulx (c, qbuf, size);
 
-      c = ((unsigned) bad2 + c) % 255;
+      c = mod_255((unsigned) bad2 + c);
       grub_raid_block_mulx (c, pbuf, size);
 
       grub_crypto_xor (pbuf, pbuf, qbuf, size);

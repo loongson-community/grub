@@ -60,7 +60,7 @@ static const struct grub_arg_option options[] =
   {"word",   'w', 0, N_("Set the serial port word length."), 0, ARG_TYPE_INT},
   {"parity", 'r', 0, N_("Set the serial port parity."),      0, ARG_TYPE_STRING},
   {"stop",   't', 0, N_("Set the serial port stop bits."),   0, ARG_TYPE_INT},
-  {"base-clock",   'b', 0, N_("Set the base clock."),   0, ARG_TYPE_STRING},
+  {"base-clock",   'b', 0, N_("Set the base frequency."),   0, ARG_TYPE_STRING},
   {"rtscts",   'f', 0, N_("Enable/disable RTS/CTS."),   "on|off", ARG_TYPE_STRING},
   {0, 0, 0, 0, 0, 0}
 };
@@ -220,8 +220,12 @@ grub_cmd_serial (grub_extcmd_context_t ctxt, int argc, char **args)
 
   config = port->config;
 
-  if (state[OPTION_SPEED].set)
+  if (state[OPTION_SPEED].set) {
     config.speed = grub_strtoul (state[OPTION_SPEED].arg, 0, 0);
+    if (config.speed == 0)
+      return grub_error (GRUB_ERR_BAD_ARGUMENT,
+			 N_("unsupported serial port parity"));
+  }
 
   if (state[OPTION_WORD].set)
     config.word_len = grub_strtoul (state[OPTION_WORD].arg, 0, 0);
@@ -241,13 +245,13 @@ grub_cmd_serial (grub_extcmd_context_t ctxt, int argc, char **args)
 
   if (state[OPTION_RTSCTS].set)
     {
-      if (grub_strcmp (state[OPTION_PARITY].arg, "on") == 0)
+      if (grub_strcmp (state[OPTION_RTSCTS].arg, "on") == 0)
 	config.rtscts = 1;
-      if (grub_strcmp (state[OPTION_PARITY].arg, "off") == 0)
+      else if (grub_strcmp (state[OPTION_RTSCTS].arg, "off") == 0)
 	config.rtscts = 0;
       else
 	return grub_error (GRUB_ERR_BAD_ARGUMENT,
-			   N_("unsupported serial port flow"));
+			   N_("unsupported serial port flow control"));
     }
 
   if (state[OPTION_STOP].set)
@@ -274,6 +278,9 @@ grub_cmd_serial (grub_extcmd_context_t ctxt, int argc, char **args)
       if (ptr && (*ptr == 'k' || *ptr == 'K'))
 	config.base_clock *= 1000;
     }
+
+  if (config.speed == 0)
+    config.speed = 9600;
 
   /* Initialize with new settings.  */
   err = port->driver->configure (port, &config);
@@ -338,23 +345,23 @@ grub_serial_register (struct grub_serial_port *port)
       grub_free (indata);
       return grub_errno;
     }
-  
-  out = grub_malloc (sizeof (*out));
+
+  out = grub_zalloc (sizeof (*out));
   if (!out)
     {
-      grub_free (in);
       grub_free (indata);
       grub_free ((char *) in->name);
+      grub_free (in);
       return grub_errno;
     }
 
   outdata = grub_malloc (sizeof (*outdata));
   if (!outdata)
     {
-      grub_free (in);
       grub_free (indata);
       grub_free ((char *) in->name);
       grub_free (out);
+      grub_free (in);
       return grub_errno;
     }
 

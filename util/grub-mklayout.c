@@ -28,9 +28,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <argp.h>
+
 #include <unistd.h>
 #include <errno.h>
+
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
+
+#include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 #include "progname.h"
 
@@ -322,7 +329,7 @@ write_file (FILE *out, const char *fname, struct grub_keyboard_layout *layout)
   grub_uint32_t version;
   unsigned i;
 
-  version = grub_cpu_to_le32 (GRUB_KEYBOARD_LAYOUTS_VERSION);
+  version = grub_cpu_to_le32_compile_time (GRUB_KEYBOARD_LAYOUTS_VERSION);
   
   for (i = 0; i < ARRAY_SIZE (layout->keyboard_map); i++)
     layout->keyboard_map[i] = grub_cpu_to_le32(layout->keyboard_map[i]);

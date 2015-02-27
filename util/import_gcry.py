@@ -369,6 +369,14 @@ for cipher_file in cipher_files:
             if not m is None:
                 skip_statement = True
                 continue
+            m = re.match ("static const char sample_secret_key", line)
+            if not m is None:
+                skip_statement = True
+                continue
+            m = re.match ("static const char sample_public_key", line)
+            if not m is None:
+                skip_statement = True
+                continue
             m = re.match ("static void sign|static gpg_err_code_t sign|static gpg_err_code_t generate",
                           line)
             if not m is None:
@@ -522,6 +530,12 @@ for src in sorted (os.listdir (os.path.join (indir, "src"))):
     f = codecs.open (infile, "r", "utf-8")
     if src == "types.h":
         fw.write (f.read ().replace ("float f;", "").replace ("double g;", ""))
+        f.close ()
+        fw.close ()
+        continue
+
+    if src == "g10lib.h":
+        fw.write (f.read ().replace ("(printf,f,a)", "(__printf__,f,a)"))
         f.close ()
         fw.close ()
         continue

@@ -110,7 +110,7 @@ grub_linux_boot (void)
       int len = grub_strlen (linux_args) + 1;
       if (bp->len < len)
 	len = bp->len;
-      memcpy(bp->buf, linux_args, len);
+      grub_memcpy(bp->buf, linux_args, len);
       bp->buf[len-1] = '\0';
       bp->valid = 1;
     }
@@ -373,7 +373,7 @@ grub_cmd_initrd (grub_command_t cmd __attribute__ ((unused)),
   grub_addr_t paddr;
   grub_addr_t addr;
   int ret;
-  struct grub_linux_initrd_context initrd_ctx;
+  struct grub_linux_initrd_context initrd_ctx = { 0, 0, 0 };
 
   if (argc == 0)
     {

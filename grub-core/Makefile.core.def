@@ -66,7 +66,7 @@ kernel = {
   arm_efi_stripflags       = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
 
   arm64_efi_ldflags          = '-Wl,-r,-d';
-  arm64_efi_stripflags       = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
+  arm64_efi_stripflags       = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version -R .eh_frame';
 
   i386_pc_ldflags          = '$(TARGET_IMG_LDFLAGS)';
   i386_pc_ldflags          = '$(TARGET_IMG_BASE_LDOPT),0x9000';
@@ -158,6 +158,8 @@ kernel = {
   terminfoinkernel = term/tparm.c;
   terminfoinkernel = commands/extcmd.c;
   terminfoinkernel = lib/arg.c;
+
+  softdiv = lib/division.c;
 
   i386 = kern/i386/dl.c;
   i386_xen = kern/i386/dl.c;
@@ -1672,7 +1674,8 @@ module = {
   sparc64_ieee1275 = loader/sparc64/ieee1275/linux.c;
   ia64_efi = loader/ia64/efi/linux.c;
   arm = loader/arm/linux.c;
-  arm = lib/fdt.c;
+  arm64 = loader/arm64/linux.c;
+  fdt = lib/fdt.c;
   common = loader/linux.c;
   common = lib/cmdline.c;
   enable = noemu;
@@ -1966,6 +1969,12 @@ module = {
   enable = x86_64_efi;
   enable = emu;
   enable = xen;
+};
+
+module = {
+  name = div;
+  common = lib/division.c;
+  enable = no_softdiv;
 };
 
 module = {

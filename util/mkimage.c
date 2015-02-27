@@ -937,8 +937,8 @@ grub_install_get_image_target (const char *arg)
 {
   unsigned i, j;
   for (i = 0; i < ARRAY_SIZE (image_targets); i++)
-    for (j = 0; image_targets[i].names[j]
-	   && j < ARRAY_SIZE (image_targets[i].names); j++)
+    for (j = 0; j < ARRAY_SIZE (image_targets[i].names) &&
+		    image_targets[i].names[j]; j++)
       if (strcmp (arg, image_targets[i].names[j]) == 0)
 	return &image_targets[i];
   return NULL;
@@ -1278,6 +1278,8 @@ grub_install_generate_image (const char *dir, const char *prefix,
       free (core_img);
       core_img = full_img;
       core_size = full_size;
+      free (decompress_img);
+      free (decompress_path);
     }
 
   switch (image_target->id)
@@ -1528,9 +1530,10 @@ grub_install_generate_image (const char *dir, const char *prefix,
 	text_section->virtual_address = grub_cpu_to_le32 (header_size);
 	text_section->raw_data_size = grub_cpu_to_le32 (exec_size);
 	text_section->raw_data_offset = grub_cpu_to_le32 (header_size);
-	text_section->characteristics = grub_cpu_to_le32 (GRUB_PE32_SCN_CNT_CODE
-							  | GRUB_PE32_SCN_MEM_EXECUTE
-							  | GRUB_PE32_SCN_MEM_READ);
+	text_section->characteristics = grub_cpu_to_le32_compile_time (
+						  GRUB_PE32_SCN_CNT_CODE
+						| GRUB_PE32_SCN_MEM_EXECUTE
+						| GRUB_PE32_SCN_MEM_READ);
 
 	data_section = text_section + 1;
 	strcpy (data_section->name, ".data");
@@ -1539,7 +1542,7 @@ grub_install_generate_image (const char *dir, const char *prefix,
 	data_section->raw_data_size = grub_cpu_to_le32 (kernel_size - exec_size);
 	data_section->raw_data_offset = grub_cpu_to_le32 (header_size + exec_size);
 	data_section->characteristics
-	  = grub_cpu_to_le32 (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
+	  = grub_cpu_to_le32_compile_time (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
 			      | GRUB_PE32_SCN_MEM_READ
 			      | GRUB_PE32_SCN_MEM_WRITE);
 
@@ -1551,7 +1554,7 @@ grub_install_generate_image (const char *dir, const char *prefix,
 	bss_section->raw_data_size = 0;
 	bss_section->raw_data_offset = 0;
 	bss_section->characteristics
-	  = grub_cpu_to_le32 (GRUB_PE32_SCN_MEM_READ
+	  = grub_cpu_to_le32_compile_time (GRUB_PE32_SCN_MEM_READ
 			      | GRUB_PE32_SCN_MEM_WRITE
 			      | GRUB_PE32_SCN_ALIGN_64BYTES
 			      | GRUB_PE32_SCN_CNT_INITIALIZED_DATA
@@ -1565,7 +1568,7 @@ grub_install_generate_image (const char *dir, const char *prefix,
 	mods_section->raw_data_size = grub_cpu_to_le32 (reloc_addr - kernel_size - header_size);
 	mods_section->raw_data_offset = grub_cpu_to_le32 (header_size + kernel_size);
 	mods_section->characteristics
-	  = grub_cpu_to_le32 (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
+	  = grub_cpu_to_le32_compile_time (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
 			      | GRUB_PE32_SCN_MEM_READ
 			      | GRUB_PE32_SCN_MEM_WRITE);
 
@@ -1576,7 +1579,7 @@ grub_install_generate_image (const char *dir, const char *prefix,
 	reloc_section->raw_data_size = grub_cpu_to_le32 (reloc_size);
 	reloc_section->raw_data_offset = grub_cpu_to_le32 (reloc_addr);
 	reloc_section->characteristics
-	  = grub_cpu_to_le32 (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
+	  = grub_cpu_to_le32_compile_time (GRUB_PE32_SCN_CNT_INITIALIZED_DATA
 			      | GRUB_PE32_SCN_MEM_DISCARDABLE
 			      | GRUB_PE32_SCN_MEM_READ);
 	free (core_img);
@@ -1743,6 +1746,8 @@ grub_install_generate_image (const char *dir, const char *prefix,
       free (core_img);
       core_img = rom_img;
       core_size = rom_size;
+      free (boot_img);
+      free (boot_path);
     }
     break;
     case IMAGE_QEMU_MIPS_FLASH:

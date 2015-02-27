@@ -25,7 +25,11 @@
 #include <grub/emu/exec.h>
 #include <grub/emu/config.h>
 #include <grub/emu/hostdisk.h>
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -112,17 +116,35 @@ static struct argp_option options[] = {
   {0, 0, 0, 0, 0, 0}
 };
 
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 static char *
 help_filter (int key, const char *text, void *input __attribute__ ((unused)))
 {
   switch (key)
     {
+    case ARGP_KEY_HELP_PRE_DOC:
+      /* TRANSLATORS: it generates one single image which is bootable through any method. */
+      return strdup (_("Make GRUB CD-ROM, disk, pendrive and floppy bootable image."));
     case ARGP_KEY_HELP_POST_DOC:
-      return xasprintf (text, "xorriso -as mkisofs -help");
+      {
+	char *p1, *out;
+
+	p1 = xasprintf (_("Generates a bootable CD/USB/floppy image.  Arguments other than options to this program"
+      " are passed to xorriso, and indicate source files, source directories, or any of the "
+      "mkisofs options listed by the output of `%s'."), "xorriso -as mkisofs -help");
+	out = xasprintf ("%s\n\n%s\n\n%s", p1,
+	  _("Option -- switches to native xorriso command mode."),
+	  _("Mail xorriso support requests to <bug-xorriso@gnu.org>."));
+	free (p1);
+	return out;
+      }
     default:
       return grub_install_help_filter (key, text, input);
     }
 }
+
+#pragma GCC diagnostic error "-Wformat-nonliteral"
 
 enum {
   SYS_AREA_AUTO,
@@ -210,12 +232,7 @@ argp_parser (int key, char *arg, struct argp_state *state)
 
 struct argp argp = {
   options, argp_parser, N_("[OPTION] SOURCE..."),
-  /* TRANSLATORS: it generates one single image which is bootable through any method. */
-  N_("Make GRUB CD-ROM, disk, pendrive and floppy bootable image.")"\v"
-  N_("Generates a bootable rescue image with specified source files, source directories, or mkisofs options listed by the output of `%s'.\n\n"
-     "Option -- switches to native xorriso command mode.\n\n"
-     "Mail xorriso support requests to <bug-xorriso@gnu.org>."), 
-  NULL, help_filter, NULL
+  NULL, NULL, help_filter, NULL
 };
 
 static void
@@ -428,6 +445,9 @@ main (int argc, char *argv[])
       if (source_dirs[GRUB_INSTALL_PLATFORM_I386_PC]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_IA64_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI])
 	system_area = SYS_AREA_COMMON;
       else if (source_dirs[GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275])
@@ -623,7 +643,8 @@ main (int argc, char *argv[])
   if (source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_IA64_EFI]
-      || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI])
+      || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI]
+      || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI])
     {
       char *efidir = grub_util_make_temporary_dir ();
       char *efidir_efi = grub_util_path_concat (2, efidir, "efi");
@@ -632,18 +653,30 @@ main (int argc, char *argv[])
       char *efiimgfat;
       grub_install_mkdir_p (efidir_efi_boot);
 
+      grub_install_push_module ("part_gpt");
+      grub_install_push_module ("part_msdos");
+
       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootia64.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_IA64_EFI, "ia64-efi", imgname);
       free (imgname);
 
+      grub_install_push_module ("part_apple");
       img64 = grub_util_path_concat (2, efidir_efi_boot, "bootx64.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_X86_64_EFI, "x86_64-efi", img64);
+      grub_install_pop_module ();
 
+      grub_install_push_module ("part_apple");
       img32 = grub_util_path_concat (2, efidir_efi_boot, "bootia32.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_I386_EFI, "i386-efi", img32);
+      grub_install_pop_module ();
 
       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootarm.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_ARM_EFI, "arm-efi", imgname);
+      free (imgname);
+
+      imgname = grub_util_path_concat (2, efidir_efi_boot, "bootaa64.efi");
+      make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_ARM64_EFI, "arm64-efi",
+			     imgname);
       free (imgname);
 
       if (source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI])
@@ -683,9 +716,13 @@ main (int argc, char *argv[])
       free (efiimgfat);
       free (efidir_efi);
       free (efidir);
+      grub_install_pop_module ();
+      grub_install_pop_module ();
     }
 
+  grub_install_push_module ("part_apple");
   make_image_fwdisk (GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275, "powerpc-ieee1275", "powerpc-ieee1275/core.elf");
+  grub_install_pop_module ();
 
   if (source_dirs[GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275])
     {

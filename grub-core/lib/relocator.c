@@ -652,7 +652,7 @@ malloc_in_range (struct grub_relocator *rel,
     for (i = 0; i < (BITS_IN_BYTE * sizeof (grub_addr_t) / DIGITSORT_BITS);
 	 i++)
       {
-	memset (counter, 0, (1 + (1 << DIGITSORT_BITS)) * sizeof (counter[0]));
+	grub_memset (counter, 0, (1 + (1 << DIGITSORT_BITS)) * sizeof (counter[0]));
 	for (j = 0; j < N; j++)
 	  counter[((events[j].pos >> (DIGITSORT_BITS * i)) 
 		   & DIGITSORT_MASK) + 1]++;
@@ -865,6 +865,8 @@ malloc_in_range (struct grub_relocator *rel,
 			% GRUB_RELOCATOR_FIRMWARE_REQUESTS_QUANT;
 		      struct grub_relocator_fw_leftover *lo
 			= events[last_lo].leftover;
+		      if (offend == 0 && alloc_end != alloc_start)
+			offend = GRUB_RELOCATOR_FIRMWARE_REQUESTS_QUANT;
 		      lo->freebytes[offstart / 8]
 			&= ((1 << (8 - (start % 8))) - 1);
 		      grub_memset (lo->freebytes + (offstart + 7) / 8, 0,

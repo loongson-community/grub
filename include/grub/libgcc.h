@@ -42,12 +42,6 @@ void EXPORT_FUNC (__bswapsi2) (void);
 # ifdef HAVE___BSWAPDI2
 void EXPORT_FUNC (__bswapdi2) (void);
 # endif
-# ifdef HAVE___CTZDI2
-void EXPORT_FUNC (__ctzdi2) (void);
-# endif
-# ifdef HAVE___CTZSI2
-void EXPORT_FUNC (__ctzsi2) (void);
-# endif
 #endif
 
 #ifdef HAVE__RESTGPR_14_X

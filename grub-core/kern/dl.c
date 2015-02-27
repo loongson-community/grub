@@ -223,7 +223,7 @@ static grub_err_t
 grub_dl_load_segments (grub_dl_t mod, const Elf_Ehdr *e)
 {
   unsigned i;
-  Elf_Shdr *s;
+  const Elf_Shdr *s;
   grub_size_t tsize = 0, talign = 1;
 #if !defined (__i386__) && !defined (__x86_64__)
   grub_size_t tramp;
@@ -232,9 +232,9 @@ grub_dl_load_segments (grub_dl_t mod, const Elf_Ehdr *e)
 #endif
   char *ptr;
 
-  for (i = 0, s = (Elf_Shdr *)((char *) e + e->e_shoff);
+  for (i = 0, s = (const Elf_Shdr *)((const char *) e + e->e_shoff);
        i < e->e_shnum;
-       i++, s = (Elf_Shdr *)((char *) s + e->e_shentsize))
+       i++, s = (const Elf_Shdr *)((const char *) s + e->e_shentsize))
     {
       tsize = ALIGN_UP (tsize, s->sh_addralign) + s->sh_size;
       if (talign < s->sh_addralign)
@@ -340,7 +340,7 @@ grub_dl_resolve_symbols (grub_dl_t mod, Elf_Ehdr *e)
   mod->symtab = grub_malloc (s->sh_size);
   if (!mod->symtab)
     return grub_errno;
-  memcpy (mod->symtab, (char *) e + s->sh_offset, s->sh_size);
+  grub_memcpy (mod->symtab, (char *) e + s->sh_offset, s->sh_size);
 #else
   mod->symtab = (Elf_Sym *) ((char *) e + s->sh_offset);
 #endif
@@ -657,6 +657,8 @@ grub_dl_load_core (void *addr, grub_size_t size)
 {
   grub_dl_t mod;
 
+  grub_boot_time ("Parsing module");
+
   mod = grub_dl_load_core_noinit (addr, size);
 
   if (!mod)
@@ -677,6 +679,8 @@ grub_dl_load_file (const char *filename)
   grub_ssize_t size;
   void *core = 0;
   grub_dl_t mod = 0;
+
+  grub_boot_time ("Loading module %s", filename);
 
   file = grub_file_open (filename);
   if (! file)
