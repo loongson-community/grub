@@ -31,7 +31,8 @@ GRUB_PLATFORMS = [ "emu", "i386_pc", "i386_efi", "i386_qemu", "i386_coreboot",
                    "i386_xen", "x86_64_xen",
                    "mips_loongson", "sparc64_ieee1275",
                    "powerpc_ieee1275", "mips_arc", "ia64_efi",
-                   "mips_qemu_mips", "arm_uboot", "arm_efi", "arm64_efi" ]
+                   "mips_qemu_mips", "arm_uboot", "arm_efi", "arm64_efi",
+                   "arm_coreboot"]
 
 GROUPS = {}
 
@@ -44,7 +45,7 @@ GROUPS["x86"]      = GROUPS["i386"] + GROUPS["x86_64"]
 GROUPS["mips"]     = [ "mips_loongson", "mips_qemu_mips", "mips_arc" ]
 GROUPS["sparc64"]  = [ "sparc64_ieee1275" ]
 GROUPS["powerpc"]  = [ "powerpc_ieee1275" ]
-GROUPS["arm"]      = [ "arm_uboot", "arm_efi" ]
+GROUPS["arm"]      = [ "arm_uboot", "arm_efi", "arm_coreboot" ]
 GROUPS["arm64"]    = [ "arm64_efi" ]
 
 # Groups based on firmware
