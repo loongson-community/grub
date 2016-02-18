@@ -1257,7 +1257,6 @@ translate_relocation (struct translate_context *ctx,
 
 	case R_IA64_FPTR64LSB:
 	case R_IA64_DIR64LSB:
-#if 1
 	  {
 	    grub_util_info ("adding a relocation entry for 0x%"
 			    GRUB_HOST_PRIxLONG_LONG,
@@ -1269,7 +1268,6 @@ translate_relocation (struct translate_context *ctx,
 				 0, ctx->current_address,
 				 image_target);
 	  }
-#endif
 	  break;
 	default:
 	  grub_util_error (_("relocation 0x%x is not implemented yet"),
@@ -1309,7 +1307,6 @@ translate_relocation (struct translate_context *ctx,
 	}
       break;
       break;
-#if defined(MKIMAGE_ELF32)
     case EM_ARM:
       switch (ELF_R_TYPE (info))
 	{
@@ -1340,7 +1337,6 @@ translate_relocation (struct translate_context *ctx,
 	  break;
 	}
       break;
-#endif /* defined(MKIMAGE_ELF32) */
     default:
       grub_util_error ("unknown machine type 0x%x", image_target->elf_target);
     }
@@ -1778,13 +1774,13 @@ SUFFIX (grub_mkimage_load_image) (const char *kernel_path, size_t *exec_size,
 				   out_img, tramp_off, ia64_got_off,
 				   image_target);
 
-      *reloc_size = SUFFIX (make_reloc_section) (e, reloc_section,
-						 section_vaddresses, sections,
-						 section_entsize, num_sections,
-						 strtab, ia64jmp_off
-						 + image_target->vaddr_offset,
-						 2 * ia64jmpnum + (got / 8),
-						 image_target);
+      *reloc_size = make_reloc_section (e, reloc_section,
+					section_vaddresses, sections,
+					section_entsize, num_sections,
+					strtab, ia64jmp_off
+					+ image_target->vaddr_offset,
+					2 * ia64jmpnum + (got / 8),
+					image_target);
     }
 
   for (i = 0, s = sections;
