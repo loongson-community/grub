@@ -1686,27 +1686,6 @@ SUFFIX (put_section) (Elf_Shdr *s, int i,
 	return current_address;
 }
 
-static void
-place_trampolines (Elf_Ehdr *e, Elf_Shdr *sections, Elf_Half section_entsize,
-		   Elf_Half num_sections, struct grub_mkimage_layout *layout,
-		   const struct grub_install_image_target_desc *image_target)
-{
-#ifdef MKIMAGE_ELF32
-  if (image_target->elf_target == EM_ARM)
-    {
-      grub_size_t tramp;
-
-      layout->kernel_size = ALIGN_UP (layout->kernel_size, 16);
-
-      tramp = arm_get_trampoline_size (e, sections, section_entsize,
-				       num_sections, image_target);
-
-      layout->tramp_off = layout->kernel_size;
-      layout->kernel_size += ALIGN_UP (tramp, 16);
-    }
-#endif
-}
-
 /* Locate section addresses by merging code sections and data sections
    into .text and .data, respectively. Return the array of section
    addresses.  */
@@ -1779,14 +1758,22 @@ SUFFIX (locate_sections) (Elf_Ehdr *e, const char *kernel_path,
 					      strtab,
 					      image_target);
 
-
-  if (image_target->id != IMAGE_EFI)
+#ifdef MKIMAGE_ELF32
+  if (image_target->elf_target == EM_ARM)
     {
+      grub_size_t tramp;
       layout->kernel_size = ALIGN_UP (layout->kernel_size + image_target->vaddr_offset,
 				      image_target->section_align) - image_target->vaddr_offset;
-      place_trampolines (e, sections, section_entsize,
-			 num_sections, layout, image_target);
+
+      layout->kernel_size = ALIGN_UP (layout->kernel_size, 16);
+
+      tramp = arm_get_trampoline_size (e, sections, section_entsize,
+				       num_sections, image_target);
+
+      layout->tramp_off = layout->kernel_size;
+      layout->kernel_size += ALIGN_UP (tramp, 16);
     }
+#endif
 
   layout->bss_start = layout->kernel_size;
   layout->end = layout->kernel_size;
@@ -1811,10 +1798,6 @@ SUFFIX (locate_sections) (Elf_Ehdr *e, const char *kernel_path,
   */
   if (image_target->id != IMAGE_UBOOT)
     layout->kernel_size = layout->end;
-
-  if (image_target->id != IMAGE_EFI)
-    place_trampolines (e, sections, section_entsize,
-		       num_sections, layout, image_target);
 
   return section_addresses;
 }
