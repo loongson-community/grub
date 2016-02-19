@@ -167,6 +167,7 @@ case "$target_cpu"-"$platform" in
   mipsel-fuloong) platform=loongson ;;
   mipsel-loongson) ;;
   arm-uboot) ;;
+  arm-coreboot) ;;
   arm-efi) ;;
   arm64-efi) ;;
   *-emu) ;;

@@ -20,6 +20,9 @@
 #ifndef _GRUB_MACHINE_LBIO_HEADER
 #define _GRUB_MACHINE_LBIO_HEADER      1
 
+#include <grub/types.h>
+#include <grub/err.h>
+
 struct grub_linuxbios_table_header
 {
   grub_uint8_t signature[4];

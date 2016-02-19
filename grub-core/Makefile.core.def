@@ -92,6 +92,8 @@ kernel = {
   emu_cppflags = '$(CPPFLAGS_GNULIB)';
   arm_uboot_ldflags       = '-Wl,-r,-d';
   arm_uboot_stripflags    = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
+  arm_coreboot_ldflags       = '-Wl,-r,-d';
+  arm_coreboot_stripflags    = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
 
   i386_pc_startup = kern/i386/pc/startup.S;
   i386_efi_startup = kern/i386/efi/startup.S;
@@ -105,7 +107,8 @@ kernel = {
   mips_startup = kern/mips/startup.S;
   sparc64_ieee1275_startup = kern/sparc64/ieee1275/crt0.S;
   powerpc_ieee1275_startup = kern/powerpc/ieee1275/startup.S;
-  arm_uboot_startup = kern/arm/uboot/startup.S;
+  arm_uboot_startup = kern/arm/startup.S;
+  arm_coreboot_startup = kern/arm/startup.S;
   arm_efi_startup = kern/arm/efi/startup.S;
   arm64_efi_startup = kern/arm64/efi/startup.S;
 
@@ -149,6 +152,11 @@ kernel = {
   uboot = kern/uboot/init.c;
   uboot = kern/uboot/hw.c;
   uboot = term/uboot/console.c;
+  arm_uboot = kern/arm/uboot/init.c;
+  arm_uboot = kern/arm/uboot/uboot.S;
+
+  arm_coreboot = kern/arm/coreboot/init.c;
+  arm_coreboot = kern/arm/coreboot/coreboot.S;
 
   terminfoinkernel = term/terminfo.c;
   terminfoinkernel = term/tparm.c;
@@ -223,8 +231,9 @@ kernel = {
   i386_qemu = kern/vga_init.c;
   i386_qemu = kern/i386/qemu/mmap.c;
 
-  i386_coreboot = kern/i386/coreboot/mmap.c;
+  coreboot = kern/coreboot/mmap.c;
   i386_coreboot = kern/i386/coreboot/cbtable.c;
+  arm_coreboot = kern/arm/coreboot/cbtable.c;
 
   i386_multiboot = kern/i386/multiboot_mmap.c;
 
@@ -752,6 +761,7 @@ module = {
   enable = arm_efi;
   enable = arm64_efi;
   enable = arm_uboot;
+  enable = arm_coreboot;
 };
 
 module = {
@@ -819,7 +829,7 @@ module = {
   common = commands/gptsync.c;
 };
 
-module = {
+/*module = {
   name = halt;
   nopc = commands/halt.c;
   i386_pc = commands/i386/pc/halt.c;
@@ -854,7 +864,7 @@ module = {
   xen = lib/xen/reboot.c;
   uboot = lib/uboot/reboot.c;
   common = commands/reboot.c;
-};
+};*/
 
 module = {
   name = hashsum;
@@ -1546,6 +1556,7 @@ module = {
   cmos = lib/cmos_datetime.c;
   efi = lib/efi/datetime.c;
   uboot = lib/uboot/datetime.c;
+  arm_coreboot = lib/uboot/datetime.c;
   sparc64_ieee1275 = lib/ieee1275/datetime.c;
   powerpc_ieee1275 = lib/ieee1275/datetime.c;
   sparc64_ieee1275 = lib/ieee1275/cmos.c;
@@ -1655,7 +1666,7 @@ module = {
   arm64 = loader/arm64/xen_boot.c;
   enable = arm64;
 };
-
+/*
 module = {
   name = linux;
   x86 = loader/i386/linux.c;
@@ -1671,7 +1682,7 @@ module = {
   common = lib/cmdline.c;
   enable = noemu;
 };
-
+*/
 module = {
   name = fdt;
   arm64 = loader/arm64/fdt.c;

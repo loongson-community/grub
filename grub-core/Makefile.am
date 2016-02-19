@@ -112,7 +112,7 @@ endif
 
 if COND_i386_coreboot
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/tsc.h
-KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/i386/coreboot/lbio.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/coreboot/lbio.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video_fb.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/gfxterm.h
@@ -237,6 +237,15 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/uboot/disk.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/extcmd.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/lib/arg.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/system.h
+endif
+
+if COND_arm_coreboot
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/system.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video_fb.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/gfxterm.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/font.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/bufio.h
 endif
 
 if COND_arm_efi

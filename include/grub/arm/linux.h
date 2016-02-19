@@ -25,7 +25,7 @@
 
 #include "system.h"
 
-#if defined GRUB_MACHINE_UBOOT
+#if defined (GRUB_MACHINE_UBOOT) || defined (GRUB_MACHINE_COREBOOT)
 # include <grub/uboot/uboot.h>
 # define LINUX_ADDRESS        (start_of_ram + 0x8000)
 # define LINUX_INITRD_ADDRESS (start_of_ram + 0x02000000)

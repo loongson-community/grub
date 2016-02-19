@@ -16,14 +16,16 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <grub/i386/coreboot/memory.h>
 #include <grub/coreboot/lbio.h>
 #include <grub/types.h>
 #include <grub/err.h>
 #include <grub/misc.h>
 #include <grub/dl.h>
+#include <grub/arm/startup.h>
 
 GRUB_MOD_LICENSE ("GPLv3+");
+
+#pragma GCC diagnostic ignored "-Wcast-align"
 
 /* Helper for grub_linuxbios_table_iterate.  */
 static int
@@ -40,25 +42,14 @@ grub_linuxbios_table_iterate (int (*hook) (grub_linuxbios_table_item_t,
 					   void *),
 			      void *hook_data)
 {
-  grub_linuxbios_table_header_t table_header;
+  grub_linuxbios_table_header_t table_header
+    = (grub_linuxbios_table_header_t) grub_arm_saved_registers.r[0];
   grub_linuxbios_table_item_t table_item;
 
-  /* Assuming table_header is aligned to its size (8 bytes).  */
+  if (!check_signature (table_header))
+    return 0;
 
-  for (table_header = (grub_linuxbios_table_header_t) 0x500;
-       table_header < (grub_linuxbios_table_header_t) 0x1000; table_header++)
-    if (check_signature (table_header))
-      goto signature_found;
-
-  for (table_header = (grub_linuxbios_table_header_t) 0xf0000;
-       table_header < (grub_linuxbios_table_header_t) 0x100000; table_header++)
-    if (check_signature (table_header))
-      goto signature_found;
-
-  return 0;
-
-signature_found:
-
+ signature_found:
   table_item =
     (grub_linuxbios_table_item_t) ((char *) table_header +
 				   table_header->header_size);

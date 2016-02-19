@@ -53,6 +53,7 @@ GROUPS["efi"]  = [ "i386_efi", "x86_64_efi", "ia64_efi", "arm_efi", "arm64_efi" 
 GROUPS["ieee1275"]   = [ "i386_ieee1275", "sparc64_ieee1275", "powerpc_ieee1275" ]
 GROUPS["uboot"] = [ "arm_uboot" ]
 GROUPS["xen"]  = [ "i386_xen", "x86_64_xen" ]
+GROUPS["coreboot"]  = [ "i386_coreboot", "arm_coreboot" ]
 
 # emu is a special case so many core functionality isn't needed on this platform
 GROUPS["noemu"]   = GRUB_PLATFORMS[:]; GROUPS["noemu"].remove("emu")
@@ -65,7 +66,7 @@ GROUPS["pci"]      = GROUPS["x86"] + ["mips_loongson"]
 GROUPS["usb"]      = GROUPS["pci"]
 
 # If gfxterm is main output console integrate it into kernel
-GROUPS["videoinkernel"] = ["mips_loongson", "i386_coreboot" ]
+GROUPS["videoinkernel"] = ["mips_loongson", "i386_coreboot", "arm_coreboot" ]
 GROUPS["videomodules"]   = GRUB_PLATFORMS[:];
 for i in GROUPS["videoinkernel"]: GROUPS["videomodules"].remove(i)
 
@@ -75,7 +76,7 @@ GROUPS["terminfomodule"]   = GRUB_PLATFORMS[:];
 for i in GROUPS["terminfoinkernel"]: GROUPS["terminfomodule"].remove(i)
 
 # Flattened Device Trees (FDT)
-GROUPS["fdt"] = [ "arm64_efi", "arm_uboot", "arm_efi" ]
+GROUPS["fdt"] = [ "arm64_efi", "arm_uboot", "arm_efi", "arm_coreboot" ]
 
 # Needs software helpers for division
 # Must match GRUB_DIVISION_IN_SOFTWARE in misc.h
