@@ -89,7 +89,8 @@ struct fixup_block_list
 static int
 is_relocatable (const struct grub_install_image_target_desc *image_target)
 {
-  return image_target->id == IMAGE_EFI || image_target->id == IMAGE_UBOOT;
+  return image_target->id == IMAGE_EFI || image_target->id == IMAGE_UBOOT
+    || (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM);
 }
 
 #ifdef MKIMAGE_ELF32
@@ -291,7 +292,7 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
       phdr->p_filesz = phdr->p_memsz
 	= grub_host_to_target32 (*core_size - kernel_size);
 
-      if (image_target->id == IMAGE_COREBOOT)
+      if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_386)
 	target_addr_mods = GRUB_KERNEL_I386_COREBOOT_MODULES_ADDR;
       else
 	target_addr_mods = ALIGN_UP (target_addr + kernel_size + bss_size
@@ -1796,7 +1797,7 @@ SUFFIX (locate_sections) (Elf_Ehdr *e, const char *kernel_path,
      Platforms other than EFI and U-boot shouldn't have .bss in
      their binaries as we build with -Wl,-Ttext.
   */
-  if (image_target->id != IMAGE_UBOOT)
+  if (image_target->id == IMAGE_EFI || !is_relocatable (image_target))
     layout->kernel_size = layout->end;
 
   return section_addresses;
@@ -1899,6 +1900,7 @@ SUFFIX (grub_mkimage_load_image) (const char *kernel_path,
   if (image_target->id == IMAGE_SPARC64_AOUT
       || image_target->id == IMAGE_SPARC64_RAW
       || image_target->id == IMAGE_UBOOT
+      || image_target->id == IMAGE_COREBOOT
       || image_target->id == IMAGE_SPARC64_CDCORE)
     layout->kernel_size = ALIGN_UP (layout->kernel_size, image_target->mod_align);
 
@@ -1995,7 +1997,8 @@ SUFFIX (grub_mkimage_load_image) (const char *kernel_path,
 	   Platforms other than EFI and U-boot shouldn't have .bss in
 	   their binaries as we build with -Wl,-Ttext.
 	*/
-	|| (SUFFIX (is_bss_section) (s, image_target) && (image_target->id != IMAGE_UBOOT))
+	|| (SUFFIX (is_bss_section) (s, image_target)
+	    && ((image_target->id == IMAGE_EFI) || !is_relocatable (image_target)))
 	|| SUFFIX (is_text_section) (s, image_target))
       {
 	if (grub_target_to_host32 (s->sh_type) == SHT_NOBITS)
