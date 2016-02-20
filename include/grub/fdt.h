@@ -96,10 +96,12 @@ struct grub_fdt_empty_tree {
 	grub_fdt_set_header(fdt, size_dt_struct, value)
 
 int grub_fdt_create_empty_tree (void *fdt, unsigned int size);
-int grub_fdt_check_header (void *fdt, unsigned int size);
-int grub_fdt_check_header_nosize (void *fdt);
+int grub_fdt_check_header (const void *fdt, unsigned int size);
+int grub_fdt_check_header_nosize (const void *fdt);
 int grub_fdt_find_subnode (const void *fdt, unsigned int parentoffset,
 			   const char *name);
+int grub_fdt_first_node (const void *fdt, unsigned int parentoffset);
+int grub_fdt_next_node (const void *fdt, unsigned int currentoffset);
 int grub_fdt_add_subnode (void *fdt, unsigned int parentoffset,
 			  const char *name);
 

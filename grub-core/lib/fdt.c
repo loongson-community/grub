@@ -268,7 +268,7 @@ static grub_uint32_t *find_prop (void *fdt, unsigned int nodeoffset,
    the size allocated for the FDT; if this function is called before the other
    functions in this file and returns success, the other functions are
    guaranteed not to access memory locations outside the allocated memory. */
-int grub_fdt_check_header_nosize (void *fdt)
+int grub_fdt_check_header_nosize (const void *fdt)
 {
   if (((grub_addr_t) fdt & 0x7) || (grub_fdt_get_magic (fdt) != FDT_MAGIC)
       || (grub_fdt_get_version (fdt) < FDT_SUPPORTED_VERSION)
@@ -286,7 +286,7 @@ int grub_fdt_check_header_nosize (void *fdt)
   return 0;
 }
 
-int grub_fdt_check_header (void *fdt, unsigned int size)
+int grub_fdt_check_header (const void *fdt, unsigned int size)
 {
   if (size < sizeof (grub_fdt_header_t)
       || (grub_fdt_get_totalsize (fdt) > size)
@@ -295,41 +295,29 @@ int grub_fdt_check_header (void *fdt, unsigned int size)
   return 0;
 }
 
-/* Find a direct sub-node of a given parent node. */
-int grub_fdt_find_subnode (const void *fdt, unsigned int parentoffset,
-			   const char *name)
+static const grub_uint32_t *
+advance_token (const void *fdt, const grub_uint32_t *token, const grub_uint32_t *end, int skip_current)
 {
-  grub_uint32_t *token, *end;
-  char *node_name;
-
-  if (parentoffset & 0x3)
-    return -1;
-  token = (void *) ((grub_addr_t) fdt + grub_fdt_get_off_dt_struct(fdt)
-                    + parentoffset);
-  end = (void *) struct_end (fdt);
-  if ((token >= end) || (grub_be_to_cpu32(*token) != FDT_BEGIN_NODE))
-    return -1;
-  SKIP_NODE_NAME(node_name, token, end);
-  while (token < end)
+  for (; token < end; skip_current = 0)
   {
-    switch (grub_be_to_cpu32(*token))
+    switch (grub_be_to_cpu32 (*token))
     {
       case FDT_BEGIN_NODE:
-        node_name = (char *) (token + 1);
-        if (node_name + grub_strlen (name) >= (char *) end)
-          return -1;
-        if (!grub_strcmp (node_name, name))
-          return (int) ((grub_addr_t) token - (grub_addr_t) fdt
-                        - grub_fdt_get_off_dt_struct (fdt));
-        token = get_next_node (fdt, node_name);
-        if (!token)
-          return -1;
-        break;
+	if (skip_current)
+	  {
+	    token = get_next_node (fdt, (char *) (token + 1));
+	    continue;
+	  }
+	char *ptr;
+	for (ptr = (char *) (token + 1); *ptr && ptr < (char *) end; ptr++);
+        if (ptr >= (char *) end)
+          return 0;
+	return token;
       case FDT_PROP:
         /* Skip property token and following data (len, nameoff and property
            value). */
         if (token >= end - 1)
-          return -1;
+          return 0;
         token += prop_entry_size(grub_be_to_cpu32(*(token + 1)))
                  / sizeof(*token);
         break;
@@ -337,10 +325,68 @@ int grub_fdt_find_subnode (const void *fdt, unsigned int parentoffset,
         token++;
         break;
       default:
-        return -1;
+        return 0;
     }
   }
-  return -1;
+  return 0;
+}
+
+int grub_fdt_next_node (const void *fdt, unsigned int currentoffset)
+{
+  const grub_uint32_t *token = (const grub_uint32_t *) fdt + (currentoffset + grub_fdt_get_off_dt_struct (fdt)) / 4;
+  token = advance_token (fdt, token, (const void *) struct_end (fdt), 1);
+  if (!token)
+    return -1;
+  return (int) ((grub_addr_t) token - (grub_addr_t) fdt
+		- grub_fdt_get_off_dt_struct (fdt));
+}			 
+
+int grub_fdt_first_node (const void *fdt, unsigned int parentoffset)
+{
+  const grub_uint32_t *token, *end;
+  char *node_name;
+
+  if (parentoffset & 0x3)
+    return -1;
+  token = (const void *) ((grub_addr_t) fdt + grub_fdt_get_off_dt_struct(fdt)
+                    + parentoffset);
+  end = (const void *) struct_end (fdt);
+  if ((token >= end) || (grub_be_to_cpu32(*token) != FDT_BEGIN_NODE))
+    return -1;
+  SKIP_NODE_NAME(node_name, token, end);
+  token = advance_token (fdt, token, end, 0);
+  if (!token)
+    return -1;
+  return (int) ((grub_addr_t) token - (grub_addr_t) fdt
+		- grub_fdt_get_off_dt_struct (fdt));
+}			 
+
+/* Find a direct sub-node of a given parent node. */
+int grub_fdt_find_subnode (const void *fdt, unsigned int parentoffset,
+			   const char *name)
+{
+  const grub_uint32_t *token, *end;
+  const char *node_name;
+  int skip_current = 0;
+
+  if (parentoffset & 0x3)
+    return -1;
+  token = (const void *) ((grub_addr_t) fdt + grub_fdt_get_off_dt_struct(fdt)
+                    + parentoffset);
+  end = (const void *) struct_end (fdt);
+  if ((token >= end) || (grub_be_to_cpu32(*token) != FDT_BEGIN_NODE))
+    return -1;
+  SKIP_NODE_NAME(node_name, token, end);
+  while (1) {
+    token = advance_token (fdt, token, end, skip_current);
+    if (!token)
+      return -1;
+    skip_current = 1;
+    node_name = (const char *) token + 1;
+    if (grub_strcmp (node_name, name) == 0)
+      return (int) ((grub_addr_t) token - (grub_addr_t) fdt
+		    - grub_fdt_get_off_dt_struct (fdt));
+  }
 }
 
 int grub_fdt_add_subnode (void *fdt, unsigned int parentoffset,
