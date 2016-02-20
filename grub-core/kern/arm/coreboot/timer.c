@@ -49,12 +49,13 @@ sp804_get_time_ms (void)
 }
 
 static grub_err_t
-sp804_attach(const void *fdt, unsigned int nodeoffset)
+sp804_attach(const struct grub_fdtbus_dev *dev)
 {
   if (have_timer)
     return GRUB_ERR_NONE;
-  const grub_uint32_t *reg = grub_fdt_get_prop (fdt, nodeoffset, "reg", 0);
-  sp804_regs = (void *) grub_be_to_cpu32 (*reg);
+  sp804_regs = grub_fdtbus_map_reg (dev, 0, 0);
+  if (!grub_fdtbus_is_mapping_valid (sp804_regs))
+    return grub_error (GRUB_ERR_IO, "could not map sp804: %p", sp804_regs);
   grub_install_get_time_ms (sp804_get_time_ms);
   have_timer = 1;
   return GRUB_ERR_NONE;
