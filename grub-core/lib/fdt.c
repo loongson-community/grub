@@ -229,7 +229,7 @@ static int rearrange_blocks (void *fdt, unsigned int clearance)
   return 0;
 }
 
-static grub_uint32_t *find_prop (void *fdt, unsigned int nodeoffset,
+static grub_uint32_t *find_prop (const void *fdt, unsigned int nodeoffset,
 				 const char *name)
 {
   grub_uint32_t *prop = (void *) ((grub_addr_t) fdt
@@ -382,11 +382,17 @@ int grub_fdt_find_subnode (const void *fdt, unsigned int parentoffset,
     if (!token)
       return -1;
     skip_current = 1;
-    node_name = (const char *) token + 1;
+    node_name = (const char *) token + 4;
     if (grub_strcmp (node_name, name) == 0)
       return (int) ((grub_addr_t) token - (grub_addr_t) fdt
 		    - grub_fdt_get_off_dt_struct (fdt));
   }
+}
+
+const char *
+grub_fdt_get_nodename (const void *fdt, unsigned int nodeoffset)
+{
+  return (const char *) fdt + grub_fdt_get_off_dt_struct(fdt) + nodeoffset + 4;
 }
 
 int grub_fdt_add_subnode (void *fdt, unsigned int parentoffset,
@@ -403,6 +409,24 @@ int grub_fdt_add_subnode (void *fdt, unsigned int parentoffset,
   if (rearrange_blocks (fdt, entry_size) < 0)
     return -1;
   return add_subnode (fdt, parentoffset, name);
+}
+
+const void *
+grub_fdt_get_prop (const void *fdt, unsigned int nodeoffset, const char *name,
+		   grub_uint32_t *len)
+{
+  grub_uint32_t *prop;
+  if ((nodeoffset >= grub_fdt_get_size_dt_struct (fdt)) || (nodeoffset & 0x3)
+      || (grub_be_to_cpu32(*(grub_uint32_t *) ((grub_addr_t) fdt
+					       + grub_fdt_get_off_dt_struct (fdt) + nodeoffset))
+          != FDT_BEGIN_NODE))
+    return 0;
+  prop = find_prop (fdt, nodeoffset, name);
+  if (!prop)
+    return 0;
+  if (len)
+    *len = grub_be_to_cpu32 (*(prop + 2));
+  return prop + 3;
 }
 
 int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,

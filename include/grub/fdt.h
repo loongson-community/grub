@@ -104,6 +104,10 @@ int grub_fdt_first_node (const void *fdt, unsigned int parentoffset);
 int grub_fdt_next_node (const void *fdt, unsigned int currentoffset);
 int grub_fdt_add_subnode (void *fdt, unsigned int parentoffset,
 			  const char *name);
+const char *
+grub_fdt_get_nodename (const void *fdt, unsigned int nodeoffset);
+const void *grub_fdt_get_prop (const void *fdt, unsigned int nodeoffset, const char *name,
+			       grub_uint32_t *len);
 
 int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,
 		      const void *val, grub_uint32_t len);
