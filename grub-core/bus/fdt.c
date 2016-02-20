@@ -36,9 +36,17 @@ static int
 is_compatible (struct grub_fdtbus_driver *driver,
 	       int node)
 {
+  grub_size_t compatible_size;
   const char *compatible = grub_fdt_get_prop (dtb, node, "compatible",
-					      0);
-  return grub_strcmp (driver->compatible, compatible) == 0;
+					      &compatible_size);
+  const char *compatible_end = compatible + compatible_size;
+  while (compatible < compatible_end)
+    {
+      if (grub_strcmp (driver->compatible, compatible) == 0)
+	return 1;
+      compatible += grub_strlen (compatible) + 1;
+    }
+  return 0;
 }
 
 void
@@ -69,7 +77,6 @@ grub_fdtbus_scan (int parent)
 	      }
 	    grub_print_error ();
 	  }
-      grub_printf ("C: %s; %s\n", grub_fdt_get_nodename (dtb, node), compatible);
     }
 }
 
@@ -80,7 +87,7 @@ grub_fdtbus_register (struct grub_fdtbus_driver *driver)
   grub_list_push (GRUB_AS_LIST_P (&drivers),
 		  GRUB_AS_LIST (driver));
   FOR_LIST_ELEMENTS(dev, devs)
-    if (is_compatible (driver, node))
+    if (is_compatible (driver, dev->node))
       {
 	if (driver->attach(dtb, dev->node) == GRUB_ERR_NONE)
 	  {
