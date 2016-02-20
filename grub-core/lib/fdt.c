@@ -425,7 +425,7 @@ grub_fdt_get_prop (const void *fdt, unsigned int nodeoffset, const char *name,
   if (!prop)
     return 0;
   if (len)
-    *len = grub_be_to_cpu32 (*(prop + 2));
+    *len = grub_be_to_cpu32 (*(prop + 1));
   return prop + 3;
 }
 
