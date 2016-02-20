@@ -29,6 +29,10 @@
 	.thumb
 #endif
 
+FUNCTION(grub_arm_pfr1)
+	mrc p15, 0, r0, c0, c1, 1
+	bx	lr
+
 FUNCTION(grub_armv7_get_timer_value)
 	isb
 	mrrc p15, 1, r0, r1, c14

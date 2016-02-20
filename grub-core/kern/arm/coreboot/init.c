@@ -42,6 +42,9 @@ grub_armv7_get_timer_value(void);
 grub_uint32_t
 grub_armv7_get_timer_frequency(void);
 
+grub_uint32_t
+grub_arm_pfr1(void);
+
 void  __attribute__ ((noreturn))
 grub_exit (void)
 {
@@ -93,6 +96,18 @@ get_time_ms (void)
   return grub_divmod64 (grub_armv7_get_timer_value(), timer_frequency_in_khz, 0);
 }
 
+static int
+try_generic_timer (void)
+{
+  if (((grub_arm_pfr1 () >> 16) & 0xf) != 1)
+    return 0;
+  timer_frequency_in_khz = grub_armv7_get_timer_frequency() / 1000;
+  if (timer_frequency_in_khz == 0)
+    return 0;
+  grub_install_get_time_ms (get_time_ms);
+  return 1;
+}
+
 void
 grub_machine_init (void)
 {
@@ -109,10 +124,8 @@ grub_machine_init (void)
   grub_font_init ();
   grub_gfxterm_init ();
 
-  timer_frequency_in_khz = grub_armv7_get_timer_frequency() / 1000;
-  if (timer_frequency_in_khz == 0)
+  if (!try_generic_timer ())
     grub_fatal ("No timer found");
-  grub_install_get_time_ms (get_time_ms);
 }
 
 void
