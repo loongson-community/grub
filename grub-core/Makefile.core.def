@@ -156,7 +156,11 @@ kernel = {
   arm_uboot = kern/arm/uboot/uboot.S;
 
   arm_coreboot = kern/arm/coreboot/init.c;
+  arm_coreboot = kern/arm/coreboot/timer.c;
+  arm_coreboot = kern/arm/coreboot/fdt_guess.c;
   arm_coreboot = kern/arm/coreboot/coreboot.S;
+  arm_coreboot = lib/fdt.c;
+  arm_coreboot = bus/fdt.c;
 
   terminfoinkernel = term/terminfo.c;
   terminfoinkernel = term/tparm.c;

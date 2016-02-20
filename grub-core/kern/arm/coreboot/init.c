@@ -20,6 +20,7 @@
 #include <grub/mm.h>
 #include <grub/memory.h>
 #include <grub/machine/console.h>
+#include <grub/machine/kernel.h>
 #include <grub/offsets.h>
 #include <grub/types.h>
 #include <grub/err.h>
@@ -31,19 +32,12 @@
 #include <grub/time.h>
 #include <grub/symbol.h>
 #include <grub/video.h>
+#include <grub/coreboot/lbio.h>
+#include <grub/fdtbus.h>
 
 extern grub_uint8_t _start[];
 extern grub_uint8_t _end[];
 extern grub_uint8_t _edata[];
-
-grub_uint64_t
-grub_armv7_get_timer_value(void);
-
-grub_uint32_t
-grub_armv7_get_timer_frequency(void);
-
-grub_uint32_t
-grub_arm_pfr1(void);
 
 void  __attribute__ ((noreturn))
 grub_exit (void)
@@ -88,25 +82,34 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
   return 0;
 }
 
-static grub_uint32_t timer_frequency_in_khz;
-
-static grub_uint64_t
-get_time_ms (void)
-{
-  return grub_divmod64 (grub_armv7_get_timer_value(), timer_frequency_in_khz, 0);
-}
+static char *mobo_vendor, *mobo_part_number;
+static const void *dtb;
+static grub_size_t dtb_size;
 
 static int
-try_generic_timer (void)
+iterate_linuxbios_table (grub_linuxbios_table_item_t table_item, void *data __attribute__ ((unused)))
 {
-  if (((grub_arm_pfr1 () >> 16) & 0xf) != 1)
-    return 0;
-  timer_frequency_in_khz = grub_armv7_get_timer_frequency() / 1000;
-  if (timer_frequency_in_khz == 0)
-    return 0;
-  grub_install_get_time_ms (get_time_ms);
-  return 1;
+  switch (table_item->tag)
+    {
+    case GRUB_LINUXBIOS_MEMBER_MAINBOARD:
+      {
+	struct grub_linuxbios_mainboard *mb;
+	mb = (struct grub_linuxbios_mainboard *) (table_item + 1);
+	mobo_vendor = mb->strings + mb->vendor;
+	mobo_part_number = mb->strings + mb->part_number;
+	return 0;
+      }
+    case GRUB_LINUXBIOS_MEMBER_DTB:
+      if (grub_fdt_check_header (table_item + 1, table_item->size) >= 0)
+	{
+	  dtb = table_item + 1;
+	  dtb_size = table_item->size;
+	}
+      return 0;
+    }
+  return 0;
 }
+
 
 void
 grub_machine_init (void)
@@ -124,8 +127,25 @@ grub_machine_init (void)
   grub_font_init ();
   grub_gfxterm_init ();
 
-  if (!try_generic_timer ())
-    grub_fatal ("No timer found");
+  grub_linuxbios_table_iterate (iterate_linuxbios_table, 0);
+
+  if (!dtb)
+    {
+      struct grub_fdt_board *cur;
+      for (cur = grub_fdt_boards; cur->dtb; cur++)
+	if (grub_strcmp (cur->vendor, mobo_vendor) == 0
+	    && grub_strcmp (cur->part, mobo_part_number) == 0)
+	  {
+	    dtb = cur->dtb;
+	    dtb_size = cur->dtb_size;
+	    break;
+	  }
+    }
+  if (!dtb)
+    grub_fatal ("No saved DTB found for <%s> <%s> and none is supplied", mobo_vendor, mobo_part_number);
+  grub_fdtbus_init (dtb, dtb_size);
+
+  grub_machine_timer_init ();
 }
 
 void
