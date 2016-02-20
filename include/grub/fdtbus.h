@@ -22,6 +22,8 @@
 #include <grub/fdt.h>
 #include <grub/err.h>
 
+struct grub_fdtbus_dev;
+
 struct grub_fdtbus_driver
 {
   struct grub_fdtbus_driver *next;
@@ -29,9 +31,20 @@ struct grub_fdtbus_driver
 
   const char *compatible;
 
-  grub_err_t (*attach) (const void *fdt, unsigned int nodeoffset);
-  void (*detach) (const void *fdt, unsigned int nodeoffset);
+  grub_err_t (*attach) (const struct grub_fdtbus_dev *dev);
+  void (*detach) (const struct grub_fdtbus_dev *dev);
 };
+
+extern char grub_fdtbus_invalid_mapping[1];
+
+static inline int
+grub_fdtbus_is_mapping_valid (volatile void *m)
+{
+  return m != grub_fdtbus_invalid_mapping;
+}
+
+volatile void *
+grub_fdtbus_map_reg (const struct grub_fdtbus_dev *dev, int reg, grub_size_t *size);
 
 void
 grub_fdtbus_register (struct grub_fdtbus_driver *driver);
@@ -45,8 +58,5 @@ grub_fdtbus_unregister (struct grub_fdtbus_driver *driver);
  */
 void
 grub_fdtbus_init (const void *dtb, grub_size_t size);
-
-void
-grub_fdtbus_scan (int nodeoffset);
 
 #endif
