@@ -96,10 +96,7 @@ grub_fdtbus_register (struct grub_fdtbus_driver *driver)
     if (!dev->driver && is_compatible (driver, dev->node))
       {
 	if (driver->attach(dev) == GRUB_ERR_NONE)
-	  {
-	    dev->driver = driver;
-	    break;
-	  }
+	  dev->driver = driver;
 	grub_print_error ();
       }
 }
@@ -235,4 +232,18 @@ grub_fdtbus_map_reg (const struct grub_fdtbus_dev *dev, int regno, grub_size_t *
   if (size && !size_cells)
     *size = 0;
   return translate (dev->parent, reg + (address_cells + size_cells) * regno);
+}
+
+const char *
+grub_fdtbus_get_name (const struct grub_fdtbus_dev *dev)
+{
+  return grub_fdt_get_nodename (dtb, dev->node);
+}
+
+const void *
+grub_fdtbus_get_prop (const struct grub_fdtbus_dev *dev,
+		      const char *name,
+		      grub_uint32_t *len)
+{
+  return grub_fdt_get_prop (dtb, dev->node, name, len);
 }

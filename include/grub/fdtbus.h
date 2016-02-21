@@ -46,6 +46,14 @@ grub_fdtbus_is_mapping_valid (volatile void *m)
 volatile void *
 grub_fdtbus_map_reg (const struct grub_fdtbus_dev *dev, int reg, grub_size_t *size);
 
+const char *
+grub_fdtbus_get_name (const struct grub_fdtbus_dev *dev);
+
+const void *
+grub_fdtbus_get_prop (const struct grub_fdtbus_dev *dev,
+		      const char *name,
+		      grub_uint32_t *len);
+
 void
 grub_fdtbus_register (struct grub_fdtbus_driver *driver);
 
