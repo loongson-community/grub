@@ -38,6 +38,7 @@
 extern grub_uint8_t _start[];
 extern grub_uint8_t _end[];
 extern grub_uint8_t _edata[];
+grub_addr_t start_of_ram = ~(grub_addr_t)0;
 
 void  __attribute__ ((noreturn))
 grub_exit (void)
@@ -65,6 +66,9 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
   if (end > GRUB_ULONG_MAX)
     end = GRUB_ULONG_MAX;
 #endif
+
+  if (start_of_ram > begin)
+    start_of_ram = begin;
 
   if (type != GRUB_MEMORY_AVAILABLE)
     return 0;

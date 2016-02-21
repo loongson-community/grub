@@ -1675,7 +1675,7 @@ module = {
   arm64 = loader/arm64/xen_boot.c;
   enable = arm64;
 };
-/*
+
 module = {
   name = linux;
   x86 = loader/i386/linux.c;
@@ -1691,7 +1691,7 @@ module = {
   common = lib/cmdline.c;
   enable = noemu;
 };
-*/
+
 module = {
   name = fdt;
   arm64 = loader/arm64/fdt.c;

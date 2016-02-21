@@ -34,6 +34,7 @@ struct grub_fdt_board
 extern struct grub_fdt_board grub_fdt_boards[];
 void grub_machine_timer_init (void);
 void grub_pl050_init (void);
+extern grub_addr_t EXPORT_VAR (start_of_ram);
 #endif /* ! ASM_FILE */
 
 #define GRUB_KERNEL_MACHINE_STACK_SIZE GRUB_KERNEL_ARM_STACK_SIZE
