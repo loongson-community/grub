@@ -102,13 +102,13 @@ static grub_uint32_t *get_next_node (const void *fdt, char *node_name)
 static int get_mem_rsvmap_size (const void *fdt)
 {
   int size = 0;
-  grub_uint64_t *ptr = (void *) ((grub_addr_t) fdt
-                                 + grub_fdt_get_off_mem_rsvmap (fdt));
+  grub_unaligned_uint64_t *ptr = (void *) ((grub_addr_t) fdt
+					   + grub_fdt_get_off_mem_rsvmap (fdt));
 
   do
   {
     size += 2 * sizeof(*ptr);
-    if (!*ptr && !*(ptr + 1))
+    if (!ptr[0].val && !ptr[1].val)
       return size;
     ptr += 2;
   } while ((grub_addr_t) ptr <= (grub_addr_t) fdt + grub_fdt_get_totalsize (fdt)
@@ -270,7 +270,7 @@ static grub_uint32_t *find_prop (const void *fdt, unsigned int nodeoffset,
    guaranteed not to access memory locations outside the allocated memory. */
 int grub_fdt_check_header_nosize (const void *fdt)
 {
-  if (((grub_addr_t) fdt & 0x7) || (grub_fdt_get_magic (fdt) != FDT_MAGIC)
+  if (((grub_addr_t) fdt & 0x3) || (grub_fdt_get_magic (fdt) != FDT_MAGIC)
       || (grub_fdt_get_version (fdt) < FDT_SUPPORTED_VERSION)
       || (grub_fdt_get_last_comp_version (fdt) > FDT_SUPPORTED_VERSION)
       || (grub_fdt_get_off_dt_struct (fdt) & 0x00000003)
