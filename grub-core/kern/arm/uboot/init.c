@@ -29,10 +29,10 @@ grub_uboot_get_machine_type (void)
   return grub_arm_saved_registers.r[1];
 }
 
-grub_addr_t
+const void *
 grub_uboot_get_boot_data (void)
 {
-  return grub_arm_saved_registers.r[2];
+  return (const void *) grub_arm_saved_registers.r[2];
 }
 
 int

@@ -37,7 +37,7 @@ grub_err_t grub_uboot_probe_hardware (void);
 extern grub_addr_t EXPORT_VAR (start_of_ram);
 
 grub_uint32_t EXPORT_FUNC (grub_uboot_get_machine_type) (void);
-grub_addr_t EXPORT_FUNC (grub_uboot_get_boot_data) (void);
+const void *EXPORT_FUNC (grub_uboot_get_boot_data) (void);
 
 
 /*

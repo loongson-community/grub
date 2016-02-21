@@ -40,7 +40,7 @@
 # define LINUX_PHYS_OFFSET        (0x00008000)
 # define LINUX_INITRD_PHYS_OFFSET (LINUX_PHYS_OFFSET + 0x02000000)
 # define LINUX_FDT_PHYS_OFFSET    (LINUX_INITRD_PHYS_OFFSET - 0x10000)
-static inline grub_addr_t
+static inline const void *
 grub_arm_firmware_get_boot_data (void)
 {
   return 0;
