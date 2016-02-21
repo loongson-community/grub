@@ -218,7 +218,8 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
       string_size += sizeof (".xen");
       footer_size += XEN_NOTE_SIZE;
     }
-  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM
+      && image_target->link_addr == 0)
     {
       phnum++;
       shnum++;
@@ -319,7 +320,8 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
       phdr->p_align = grub_host_to_target32 (image_target->link_align);
     }
 
-  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM
+      && image_target->link_addr == 0)
     {
       char *note_start = (elf_img + program_size + header_size);
       Elf_Nhdr *note_ptr;
@@ -532,7 +534,8 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
 	shdr->sh_entsize = grub_host_to_target32 (0);
 	shdr++;
       }
-    if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+    if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM
+	&& image_target->link_addr == 0)
       {
 	memcpy (ptr, ".coreboot_flags", sizeof (".coreboot_flags"));
 	shdr->sh_name = grub_host_to_target32 (ptr - str_start);
