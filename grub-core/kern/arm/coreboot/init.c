@@ -93,33 +93,22 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
   return 0;
 }
 
-static char *mobo_vendor, *mobo_part_number;
 static const void *dtb;
 static grub_size_t dtb_size;
 
 static int
 iterate_linuxbios_table (grub_linuxbios_table_item_t table_item, void *data __attribute__ ((unused)))
 {
-  switch (table_item->tag)
+  if (table_item->tag != GRUB_LINUXBIOS_MEMBER_DTB)
+    return 0;
+
+  if (grub_fdt_check_header (table_item + 1, table_item->size) >= 0)
     {
-    case GRUB_LINUXBIOS_MEMBER_MAINBOARD:
-      {
-	struct grub_linuxbios_mainboard *mb;
-	mb = (struct grub_linuxbios_mainboard *) (table_item + 1);
-	mobo_vendor = mb->strings + mb->vendor;
-	mobo_part_number = mb->strings + mb->part_number;
-	return 0;
-      }
-    case GRUB_LINUXBIOS_MEMBER_DTB:
-      if (grub_fdt_check_header (table_item + 1, table_item->size) >= 0)
-	{
-	  dtb = table_item + 1;
-	  dtb_size = table_item->size;
-	}
-      else
-	grub_printf ("Invalid DTB supplied by coreboot\n");
-      return 0;
+      dtb = table_item + 1;
+      dtb_size = table_item->size;
     }
+  else
+    grub_printf ("Invalid DTB supplied by coreboot\n");
   return 0;
 }
 
@@ -127,6 +116,8 @@ iterate_linuxbios_table (grub_linuxbios_table_item_t table_item, void *data __at
 void
 grub_machine_init (void)
 {
+  struct grub_module_header *header;
+
   modend = grub_modules_get_end ();
 
   grub_video_coreboot_fb_early_init ();
@@ -140,22 +131,21 @@ grub_machine_init (void)
   grub_font_init ();
   grub_gfxterm_init ();
 
-  grub_linuxbios_table_iterate (iterate_linuxbios_table, 0);
+  FOR_MODULES (header)
+    if (header->type == OBJ_TYPE_DTB)
+      {
+	char *dtb_orig_addr, *dtb_copy;
+	dtb_orig_addr = (char *) header + sizeof (struct grub_module_header);
 
+	dtb_size = header->size - sizeof (struct grub_module_header);
+	dtb = dtb_copy = grub_malloc (dtb_size);
+	grub_memmove (dtb_copy, dtb_orig_addr, dtb_size);
+	break;
+      }
   if (!dtb)
-    {
-      struct grub_fdt_board *cur;
-      for (cur = grub_fdt_boards; cur->dtb; cur++)
-	if (grub_strcmp (cur->vendor, mobo_vendor) == 0
-	    && grub_strcmp (cur->part, mobo_part_number) == 0)
-	  {
-	    dtb = cur->dtb;
-	    dtb_size = cur->dtb_size;
-	    break;
-	  }
-    }
+    grub_linuxbios_table_iterate (iterate_linuxbios_table, 0);
   if (!dtb)
-    grub_fatal ("No saved DTB found for <%s> <%s> and none is supplied", mobo_vendor, mobo_part_number);
+    grub_fatal ("No DTB found");
   grub_fdtbus_init (dtb, dtb_size);
 
   grub_machine_timer_init ();
