@@ -33,6 +33,7 @@ struct grub_fdt_board
 
 extern struct grub_fdt_board grub_fdt_boards[];
 void grub_machine_timer_init (void);
+void grub_pl050_init (void);
 #endif /* ! ASM_FILE */
 
 #define GRUB_KERNEL_MACHINE_STACK_SIZE 0x40000
