@@ -122,12 +122,6 @@ reloc_done:
 
 	add     r1, r1, #GRUB_KERNEL_MACHINE_STACK_SIZE
 	and	r1, r1, #~0x7	@ Ensure 8-byte alignment
-
-	@ Do not put modules before the end of relocations.
-	@ Instead increase stack size
-	@ r1 = max (r1, r0)
-        cmp     r0, r1
-        movcs   r1, r0
 	
 	sub	sp, r1, #8
 	add     r1, r1, #1024

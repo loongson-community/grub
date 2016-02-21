@@ -1524,6 +1524,11 @@ finish_reloc_translation_pe (struct translate_context *ctx, struct grub_mkimage_
     }
 
   layout->reloc_size = ctx->current_address;
+  if (image_target->elf_target == EM_ARM && layout->reloc_size > GRUB_KERNEL_ARM_STACK_SIZE)
+    grub_util_error ("Reloc section (%d) is bigger than stack size (%d). "
+		     "This breaks assembly assumptions. Please increase stack size",
+		     (int) layout->reloc_size,
+		     (int) GRUB_KERNEL_ARM_STACK_SIZE);
 }
 
 /*
