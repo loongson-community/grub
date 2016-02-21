@@ -285,7 +285,10 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
     {
       grub_uint32_t target_addr_mods;
       phdr->p_filesz = grub_host_to_target32 (layout->kernel_size);
-      phdr->p_memsz = grub_host_to_target32 (layout->kernel_size + layout->bss_size);
+      if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+	phdr->p_memsz = grub_host_to_target32 (layout->kernel_size);
+      else
+	phdr->p_memsz = grub_host_to_target32 (layout->kernel_size + layout->bss_size);
 
       phdr++;
       phdr->p_type = grub_host_to_target32 (PT_GNU_STACK);
@@ -303,6 +306,10 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
 
       if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_386)
 	target_addr_mods = GRUB_KERNEL_I386_COREBOOT_MODULES_ADDR;
+      else if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+	target_addr_mods = ALIGN_UP (target_addr + layout->end
+				     + image_target->mod_gap,
+				     image_target->mod_align);
       else
 	target_addr_mods = ALIGN_UP (target_addr + layout->kernel_size + layout->bss_size
 				     + image_target->mod_gap,
