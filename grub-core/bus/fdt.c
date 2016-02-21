@@ -247,3 +247,9 @@ grub_fdtbus_get_prop (const struct grub_fdtbus_dev *dev,
 {
   return grub_fdt_get_prop (dtb, dev->node, name, len);
 }
+
+const void *
+grub_fdtbus_get_fdt (void)
+{
+  return dtb;
+}

@@ -35,7 +35,7 @@ struct grub_fdtbus_driver
   void (*detach) (const struct grub_fdtbus_dev *dev);
 };
 
-extern char grub_fdtbus_invalid_mapping[1];
+extern char EXPORT_VAR(grub_fdtbus_invalid_mapping)[1];
 
 static inline int
 grub_fdtbus_is_mapping_valid (volatile void *m)
@@ -44,21 +44,24 @@ grub_fdtbus_is_mapping_valid (volatile void *m)
 }
 
 volatile void *
-grub_fdtbus_map_reg (const struct grub_fdtbus_dev *dev, int reg, grub_size_t *size);
-
-const char *
-grub_fdtbus_get_name (const struct grub_fdtbus_dev *dev);
+EXPORT_FUNC(grub_fdtbus_map_reg) (const struct grub_fdtbus_dev *dev, int reg, grub_size_t *size);
 
 const void *
-grub_fdtbus_get_prop (const struct grub_fdtbus_dev *dev,
+EXPORT_FUNC(grub_fdtbus_get_fdt) (void);
+
+const char *
+EXPORT_FUNC(grub_fdtbus_get_name) (const struct grub_fdtbus_dev *dev);
+
+const void *
+EXPORT_FUNC(grub_fdtbus_get_prop) (const struct grub_fdtbus_dev *dev,
 		      const char *name,
 		      grub_uint32_t *len);
 
 void
-grub_fdtbus_register (struct grub_fdtbus_driver *driver);
+EXPORT_FUNC(grub_fdtbus_register) (struct grub_fdtbus_driver *driver);
 
 void
-grub_fdtbus_unregister (struct grub_fdtbus_driver *driver);
+EXPORT_FUNC(grub_fdtbus_unregister) (struct grub_fdtbus_driver *driver);
 
 /* Must be called before any register(). */
 /* dtb is assumed to be unfreeable and must remain
