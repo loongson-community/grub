@@ -76,6 +76,8 @@ struct grub_ieee1275_note
 };
 
 #define GRUB_XEN_NOTE_NAME "Xen"
+#define GRUB_COREBOOT_NOTE_NAME "coreboot"
+#define COREBOOT_NOTE_SIZE (sizeof (Elf_Nhdr) + ALIGN_UP (sizeof (GRUB_COREBOOT_NOTE_NAME), 4) + 12)
 
 struct fixup_block_list
 {
@@ -216,6 +218,13 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
       string_size += sizeof (".xen");
       footer_size += XEN_NOTE_SIZE;
     }
+  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+    {
+      phnum++;
+      shnum++;
+      string_size += sizeof (".coreboot_flags");
+      footer_size += COREBOOT_NOTE_SIZE;
+    }
   header_size = ALIGN_UP (sizeof (*ehdr) + phnum * sizeof (*phdr)
 			  + shnum * sizeof (*shdr) + string_size, align);
 
@@ -301,6 +310,39 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
       phdr->p_vaddr = grub_host_to_target_addr (target_addr_mods);
       phdr->p_paddr = grub_host_to_target_addr (target_addr_mods);
       phdr->p_align = grub_host_to_target32 (image_target->link_align);
+    }
+
+  if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+    {
+      char *note_start = (elf_img + program_size + header_size);
+      Elf_Nhdr *note_ptr;
+      char *ptr = (char *) note_start;
+
+      grub_util_info ("adding coreboot NOTE segment");
+
+      note_ptr = (Elf_Nhdr *) ptr;
+      note_ptr->n_namesz = grub_host_to_target32 (sizeof (GRUB_COREBOOT_NOTE_NAME));
+      note_ptr->n_descsz = grub_host_to_target32 (8);
+      note_ptr->n_type = grub_host_to_target32 (0);
+      ptr += sizeof (Elf_Nhdr);
+      memcpy (ptr, GRUB_COREBOOT_NOTE_NAME, sizeof (GRUB_COREBOOT_NOTE_NAME));
+      ptr += ALIGN_UP (sizeof (GRUB_COREBOOT_NOTE_NAME), 4);
+      ((grub_uint32_t *) ptr)[0] = grub_host_to_target32 (is_relocatable (image_target));
+      ((grub_uint32_t *) ptr)[1] = 0;
+      ((grub_uint32_t *) ptr)[2] = grub_host_to_target32 (align);
+      ptr += 12;
+
+      assert (COREBOOT_NOTE_SIZE == (ptr - note_start));
+
+      phdr++;
+      phdr->p_type = grub_host_to_target32 (PT_NOTE);
+      phdr->p_flags = grub_host_to_target32 (PF_R);
+      phdr->p_align = grub_host_to_target32 (image_target->voidp_sizeof);
+      phdr->p_vaddr = 0;
+      phdr->p_paddr = 0;
+      phdr->p_filesz = grub_host_to_target32 (COREBOOT_NOTE_SIZE);
+      phdr->p_memsz = 0;
+      phdr->p_offset = grub_host_to_target32 (header_size + program_size);
     }
 
   if (image_target->id == IMAGE_XEN)
@@ -477,6 +519,25 @@ SUFFIX (grub_mkimage_generate_elf) (const struct grub_install_image_target_desc 
 	shdr->sh_addr = grub_host_to_target_addr (target_addr + kernel_size);
 	shdr->sh_offset = grub_host_to_target_addr (program_size + header_size);
 	shdr->sh_size = grub_host_to_target32 (XEN_NOTE_SIZE);
+	shdr->sh_link = grub_host_to_target32 (0);
+	shdr->sh_info = grub_host_to_target32 (0);
+	shdr->sh_addralign = grub_host_to_target32 (image_target->voidp_sizeof);
+	shdr->sh_entsize = grub_host_to_target32 (0);
+	shdr++;
+      }
+    if (image_target->id == IMAGE_COREBOOT && image_target->elf_target == EM_ARM)
+      {
+	memcpy (ptr, ".coreboot_flags", sizeof (".coreboot_flags"));
+	shdr->sh_name = grub_host_to_target32 (ptr - str_start);
+	ptr += sizeof (".coreboot_flags");
+	shdr->sh_type = grub_host_to_target32 (SHT_PROGBITS);
+	shdr->sh_addr = grub_host_to_target_addr (target_addr + kernel_size);
+	shdr->sh_offset = grub_host_to_target_addr (program_size + header_size
+						    + sizeof (Elf_Nhdr)
+						    + ALIGN_UP (sizeof (GRUB_COREBOOT_NOTE_NAME), 4));
+	shdr->sh_size = grub_host_to_target32 (COREBOOT_NOTE_SIZE
+					       - sizeof (Elf_Nhdr)
+					       - ALIGN_UP (sizeof (GRUB_COREBOOT_NOTE_NAME), 4));
 	shdr->sh_link = grub_host_to_target32 (0);
 	shdr->sh_info = grub_host_to_target32 (0);
 	shdr->sh_addralign = grub_host_to_target32 (image_target->voidp_sizeof);
