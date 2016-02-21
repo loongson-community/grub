@@ -112,6 +112,8 @@ iterate_linuxbios_table (grub_linuxbios_table_item_t table_item, void *data __at
 	  dtb = table_item + 1;
 	  dtb_size = table_item->size;
 	}
+      else
+	grub_printf ("Invalid DTB supplied by coreboot\n");
       return 0;
     }
   return 0;
