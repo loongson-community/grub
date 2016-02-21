@@ -70,7 +70,14 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
     return 0;
 
   if (modend && begin < modend)
-    begin = modend;
+    {
+      if (begin < (grub_addr_t)_start)
+	{
+	  grub_mm_init_region ((void *) (grub_addr_t) begin, (grub_size_t) ((grub_addr_t)_start - begin));
+	  have_memory = 1;
+	}
+      begin = modend;
+    }
 
   if (end <= begin)
     return 0;
