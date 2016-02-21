@@ -548,8 +548,8 @@ static const struct grub_install_image_target_desc image_targets[] =
       .mod_gap = GRUB_KERNEL_ARM_COREBOOT_MOD_GAP,
       .mod_align = GRUB_KERNEL_ARM_COREBOOT_MOD_ALIGN,
       .link_align = 4,
-      /* FIXME: Remove once coreboot supports load to any address. */
-      .link_addr = 0x60100000,
+      /* FIXME: Kept only for comaptibility with existing coreboot installs. */
+      .link_addr = 0x43000000,
     },
     {
       .dirname = "arm-efi",

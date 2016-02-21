@@ -36,6 +36,6 @@ void grub_machine_timer_init (void);
 void grub_pl050_init (void);
 #endif /* ! ASM_FILE */
 
-#define GRUB_KERNEL_MACHINE_STACK_SIZE 0x40000
+#define GRUB_KERNEL_MACHINE_STACK_SIZE GRUB_KERNEL_ARM_STACK_SIZE
 
 #endif /* ! GRUB_KERNEL_MACHINE_HEADER */
