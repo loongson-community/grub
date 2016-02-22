@@ -25,8 +25,7 @@
 #include <grub/time.h>
 #include <grub/loader.h>
 #include <grub/disk.h>
-/* For DMA. TODO(phcoder): Move DMA to separate header.  */
-#include <grub/pci.h>
+#include <grub/dma.h>
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
