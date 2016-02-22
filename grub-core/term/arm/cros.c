@@ -34,6 +34,14 @@ struct cros_ec_keyscan old_scan;
 
 static grub_uint8_t map_code[CROS_EC_KEYSCAN_COLS][CROS_EC_KEYSCAN_ROWS];
 
+static grub_uint8_t e0_translate[16] =
+  {
+    0x1c, 0x1d, 0x35, 0x00,
+    0x38, 0x00, 0x47, 0x48,
+    0x49, 0x4b, 0x4d, 0x4f,
+    0x50, 0x51, 0x52, 0x53,
+  };
+
 /* If there is a character pending, return it;
    otherwise return GRUB_TERM_NO_KEY.  */
 static int
@@ -49,13 +57,19 @@ grub_cros_keyboard_getkey (struct grub_term_input *term __attribute__ ((unused))
 	  {
 	    grub_uint8_t code = map_code[i][j];
 	    int ret;
+	    grub_uint8_t brk = 0;
 	    if (!(scan.data[i] & (1 << j)))
-	      code |= 0x80;
+	      brk = 0x80;
 	    grub_dprintf ("cros_keyboard", "key <%d, %d> code %x\n", i, j, code);
-	    if (code == 0)
-	      ret = GRUB_TERM_NO_KEY;
+	    if (code < 0x60)
+	      ret = grub_ps2_process_incoming_byte (&ps2_state, code | brk);
+	    else if (code >= 0x60 && code < 0x70 && e0_translate[code - 0x60])
+	      {
+		grub_ps2_process_incoming_byte (&ps2_state, 0xe0);
+		ret = grub_ps2_process_incoming_byte (&ps2_state, e0_translate[code - 0x60] | brk);
+	      }
 	    else
-	      ret = grub_ps2_process_incoming_byte (&ps2_state, code);
+	      ret = GRUB_TERM_NO_KEY;
 	    old_scan.data[i] ^= (1 << j);
 	    if (ret != GRUB_TERM_NO_KEY)
 	      return ret;
