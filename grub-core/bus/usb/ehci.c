@@ -22,7 +22,6 @@
 #include <grub/usb.h>
 #include <grub/usbtrans.h>
 #include <grub/misc.h>
-#include <grub/cpu/io.h>
 #include <grub/time.h>
 #include <grub/loader.h>
 #include <grub/disk.h>
