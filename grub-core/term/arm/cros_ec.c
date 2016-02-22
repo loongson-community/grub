@@ -328,54 +328,6 @@ struct ec_response_proto_version {
 	uint32_t version;
 } __packed;
 
-/*
- * Hello.  This is a simple command to test the EC is responsive to
- * commands.
- */
-#define EC_CMD_HELLO 0x01
-
-struct ec_params_hello {
-	uint32_t in_data;  /* Pass anything here */
-} __packed;
-
-struct ec_response_hello {
-	uint32_t out_data;  /* Output will be in_data + 0x01020304 */
-} __packed;
-
-
-/*
- * Read memory-mapped data.
- *
- * This is an alternate interface to memory-mapped data for bus protocols
- * which don't support direct-mapped memory - I2C, SPI, etc.
- *
- * Response is params.size bytes of data.
- */
-#define EC_CMD_READ_MEMMAP 0x07
-
-struct ec_params_read_memmap {
-	uint8_t offset;   /* Offset in memmap (EC_MEMMAP_*) */
-	uint8_t size;     /* Size to read in bytes */
-} __packed;
-
-/* Read versions supported for a command */
-#define EC_CMD_GET_CMD_VERSIONS 0x08
-
-struct ec_params_get_cmd_versions {
-	uint8_t cmd;      /* Command to check */
-} __packed;
-
-struct ec_params_get_cmd_versions_v1 {
-	uint16_t cmd;     /* Command to check */
-} __packed;
-
-struct ec_response_get_cmd_versions {
-	/*
-	 * Mask of supported versions; use EC_VER_MASK() to compare with a
-	 * desired version.
-	 */
-	uint32_t version_mask;
-} __packed;
 
 /*
  * Check EC communcations status (busy). This is needed on i2c/spi but not
