@@ -424,9 +424,10 @@ grub_ehci_reset (struct grub_ehci *e)
 {
   grub_uint64_t maxtime;
 
+  grub_dprintf ("ehci", "reset\n");
+
   grub_ehci_oper_write32 (e, GRUB_EHCI_COMMAND,
-			  GRUB_EHCI_CMD_HC_RESET
-			  | grub_ehci_oper_read32 (e, GRUB_EHCI_COMMAND));
+			  GRUB_EHCI_CMD_HC_RESET);
   /* Ensure command is written */
   grub_ehci_oper_read32 (e, GRUB_EHCI_COMMAND);
   /* XXX: How long time could take reset of HC ? */
