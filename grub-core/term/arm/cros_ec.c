@@ -167,61 +167,6 @@ enum ec_status {
 	EC_RES_BUSY = 16                /* Up but too busy.  Should retry */
 };
 
-/* Flags for ec_lpc_host_args.flags */
-/*
- * Args are from host.  Data area at EC_LPC_ADDR_HOST_PARAM contains command
- * params.
- *
- * If EC gets a command and this flag is not set, this is an old-style command.
- * Command version is 0 and params from host are at EC_LPC_ADDR_OLD_PARAM with
- * unknown length.  EC must respond with an old-style response (that is,
- * withouth setting EC_HOST_ARGS_FLAG_TO_HOST).
- */
-#define EC_HOST_ARGS_FLAG_FROM_HOST 0x01
-/*
- * Args are from EC.  Data area at EC_LPC_ADDR_HOST_PARAM contains response.
- *
- * If EC responds to a command and this flag is not set, this is an old-style
- * response.  Command version is 0 and response data from EC is at
- * EC_LPC_ADDR_OLD_PARAM with unknown length.
- */
-#define EC_HOST_ARGS_FLAG_TO_HOST   0x02
-
-/*****************************************************************************/
-/*
- * Byte codes returned by EC over SPI interface.
- *
- * These can be used by the AP to debug the EC interface, and to determine
- * when the EC is not in a state where it will ever get around to responding
- * to the AP.
- *
- * Example of sequence of bytes read from EC for a current good transfer:
- *   1. -                  - AP asserts chip select (CS#)
- *   2. EC_SPI_OLD_READY   - AP sends first byte(s) of request
- *   3. -                  - EC starts handling CS# interrupt
- *   4. EC_SPI_RECEIVING   - AP sends remaining byte(s) of request
- *   5. EC_SPI_PROCESSING  - EC starts processing request; AP is clocking in
- *                           bytes looking for EC_SPI_FRAME_START
- *   6. -                  - EC finishes processing and sets up response
- *   7. EC_SPI_FRAME_START - AP reads frame byte
- *   8. (response packet)  - AP reads response packet
- *   9. EC_SPI_PAST_END    - Any additional bytes read by AP
- *   10 -                  - AP deasserts chip select
- *   11 -                  - EC processes CS# interrupt and sets up DMA for
- *                           next request
- *
- * If the AP is waiting for EC_SPI_FRAME_START and sees any value other than
- * the following byte values:
- *   EC_SPI_OLD_READY
- *   EC_SPI_RX_READY
- *   EC_SPI_RECEIVING
- *   EC_SPI_PROCESSING
- *
- * Then the EC found an error in the request, or was not ready for the request
- * and lost data.  The AP should give up waiting for EC_SPI_FRAME_START,
- * because the EC is unable to tell when the AP is done sending its request.
- */
-
 /*
  * Framing byte which precedes a response packet from the EC.  After sending a
  * request, the AP will clock in bytes until it sees the framing byte, then
