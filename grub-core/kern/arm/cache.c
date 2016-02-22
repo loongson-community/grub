@@ -253,6 +253,12 @@ grub_arch_sync_caches (void *address, grub_size_t len)
 }
 
 void
+grub_arch_sync_dma_caches (void *address, grub_size_t len)
+{
+  grub_arch_sync_caches (address, len);
+}
+
+void
 grub_arm_disable_caches_mmu (void)
 {
   if (type == ARCH_UNKNOWN)
