@@ -119,16 +119,6 @@ static const uint64_t FramingTimeoutUs = 1000 * 1000;
 
 static const uint8_t EcFramingByte = 0xec;
 
-/* Command version mask */
-#define EC_VER_MASK(version) (1UL << (version))
-
-/* The actual block is 0x800-0x8ff, but some BIOSes think it's 0x880-0x8ff
- * and they tell the kernel that so we have to think of it as two parts. */
-#define EC_HOST_CMD_REGION0    0x800
-#define EC_HOST_CMD_REGION1    0x880
-#define EC_HOST_CMD_REGION_SIZE 0x80
-
-
 
 /*
  * This header file is used in coreboot both in C and ACPI code.  The ACPI code
@@ -352,58 +342,6 @@ struct ec_response_hello {
 	uint32_t out_data;  /* Output will be in_data + 0x01020304 */
 } __packed;
 
-/* Get version number */
-#define EC_CMD_GET_VERSION 0x02
-
-enum ec_current_image {
-	EC_IMAGE_UNKNOWN = 0,
-	EC_IMAGE_RO,
-	EC_IMAGE_RW
-};
-
-struct ec_response_get_version {
-	/* Null-terminated version strings for RO, RW */
-	char version_string_ro[32];
-	char version_string_rw[32];
-	char reserved[32];       /* Was previously RW-B string */
-	uint32_t current_image;  /* One of ec_current_image */
-} __packed;
-
-/* Read test */
-#define EC_CMD_READ_TEST 0x03
-
-struct ec_params_read_test {
-	uint32_t offset;   /* Starting value for read buffer */
-	uint32_t size;     /* Size to read in bytes */
-} __packed;
-
-struct ec_response_read_test {
-	uint32_t data[32];
-} __packed;
-
-/*
- * Get build information
- *
- * Response is null-terminated string.
- */
-#define EC_CMD_GET_BUILD_INFO 0x04
-
-/* Get chip info */
-#define EC_CMD_GET_CHIP_INFO 0x05
-
-struct ec_response_get_chip_info {
-	/* Null-terminated strings */
-	char vendor[32];
-	char name[32];
-	char revision[32];  /* Mask version */
-} __packed;
-
-/* Get board HW version */
-#define EC_CMD_GET_BOARD_VERSION 0x06
-
-struct ec_response_board_version {
-	uint16_t board_version;  /* A monotonously incrementing number. */
-} __packed;
 
 /*
  * Read memory-mapped data.
