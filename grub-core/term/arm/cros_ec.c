@@ -797,67 +797,6 @@ enum ec_mkbp_event {
 #endif  /* !__ACPI__ */
 
 
-/*****************************************************************************/
-/*
- * Blob commands are just opaque chunks of data, sent with proto v3.
- * params is struct ec_host_request, response is struct ec_host_response.
- */
-#define EC_CMD_BLOB 0x200
-
-/*****************************************************************************/
-/*
- * Reserve a range of host commands for board-specific, experimental, or
- * special purpose features. These can be (re)used without updating this file.
- *
- * CAUTION: Don't go nuts with this. Shipping products should document ALL
- * their EC commands for easier development, testing, debugging, and support.
- *
- * In your experimental code, you may want to do something like this:
- *
- *   #define EC_CMD_MAGIC_FOO (EC_CMD_BOARD_SPECIFIC_BASE + 0x000)
- *   #define EC_CMD_MAGIC_BAR (EC_CMD_BOARD_SPECIFIC_BASE + 0x001)
- *   #define EC_CMD_MAGIC_HEY (EC_CMD_BOARD_SPECIFIC_BASE + 0x002)
- */
-#define EC_CMD_BOARD_SPECIFIC_BASE 0x3E00
-#define EC_CMD_BOARD_SPECIFIC_LAST 0x3FFF
-
-/*****************************************************************************/
-/*
- * Passthru commands
- *
- * Some platforms have sub-processors chained to each other.  For example.
- *
- *     AP <--> EC <--> PD MCU
- *
- * The top 2 bits of the command number are used to indicate which device the
- * command is intended for.  Device 0 is always the device receiving the
- * command; other device mapping is board-specific.
- *
- * When a device receives a command to be passed to a sub-processor, it passes
- * it on with the device number set back to 0.  This allows the sub-processor
- * to remain blissfully unaware of whether the command originated on the next
- * device up the chain, or was passed through from the AP.
- *
- * In the above example, if the AP wants to send command 0x0002 to the PD MCU,
- *     AP sends command 0x4002 to the EC
- *     EC sends command 0x0002 to the PD MCU
- *     EC forwards PD MCU response back to the AP
- */
-
-/* Offset and max command number for sub-device n */
-#define EC_CMD_PASSTHRU_OFFSET(n) (0x4000 * (n))
-#define EC_CMD_PASSTHRU_MAX(n) (EC_CMD_PASSTHRU_OFFSET(n) + 0x3fff)
-
-/*****************************************************************************/
-/*
- * Deprecated constants. These constants have been renamed for clarity. The
- * meaning and size has not changed. Programs that use the old names should
- * switch to the new names soon, as the old names may not be carried forward
- * forever.
- */
-#define EC_HOST_PARAM_SIZE      EC_PROTO2_MAX_PARAM_SIZE
-#define EC_LPC_ADDR_OLD_PARAM   EC_HOST_CMD_REGION1
-#define EC_OLD_PARAM_SIZE       EC_HOST_CMD_REGION_SIZE
 
 #define DEFAULT_BUF_SIZE 0x100
 
@@ -1344,11 +1283,9 @@ static int ec_command(int cmd, int cmd_version,
 				 din, din_len);
 }
 
-static int cros_ec_get_protocol_info(int devidx,
-				     struct ec_response_get_protocol_info *info)
+static int cros_ec_get_protocol_info(struct ec_response_get_protocol_info *info)
 {
-	if (ec_command(EC_CMD_PASSTHRU_OFFSET(devidx) +
-		       EC_CMD_GET_PROTOCOL_INFO, 0, NULL, 0, info,
+	if (ec_command(EC_CMD_GET_PROTOCOL_INFO, 0, NULL, 0, info,
 		       sizeof(*info)) < (int)sizeof(*info))
 		return -1;
 
@@ -1407,7 +1344,7 @@ int cros_ec_init(void)
 	  return -1;
 
 	struct ec_response_get_protocol_info info;
-	if (cros_ec_get_protocol_info(0, &info)) {
+	if (cros_ec_get_protocol_info(&info)) {
 	  set_max_proto3_sizes(0, 0, 0);
 	  send_command_func = NULL;
 	} else {
