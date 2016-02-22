@@ -80,7 +80,8 @@ try_generic_timer (void)
 {
   if (((grub_arm_pfr1 () >> 16) & 0xf) != 1)
     return 0;
-  timer_frequency_in_khz = grub_armv7_get_timer_frequency() / 1000;
+  grub_printf ("freq = %x\n", grub_armv7_get_timer_frequency());
+  timer_frequency_in_khz = 0x016e3600 / 1000; //grub_armv7_get_timer_frequency() / 1000;
   if (timer_frequency_in_khz == 0)
     return 0;
   grub_install_get_time_ms (generic_get_time_ms);
