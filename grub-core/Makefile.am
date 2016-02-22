@@ -240,6 +240,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/system.h
 endif
 
 if COND_arm_coreboot
+KERNEL_HEADER_FILES += $(top_builddir)/include/grub/keyboard_layouts.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/system.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/video_fb.h
@@ -247,6 +248,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/gfxterm.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/font.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/bufio.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/fdt.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/dma.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/coreboot/kernel.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/fdtbus.h
 endif

@@ -83,6 +83,10 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
       begin = modend;
     }
 
+  /* Avoid DMA problems.  */
+  if (end >= 0xfe000000)
+    end = 0xfe000000;
+
   if (end <= begin)
     return 0;
 

@@ -163,6 +163,7 @@ kernel = {
   arm_coreboot = term/ps2.c;
   arm_coreboot = term/arm/pl050.c;
   arm_coreboot = commands/keylayouts.c;
+  arm_coreboot = kern/arm/coreboot/dma.c;
 
   terminfoinkernel = term/terminfo.c;
   terminfoinkernel = term/tparm.c;
@@ -589,8 +590,10 @@ module = {
 module = {
   name = ehci;
   common = bus/usb/ehci.c;
-  common = bus/usb/ehci-pci.c;
+  arm_coreboot = bus/usb/ehci-fdt.c;
+  pci = bus/usb/ehci-pci.c;
   enable = pci;
+  enable = arm_coreboot;
 };
 
 module = {
