@@ -23,7 +23,6 @@
 #include <grub/time.h>
 #include <grub/misc.h>
 
-#define assert(x)
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
 #define printf grub_printf
@@ -102,128 +101,7 @@ static const uint64_t FramingTimeoutUs = 1000 * 1000;
 
 static const uint8_t EcFramingByte = 0xec;
 
-
-/* Host command response codes */
-enum ec_status {
-	EC_RES_SUCCESS = 0,
-	EC_RES_INVALID_COMMAND = 1,
-	EC_RES_ERROR = 2,
-	EC_RES_INVALID_PARAM = 3,
-	EC_RES_ACCESS_DENIED = 4,
-	EC_RES_INVALID_RESPONSE = 5,
-	EC_RES_INVALID_VERSION = 6,
-	EC_RES_INVALID_CHECKSUM = 7,
-	EC_RES_IN_PROGRESS = 8,		/* Accepted, command in progress */
-	EC_RES_UNAVAILABLE = 9,		/* No response available */
-	EC_RES_TIMEOUT = 10,		/* We got a timeout */
-	EC_RES_OVERFLOW = 11,		/* Table / data overflow */
-	EC_RES_INVALID_HEADER = 12,     /* Header contains invalid data */
-	EC_RES_REQUEST_TRUNCATED = 13,  /* Didn't get the entire request */
-	EC_RES_RESPONSE_TOO_BIG = 14,   /* Response was too big to handle */
-	EC_RES_BUS_ERROR = 15,          /* Communications bus error */
-	EC_RES_BUSY = 16                /* Up but too busy.  Should retry */
-};
-
-/*
- * Framing byte which precedes a response packet from the EC.  After sending a
- * request, the AP will clock in bytes until it sees the framing byte, then
- * clock in the response packet.
- */
-#define EC_SPI_FRAME_START    0xec
-
-/*
- * Padding bytes which are clocked out after the end of a response packet.
- */
-#define EC_SPI_PAST_END       0xed
-
-/*
- * EC is ready to receive, and has ignored the byte sent by the AP.  EC expects
- * that the AP will send a valid packet header (starting with
- * EC_COMMAND_PROTOCOL_3) in the next 32 bytes.
- */
-#define EC_SPI_RX_READY       0xf8
-
-/*
- * EC has started receiving the request from the AP, but hasn't started
- * processing it yet.
- */
-#define EC_SPI_RECEIVING      0xf9
-
-/* EC has received the entire request from the AP and is processing it. */
-#define EC_SPI_PROCESSING     0xfa
-
-/*
- * EC received bad data from the AP, such as a packet header with an invalid
- * length.  EC will ignore all data until chip select deasserts.
- */
-#define EC_SPI_RX_BAD_DATA    0xfb
-
-/*
- * EC received data from the AP before it was ready.  That is, the AP asserted
- * chip select and started clocking data before the EC was ready to receive it.
- * EC will ignore all data until chip select deasserts.
- */
-#define EC_SPI_NOT_READY      0xfc
-
-/*
- * EC was ready to receive a request from the AP.  EC has treated the byte sent
- * by the AP as part of a request packet, or (for old-style ECs) is processing
- * a fully received packet but is not ready to respond yet.
- */
-#define EC_SPI_OLD_READY      0xfd
-
-/*****************************************************************************/
-
-/*
- * Protocol version 2 for I2C and SPI send a request this way:
- *
- *	0	EC_CMD_VERSION0 + (command version)
- *	1	Command number
- *	2	Length of params = N
- *	3..N+2	Params, if any
- *	N+3	8-bit checksum of bytes 0..N+2
- *
- * The corresponding response is:
- *
- *	0	Result code (EC_RES_*)
- *	1	Length of params = M
- *	2..M+1	Params, if any
- *	M+2	8-bit checksum of bytes 0..M+1
- */
-#define EC_PROTO2_REQUEST_HEADER_BYTES 3
-#define EC_PROTO2_REQUEST_TRAILER_BYTES 1
-#define EC_PROTO2_REQUEST_OVERHEAD (EC_PROTO2_REQUEST_HEADER_BYTES +	\
-				    EC_PROTO2_REQUEST_TRAILER_BYTES)
-
-#define EC_PROTO2_RESPONSE_HEADER_BYTES 2
-#define EC_PROTO2_RESPONSE_TRAILER_BYTES 1
-#define EC_PROTO2_RESPONSE_OVERHEAD (EC_PROTO2_RESPONSE_HEADER_BYTES +	\
-				     EC_PROTO2_RESPONSE_TRAILER_BYTES)
-
-/* Parameter length was limited by the LPC interface */
-#define EC_PROTO2_MAX_PARAM_SIZE 0xfc
-
-/* Maximum request and response packet sizes for protocol version 2 */
-#define EC_PROTO2_MAX_REQUEST_SIZE (EC_PROTO2_REQUEST_OVERHEAD +	\
-				    EC_PROTO2_MAX_PARAM_SIZE)
-#define EC_PROTO2_MAX_RESPONSE_SIZE (EC_PROTO2_RESPONSE_OVERHEAD +	\
-				     EC_PROTO2_MAX_PARAM_SIZE)
-
-/*****************************************************************************/
-
 #define EC_CMD_MKBP_STATE 0x60
-
-
-/*
- * This header byte on a command indicate version 0. Any header byte less
- * than this means that we are talking to an old EC which doesn't support
- * versioning. In that case, we assume version 0.
- *
- * Header bytes greater than this indicate a later version. For example,
- * EC_CMD_VERSION0 + 1 means we are using version 1.
- *
- * The old EC interface must not use commands 0xdc or higher.
- */
 #define EC_CMD_VERSION0 0xdc
 
 static uint64_t last_transfer;
@@ -241,10 +119,9 @@ static int wait_for_frame(void)
 	do {
 		if (spi_read(&byte, 1))
 			return -1;
-		//		grub_printf ("%x\n", byte);
 		if (byte != EcFramingByte &&
 			grub_get_time_us() - start > FramingTimeoutUs) {
-			printf("Timeout waiting for framing byte.\n");
+			grub_dprintf("cros", "Timeout waiting for framing byte.\n");
 			return -1;
 		}
 	} while (byte != EcFramingByte);
@@ -279,9 +156,9 @@ enum {
 static grub_uint8_t busbuf[256];
 #define MSG_BYTES ((int)sizeof (busbuf))
 
-static int send_command(uint8_t cmd, int cmd_version,
-			const void *dout, uint32_t dout_len,
-			void *din, uint32_t din_len)
+static int ec_command(int cmd, int cmd_version,
+		      const void *dout, int dout_len,
+		      void *din, int din_len)
 {
 	uint8_t *bytes;
 
@@ -294,11 +171,11 @@ static int send_command(uint8_t cmd, int cmd_version,
 	 * buffers.
 	 */
 	if (out_bytes > MSG_BYTES) {
-		printf("%s: Cannot send %d bytes\n", __func__, dout_len);
+		grub_dprintf("cros", "Cannot send %d bytes\n", dout_len);
 		return -1;
 	}
 	if (in_bytes > MSG_BYTES) {
-		printf("%s: Cannot receive %d bytes\n", __func__, din_len);
+		grub_dprintf("cros", "Cannot receive %d bytes\n", din_len);
 		return -1;
 	}
 
@@ -312,8 +189,6 @@ static int send_command(uint8_t cmd, int cmd_version,
 
 	*bytes++ = cros_ec_calc_checksum(busbuf,
 					 CROS_EC_SPI_OUT_HDR_SIZE + dout_len);
-
-	assert(out_bytes == bytes - (uint8_t *)busbuf);
 
 	while (grub_get_time_us() - last_transfer < 200)
 		;
@@ -347,8 +222,8 @@ static int send_command(uint8_t cmd, int cmd_version,
 
 	// Make sure there's enough room for the data.
 	if (CROS_EC_SPI_IN_HDR_SIZE + length + 1 > MSG_BYTES) {
-		printf("%s: Received length %#02x too large\n",
-		       __func__, length);
+		grub_dprintf("cros", "Received length %#02x too large\n",
+			     length);
 		stop_bus();
 		return -1;
 	}
@@ -363,8 +238,8 @@ static int send_command(uint8_t cmd, int cmd_version,
 	stop_bus();
 
 	// Check the integrity of the response.
-	if (result != EC_RES_SUCCESS) {
-		printf("%s: Received bad result code %d\n", __func__, result);
+	if (result != 0) {
+		grub_dprintf("cros", "Received bad result code %d\n", result);
 		return -result;
 	}
 
@@ -372,8 +247,8 @@ static int send_command(uint8_t cmd, int cmd_version,
 					 CROS_EC_SPI_IN_HDR_SIZE + length);
 
 	if (csum != expected) {
-		printf("%s: Invalid checksum rx %#02x, calced %#02x\n",
-		       __func__, expected, csum);
+		grub_dprintf("cros", "Invalid checksum rx %#02x, calced %#02x\n",
+			     expected, csum);
 		return -1;
 	}
 
@@ -385,51 +260,6 @@ static int send_command(uint8_t cmd, int cmd_version,
 	}
 
 	return din_len;
-}
-
-
-/* Timeout waiting for a flash erase command to complete */
-static const int CROS_EC_CMD_TIMEOUT_MS = 5000;
-
-/**
- * Send a command to the ChromeOS EC device and optionally return the reply.
- *
- * The device's internal input/output buffers are used.
- *
- * @param cmd		Command to send (EC_CMD_...)
- * @param cmd_version	Version of command to send (EC_VER_...)
- * @param dout          Output data (may be NULL If dout_len=0)
- * @param dout_len      Size of output data in bytes
- * @param din           Response data (may be NULL If din_len=0).
- * @param din_len       Maximum size of response in bytes
- * @return number of bytes in response, or -1 on error
- */
-static int send_command_proto2(int cmd, int cmd_version,
-			       const void *dout, int dout_len,
-			       void *din, int din_len)
-{
-	int len;
-
-	/* Proto2 can't send 16-bit command codes */
-	if (cmd > 0xff)
-		return -EC_RES_INVALID_COMMAND;
-
-	len = send_command(cmd, cmd_version, dout,
-					dout_len, din, din_len);
-
-#ifdef DEBUG
-	printf("%s: len=%d, din=%p\n", __func__, len, din);
-#endif
-
-	return len;
-}
-
-static int ec_command(int cmd, int cmd_version,
-		      const void *dout, int dout_len,
-		      void *din, int din_len)
-{
-	return send_command_proto2(cmd, cmd_version, dout, dout_len,
-				   din, din_len);
 }
 
 int cros_ec_scan_keyboard(struct cros_ec_keyscan *scan)
