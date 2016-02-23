@@ -41,7 +41,7 @@ grub_arch_sync_dma_caches (void *address __attribute__ ((unused)),
 {
 }
 #else
-void EXPORT_FUNC(grub_arch_sync_dma_caches) (void *address, grub_size_t len);
+void EXPORT_FUNC(grub_arch_sync_dma_caches) (volatile void *address, grub_size_t len);
 #endif
 #endif
 
