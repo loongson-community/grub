@@ -25,8 +25,6 @@
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-#define printf grub_printf
-
 static grub_uint64_t
 grub_get_time_us (void)
 {
