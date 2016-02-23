@@ -21,7 +21,7 @@
 #include <grub/mm.h>
 #include <grub/time.h>
 #include <grub/misc.h>
-#include <grub/cros_ec.h>
+#include <grub/arm/cros_ec.h>
 
 static grub_uint64_t
 grub_get_time_us (void)
@@ -93,7 +93,7 @@ spi_stop (void)
 #define mdelay grub_millisleep
 #define memcpy grub_memcpy
 
-static const uint64_t FramingTimeoutMs = 300 * 1000;
+static const uint64_t FramingTimeoutUs = 300 * 1000;
 
 static const uint8_t EcFramingByte = 0xec;
 
@@ -249,7 +249,8 @@ static int ec_command(int cmd, int cmd_version,
 	}
 
 	// If the caller wants the response, copy it out for them.
-	din_len = MIN(din_len, length);
+	if (length < din_len)
+		din_len = length;
 	if (din) {
 		memcpy(din, (uint8_t *)busbuf + CROS_EC_SPI_IN_HDR_SIZE,
 		       din_len);

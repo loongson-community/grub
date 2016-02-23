@@ -26,13 +26,13 @@
 #include <grub/term.h>
 #include <grub/time.h>
 #include <grub/fdtbus.h>
-#include <grub/cros_ec.h>
+#include <grub/arm/cros_ec.h>
 
 struct grub_ps2_state ps2_state;
 
-struct cros_ec_keyscan old_scan;
+struct grub_cros_ec_keyscan old_scan;
 
-static grub_uint8_t map_code[CROS_EC_KEYSCAN_COLS][CROS_EC_KEYSCAN_ROWS];
+static grub_uint8_t map_code[GRUB_CROS_EC_KEYSCAN_COLS][GRUB_CROS_EC_KEYSCAN_ROWS];
 
 static grub_uint8_t e0_translate[16] =
   {
@@ -47,13 +47,13 @@ static grub_uint8_t e0_translate[16] =
 static int
 grub_cros_keyboard_getkey (struct grub_term_input *term __attribute__ ((unused)))
 {
-  struct cros_ec_keyscan scan;
+  struct grub_cros_ec_keyscan scan;
   int i, j;
-  if (cros_ec_scan_keyboard(&scan) < 0)
+  if (grub_cros_ec_scan_keyboard(&scan) < 0)
 	  return GRUB_TERM_NO_KEY;
-  for (i = 0; i < CROS_EC_KEYSCAN_COLS; i++)
+  for (i = 0; i < GRUB_CROS_EC_KEYSCAN_COLS; i++)
     if (scan.data[i] ^ old_scan.data[i])
-      for (j = 0; j < CROS_EC_KEYSCAN_ROWS; j++)
+      for (j = 0; j < GRUB_CROS_EC_KEYSCAN_ROWS; j++)
 	if ((scan.data[i] ^ old_scan.data[i]) & (1 << j))
 	  {
 	    grub_uint8_t code = map_code[i][j];
@@ -93,7 +93,8 @@ cros_attach(const struct grub_fdtbus_dev *dev __attribute__ ((unused)))
   if (keymap)
     {
       for (i = 0; i + 3 < keymap_size; i += 4)
-	if (keymap[i+1] < CROS_EC_KEYSCAN_COLS && keymap[i] < CROS_EC_KEYSCAN_ROWS && keymap[i+2] == 0 && keymap[i+3] < 0x80)
+	if (keymap[i+1] < GRUB_CROS_EC_KEYSCAN_COLS && keymap[i] < GRUB_CROS_EC_KEYSCAN_ROWS
+	    && keymap[i+2] == 0 && keymap[i+3] < 0x80)
 	  map_code[keymap[i+1]][keymap[i]] = keymap[i+3];
     }
 

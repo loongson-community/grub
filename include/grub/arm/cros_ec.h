@@ -7,7 +7,7 @@
 #define GRUB_CROS_EC_KEYSCAN_ROWS 8
 
 struct grub_cros_ec_keyscan {
-	grub_uint8_t data[CROS_EC_KEYSCAN_COLS];
+	grub_uint8_t data[GRUB_CROS_EC_KEYSCAN_COLS];
 };
 
 int
