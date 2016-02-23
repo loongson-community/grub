@@ -98,27 +98,9 @@ spi_stop (void)
 #define mdelay grub_millisleep
 #define memcpy grub_memcpy
 
-#pragma GCC diagnostic ignored "-Wsign-compare"
-
 static const uint64_t FramingTimeoutUs = 1000 * 1000;
 
 static const uint8_t EcFramingByte = 0xec;
-
-
-/*
- * This header file is used in coreboot both in C and ACPI code.  The ACPI code
- * is pre-processed to handle constants but the ASL compiler is unable to
- * handle actual C code so keep it separate.
- */
-#ifndef __ACPI__
-
-/*
- * Define __packed if someone hasn't beat us to it.  Linux kernel style
- * checking prefers __packed over __attribute__((packed)).
- */
-#ifndef __packed
-#define __packed __attribute__((packed))
-#endif
 
 
 /* Host command response codes */
@@ -244,14 +226,6 @@ enum ec_status {
  */
 #define EC_CMD_VERSION0 0xdc
 
-#endif  /* !__ACPI__ */
-
-
-
-#define DEFAULT_BUF_SIZE 0x100
-
-#define EC_CMD_HELLO 0x01
-
 static uint64_t last_transfer;
 
 static void stop_bus(void)
@@ -303,7 +277,7 @@ enum {
 };
 
 static grub_uint8_t busbuf[256];
-#define MSG_BYTES sizeof (busbuf)
+#define MSG_BYTES ((int)sizeof (busbuf))
 
 static int send_command(uint8_t cmd, int cmd_version,
 			const void *dout, uint32_t dout_len,
