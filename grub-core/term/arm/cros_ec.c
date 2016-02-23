@@ -95,7 +95,7 @@ spi_stop (void)
 #define mdelay grub_millisleep
 #define memcpy grub_memcpy
 
-static const uint64_t FramingTimeoutUs = 1000 * 1000;
+static const uint64_t FramingTimeoutMs = 300 * 1000;
 
 static const uint8_t EcFramingByte = 0xec;
 
