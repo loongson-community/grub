@@ -26,7 +26,7 @@
 #include <grub/term.h>
 #include <grub/time.h>
 #include <grub/fdtbus.h>
-#include "cros_ec.h"
+#include <grub/cros_ec.h>
 
 struct grub_ps2_state ps2_state;
 

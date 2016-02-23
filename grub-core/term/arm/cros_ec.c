@@ -18,12 +18,10 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "cros_ec.h"
 #include <grub/mm.h>
 #include <grub/time.h>
 #include <grub/misc.h>
-
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
+#include <grub/cros_ec.h>
 
 static grub_uint64_t
 grub_get_time_us (void)
@@ -260,7 +258,8 @@ static int ec_command(int cmd, int cmd_version,
 	return din_len;
 }
 
-int cros_ec_scan_keyboard(struct cros_ec_keyscan *scan)
+int
+grub_cros_ec_scan_keyboard(struct grub_cros_ec_keyscan *scan)
 {
 	if (ec_command(EC_CMD_MKBP_STATE, 0, NULL, 0, scan,
 		       sizeof(*scan)) < (int)sizeof(*scan))
