@@ -49,7 +49,8 @@ grub_cros_keyboard_getkey (struct grub_term_input *term __attribute__ ((unused))
 {
   struct cros_ec_keyscan scan;
   int i, j;
-  cros_ec_scan_keyboard(&scan);
+  if (cros_ec_scan_keyboard(&scan) < 0)
+	  return GRUB_TERM_NO_KEY;
   for (i = 0; i < CROS_EC_KEYSCAN_COLS; i++)
     if (scan.data[i] ^ old_scan.data[i])
       for (j = 0; j < CROS_EC_KEYSCAN_ROWS; j++)
@@ -98,7 +99,6 @@ cros_attach(const struct grub_fdtbus_dev *dev __attribute__ ((unused)))
 
   ps2_state.current_set = 1;
   ps2_state.at_keyboard_status = 0;
-  cros_ec_init();
   grub_term_register_input ("cros_keyboard", &grub_cros_keyboard_term);
   return GRUB_ERR_NONE;
 }

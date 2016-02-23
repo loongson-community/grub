@@ -54,6 +54,4 @@ typedef struct CrosEcBusOps
 	void (*write)(const grub_uint8_t *data, grub_uint16_t port, int size);
 } CrosEcBusOps;
 
-int cros_ec_set_bus(CrosEcBusOps *bus);
 int cros_ec_scan_keyboard(struct cros_ec_keyscan *scan);
-int cros_ec_init(void);
