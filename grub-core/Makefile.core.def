@@ -599,6 +599,13 @@ module = {
 };
 
 module = {
+  name = dwc2;
+  common = bus/usb/dwc2.c;
+  arm_coreboot = bus/usb/dwc2-fdt.c;
+  enable = arm_coreboot;
+};
+
+module = {
   name = pci;
   common = bus/pci.c;
   i386_ieee1275 = bus/i386/ieee1275/pci.c;
