@@ -56,6 +56,8 @@
 
 #define TARGET_NO_FIELD 0xffffffff
 
+#pragma GCC diagnostic ignored "-Wcast-align"
+
 /* use 2015-01-01T00:00:00+0000 as a stock timestamp */
 #define STABLE_EMBEDDING_TIMESTAMP 1420070400
 
