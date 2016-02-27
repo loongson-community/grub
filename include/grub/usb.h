@@ -325,5 +325,9 @@ void
 grub_ehci_init_device (volatile void *regs);
 void
 grub_ehci_pci_scan (void);
+void
+grub_dwc2_init_device (volatile void *regs);
+void
+grub_dwc2_pci_scan (void);
 
 #endif /* GRUB_USB_H */

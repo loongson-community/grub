@@ -24,22 +24,22 @@
 #include <grub/fdtbus.h>
 
 static grub_err_t
-ehci_attach(const struct grub_fdtbus_dev *dev)
+dwc2_attach(const struct grub_fdtbus_dev *dev)
 {
-  grub_dprintf ("ehci", "Found generic-ehci\n");
+  grub_dprintf ("dwc2", "Found snps-dwc2\n");
 
-  grub_ehci_init_device (grub_fdtbus_map_reg (dev, 0, 0));
+  grub_dwc2_init_device (grub_fdtbus_map_reg (dev, 0, 0));
   return 0;
 }
 
-struct grub_fdtbus_driver ehci =
+struct grub_fdtbus_driver dwc2 =
 {
-  .compatible = "generic-ehci",
-  .attach = ehci_attach
+  .compatible = "snps,dwc2",
+  .attach = dwc2_attach
 };
 
 void
-grub_ehci_pci_scan (void)
+grub_dwc2_pci_scan (void)
 {
-  grub_fdtbus_register (&ehci);
+  grub_fdtbus_register (&dwc2);
 }
