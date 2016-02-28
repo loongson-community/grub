@@ -151,7 +151,6 @@ fuse_getattr (const char *path, struct stat *st)
 {
   struct fuse_getattr_ctx ctx;
   char *pathname, *path2;
-  const char *pathname_t;
   
   if (path[0] == '/' && path[1] == 0)
     {
@@ -170,12 +169,7 @@ fuse_getattr (const char *path, struct stat *st)
 
   ctx.file_exists = 0;
 
-  pathname_t = grub_strchr (path, ')');
-  if (! pathname_t)
-    pathname_t = path;
-  else
-    pathname_t++;
-  pathname = xstrdup (pathname_t);
+  pathname = xstrdup (path);
   
   /* Remove trailing '/'. */
   while (*pathname && pathname[grub_strlen (pathname) - 1] == '/')
@@ -547,7 +541,7 @@ argp_parser (int key, char *arg, struct argp_state *state)
     }
 
   images = xrealloc (images, (num_disks + 1) * sizeof (images[0]));
-  images[num_disks] = canonicalize_file_name (arg);
+  images[num_disks] = grub_canonicalize_file_name (arg);
   num_disks++;
 
   return 0;

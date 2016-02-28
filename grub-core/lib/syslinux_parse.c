@@ -772,7 +772,7 @@ print_escaped (struct output_buffer *outbuf,
   if (err)
     return err;
   outbuf->buf[outbuf->ptr++] = '\'';
-  for (ptr = from; *ptr; ptr++)
+  for (ptr = from; *ptr && ptr < to; ptr++)
     {
       if (*ptr == '\'')
 	{
@@ -840,6 +840,84 @@ simplify_filename (char *str)
 }
 
 static grub_err_t
+print_config (struct output_buffer *outbuf,
+	      struct syslinux_menu *menu,
+              const char *filename, const char *basedir)
+{
+  struct syslinux_menu *menuptr;
+  grub_err_t err = GRUB_ERR_NONE;
+  char *new_cwd = NULL;
+  char *new_target_cwd = NULL;
+  char *newname = NULL;
+  int depth = 0;
+
+  new_cwd = get_read_filename (menu, basedir);
+  if (!new_cwd)
+    {
+      err = grub_errno;
+      goto out;
+    }
+  new_target_cwd = get_target_filename (menu, basedir);
+  if (!new_target_cwd)
+    {
+      err = grub_errno;
+      goto out;
+    }
+  newname = get_read_filename (menu, filename);
+  if (!newname)
+    {
+      err = grub_errno;
+      goto out;
+    }
+  simplify_filename (newname);
+
+  print_string ("#");
+  print_file (outbuf, menu, filename, NULL);
+  print_string (" ");
+  err = print (outbuf, newname, grub_strlen (newname));
+  if (err)
+    return err;
+  print_string (":\n");
+
+  for (menuptr = menu; menuptr; menuptr = menuptr->parent, depth++)
+    if (grub_strcmp (menuptr->filename, newname) == 0
+        || depth > 20)
+      break;
+  if (menuptr)
+    {
+      print_string ("  syslinux_configfile -r ");
+      print_file (outbuf, menu, "/", NULL);
+      print_string (" -c ");
+      print_file (outbuf, menu, basedir, NULL);
+      print_string (" ");
+      print_file (outbuf, menu, filename, NULL);
+      print_string ("\n");
+    }
+  else
+    {
+      err = config_file (outbuf, menu->root_read_directory,
+                         menu->root_target_directory, new_cwd, new_target_cwd,
+                         newname, menu, menu->flavour);
+      if (err == GRUB_ERR_FILE_NOT_FOUND
+          || err == GRUB_ERR_BAD_FILENAME)
+        {
+          grub_errno = err = GRUB_ERR_NONE;
+          print_string ("# File ");
+          err = print (outbuf, newname, grub_strlen (newname));
+          if (err)
+            goto out;
+          print_string (" not found\n");
+        }
+    }
+
+ out:
+  grub_free (newname);
+  grub_free (new_cwd);
+  grub_free (new_target_cwd);
+  return err;
+}
+
+static grub_err_t
 write_entry (struct output_buffer *outbuf,
 	     struct syslinux_menu *menu,
 	     struct syslinux_menuentry *curentry)
@@ -868,8 +946,8 @@ write_entry (struct output_buffer *outbuf,
     {
     case KERNEL_LINUX:
       {
-	char *ptr;
-	char *initrd = NULL;
+	const char *ptr;
+	const char *initrd = NULL, *initrde= NULL;
 	for (ptr = curentry->append; ptr && *ptr; ptr++)
 	  if ((ptr == curentry->append || grub_isspace (ptr[-1]))
 	      && grub_strncasecmp (ptr, "initrd=", sizeof ("initrd=") - 1)
@@ -877,12 +955,8 @@ write_entry (struct output_buffer *outbuf,
 	    break;
 	if (ptr && *ptr)
 	  {
-	    char *ptr2;
-	    initrd = grub_strdup(ptr + sizeof ("initrd=") - 1);
-	    if (!initrd)
-	      return grub_errno;
-	    for (ptr2 = initrd; *ptr2 && !grub_isspace (*ptr2); ptr2++);
-	    *ptr2 = 0;
+	    initrd = ptr + sizeof ("initrd=") - 1;
+	    for (initrde = initrd; *initrde && !grub_isspace (*initrde); initrde++);
 	  }
 	print_string (" if test x$grub_platform = xpc; then "
 		      "linux_suffix=16; else linux_suffix= ; fi\n");
@@ -890,7 +964,11 @@ write_entry (struct output_buffer *outbuf,
 	print_file (outbuf, menu, curentry->kernel_file, NULL);
 	print_string (" ");
 	if (curentry->append)
-	  print (outbuf, curentry->append, grub_strlen (curentry->append));
+	  {
+	    err = print (outbuf, curentry->append, grub_strlen (curentry->append));
+	    if (err)
+	      return err;
+	  }
 	print_string ("\n");
 	if (initrd || curentry->initrds)
 	  {
@@ -898,7 +976,7 @@ write_entry (struct output_buffer *outbuf,
 	    print_string ("  initrd$linux_suffix ");
 	    if (initrd)
 	      {
-		print_file (outbuf, menu, initrd, NULL);
+		print_file (outbuf, menu, initrd, initrde);
 		print_string (" ");
 	      }
 	    for (lst = curentry->initrds; lst; lst = lst->next)
@@ -909,7 +987,6 @@ write_entry (struct output_buffer *outbuf,
 
 	    print_string ("\n");
 	  }
-	grub_free (initrd);
       }
       break;
     case KERNEL_CHAINLOADER:
@@ -945,6 +1022,7 @@ write_entry (struct output_buffer *outbuf,
 	    break;
 	  }
 	print_string ("  # UNSUPPORTED localboot type ");
+	print_string ("\ntrue;\n");
 	if (print_num (outbuf, n))
 	  return grub_errno;
 	print_string ("\n");
@@ -1120,8 +1198,7 @@ write_entry (struct output_buffer *outbuf,
 		  ptr++;
 		i386e = ptr;
 	      }
-	    if (lme)
-	      *lme = '\0';
+	    *lme = '\0';
 	    if (paee)
 	      *paee = '\0';
 	    if (i386e)
@@ -1226,6 +1303,36 @@ write_entry (struct output_buffer *outbuf,
 	    break;
 	  }
 
+	if (grub_strcasecmp (basename, "menu.c32") == 0 ||
+	    grub_strcasecmp (basename, "vesamenu.c32") == 0)
+	  {
+	    char *ptr;
+	    char *end;
+
+	    ptr = curentry->append;
+	    if (!ptr)
+	      return grub_errno;
+
+	    while (*ptr)
+	      {
+		end = ptr;
+		for (end = ptr; *end && !grub_isspace (*end); end++);
+		if (*end)
+		  *end++ = '\0';
+
+		/* "~" is supposed to be current file, so let's skip it */
+		if (grub_strcmp (ptr, "~") != 0)
+		  {
+		    err = print_config (outbuf, menu, ptr, "");
+		    if (err != GRUB_ERR_NONE)
+		      break;
+                  }
+		for (ptr = end; *ptr && grub_isspace (*ptr); ptr++);
+	      }
+	    err = GRUB_ERR_NONE;
+	    break;
+	  }
+
 	/* FIXME: gdb, GFXBoot, Hdt, Ifcpu, Ifplop, Kbdmap,
 	   FIXME: Linux, Lua, Meminfo, rosh, Sanbboot  */
 
@@ -1238,70 +1345,13 @@ write_entry (struct output_buffer *outbuf,
       }
     case KERNEL_CONFIG:
       {
-	char *new_cwd, *new_target_cwd;
 	const char *ap;
 	ap = curentry->append;
 	if (!ap)
 	  ap = curentry->argument;
 	if (!ap)
 	  ap = "";
-	new_cwd = get_read_filename (menu, ap);
-	if (!new_cwd)
-	  return grub_errno;
-	new_target_cwd = get_target_filename (menu, ap);
-	if (!new_target_cwd)
-	  return grub_errno;
-
-	struct syslinux_menu *menuptr;
-	char *newname;
-	int depth = 0;
-	
-	newname = get_read_filename (menu, curentry->kernel_file);
-	if (!newname)
-	  return grub_errno;
-	simplify_filename (newname);
-
-	print_string ("#");
-	print_file (outbuf, menu, curentry->kernel_file, NULL);
-	print_string (" ");
-	print (outbuf, newname, grub_strlen (newname));
-	print_string (":\n");
-
-	for (menuptr = menu; menuptr; menuptr = menuptr->parent, depth++)
-	  if (grub_strcmp (menuptr->filename, newname) == 0
-	      || depth > 20)
-	    break;
-	if (menuptr)
-	  {
-	    print_string ("  syslinux_configfile -r ");
-	    print_file (outbuf, menu, "/", NULL);
-	    print_string (" -c ");
-	    print_file (outbuf, menu, ap, NULL);
-	    print_string (" ");
-	    print_file (outbuf, menu, curentry->kernel_file, NULL);
-	    print_string ("\n");
-	  }
-	else
-	  {
-	    err = config_file (outbuf, menu->root_read_directory,
-			       menu->root_target_directory, new_cwd, new_target_cwd,
-			       newname, menu, menu->flavour);
-	    if (err == GRUB_ERR_FILE_NOT_FOUND
-		|| err == GRUB_ERR_BAD_FILENAME)
-	      {
-		grub_errno = err = GRUB_ERR_NONE;
-		print_string ("# File ");
-		err = print (outbuf, newname, grub_strlen (newname));
-		if (err)
-		  return err;
-		print_string (" not found\n");
-	      }
-	    if (err)
-	      return err;
-	  }
-	grub_free (newname);
-	grub_free (new_cwd);
-	grub_free (new_target_cwd);
+	print_config (outbuf, menu, curentry->kernel_file, ap);
       }
       break;
     case KERNEL_NO_KERNEL:

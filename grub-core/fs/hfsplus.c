@@ -336,6 +336,9 @@ grub_hfsplus_mount (grub_disk_t disk)
   data->case_sensitive = ((magic == GRUB_HFSPLUSX_MAGIC) &&
 			  (header.key_compare == GRUB_HFSPLUSX_BINARYCOMPARE));
 
+  if (data->catalog_tree.nodesize < 2)
+    goto fail;
+
   if (grub_hfsplus_read_file (&data->extoverflow_tree.file, 0, 0,
 			      sizeof (struct grub_hfsplus_btnode),
 			      sizeof (header), (char *) &header) <= 0)
@@ -349,6 +352,9 @@ grub_hfsplus_mount (grub_disk_t disk)
 
   data->extoverflow_tree.root = grub_be_to_cpu32 (header.root);
   data->extoverflow_tree.nodesize = grub_be_to_cpu16 (header.nodesize);
+
+  if (data->extoverflow_tree.nodesize < 2)
+    goto fail;
 
   if (grub_hfsplus_read_file (&data->attr_tree.file, 0, 0,
 			      sizeof (struct grub_hfsplus_btnode),
@@ -786,8 +792,8 @@ grub_hfsplus_iterate_dir (grub_fshelp_node_t dir,
   };
 
   struct grub_hfsplus_key_internal intern;
-  struct grub_hfsplus_btnode *node;
-  grub_disk_addr_t ptr;
+  struct grub_hfsplus_btnode *node = NULL;
+  grub_disk_addr_t ptr = 0;
 
   {
     struct grub_fshelp_node *fsnode;
@@ -970,8 +976,8 @@ grub_hfsplus_label (grub_device_t device, char **label)
   struct grub_hfsplus_catkey *catkey;
   int i, label_len;
   struct grub_hfsplus_key_internal intern;
-  struct grub_hfsplus_btnode *node;
-  grub_disk_addr_t ptr;
+  struct grub_hfsplus_btnode *node = NULL;
+  grub_disk_addr_t ptr = 0;
 
   *label = 0;
 
