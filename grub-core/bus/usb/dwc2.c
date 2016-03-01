@@ -80,10 +80,12 @@ enum
 #define GRUB_DWC2_N_TD  640
 
 #define GRUB_DWC2_QH_EMPTY 1
+#endif
 
 /* Operational registers offsets */
 enum
 {
+#if 0
   GRUB_DWC2_COMMAND = 0x00,
   GRUB_DWC2_STATUS = 0x04,
   GRUB_DWC2_INTERRUPT = 0x08,
@@ -92,9 +94,11 @@ enum
   GRUB_DWC2_FL_BASE = 0x14,
   GRUB_DWC2_CUR_AL_ADDR = 0x18,
   GRUB_DWC2_CONFIG_FLAG = 0x40,
-  GRUB_DWC2_PORT_STAT_CMD = 0x44
+#endif
+  GRUB_DWC2_PORT_STAT_CMD = 0x440
 };
 
+#if 0
 /* Operational register COMMAND bits */
 enum
 {
@@ -124,7 +128,7 @@ enum
   GRUB_DWC2_ST_PS_STATUS = (1 << 14),
   GRUB_DWC2_ST_AS_STATUS = (1 << 15)
 };
-
+#endif
 /* Operational register PORT_STAT_CMD bits */
 enum
 {
@@ -152,10 +156,11 @@ enum
   GRUB_DWC2_PORT_LINE_UNDEF = (3 << 10),
   GRUB_DWC2_PORT_LINE_LOWSP = GRUB_DWC2_PORT_LINE_K,	/* K state means low speed */
   GRUB_DWC2_PORT_WMASK = ~(GRUB_DWC2_PORT_CONNECT_CH
+			   | GRUB_DWC2_PORT_ENABLED
 			   | GRUB_DWC2_PORT_ENABLED_CH
 			   | GRUB_DWC2_PORT_OVERCUR_CH)
 };
-
+#if 0
 /* Operational register CONFIGFLAGS bits */
 enum
 {
@@ -321,8 +326,8 @@ struct grub_dwc2
   grub_uint32_t td_phys;
   grub_dwc2_td_t tdfree_virt;	/* Free Transfer Descriptors */
   int flag64;
-  grub_uint32_t reset;		/* bits 1-15 are flags if port was reset from connected time or not */
 #endif
+  grub_uint32_t reset;		/* bits 1-15 are flags if port was reset from connected time or not */
   struct grub_dwc2 *next;
 };
 
@@ -367,6 +372,8 @@ grub_dwc2_ehcc_read8 (struct grub_dwc2 *e, grub_uint32_t addr)
   return *((volatile grub_uint8_t *) e->iobase_ehcc + addr);
 }
 
+#endif
+
 /* Operational registers access functions */
 static inline grub_uint32_t
 grub_dwc2_oper_read32 (struct grub_dwc2 *e, grub_uint32_t addr)
@@ -379,39 +386,39 @@ grub_dwc2_oper_read32 (struct grub_dwc2 *e, grub_uint32_t addr)
 
 static inline void
 grub_dwc2_oper_write32 (struct grub_dwc2 *e, grub_uint32_t addr,
-			grub_uint32_t value)
+		   grub_uint32_t value)
 {
   *((volatile grub_uint32_t *) e->iobase + (addr / sizeof (grub_uint32_t))) =
     grub_cpu_to_le32 (value);
 }
 
 static inline grub_uint32_t
-grub_dwc2_port_read (struct grub_dwc2 *e, grub_uint32_t port)
+grub_dwc2_port_read (struct grub_dwc2 *e)
 {
-  return grub_dwc2_oper_read32 (e, GRUB_DWC2_PORT_STAT_CMD + port * 4);
+  return grub_dwc2_oper_read32 (e, GRUB_DWC2_PORT_STAT_CMD);
 }
 
 static inline void
-grub_dwc2_port_resbits (struct grub_dwc2 *e, grub_uint32_t port,
+grub_dwc2_port_resbits (struct grub_dwc2 *e,
 			grub_uint32_t bits)
 {
-  grub_dwc2_oper_write32 (e, GRUB_DWC2_PORT_STAT_CMD + port * 4,
-			  grub_dwc2_port_read (e,
-					       port) & GRUB_DWC2_PORT_WMASK &
+  grub_dwc2_oper_write32 (e, GRUB_DWC2_PORT_STAT_CMD,
+			  grub_dwc2_port_read (e) & GRUB_DWC2_PORT_WMASK &
 			  ~(bits));
-  grub_dwc2_port_read (e, port);
+  grub_dwc2_port_read (e);
 }
 
 static inline void
-grub_dwc2_port_setbits (struct grub_dwc2 *e, grub_uint32_t port,
+grub_dwc2_port_setbits (struct grub_dwc2 *e,
 			grub_uint32_t bits)
 {
-  grub_dwc2_oper_write32 (e, GRUB_DWC2_PORT_STAT_CMD + port * 4,
-			  (grub_dwc2_port_read (e, port) &
+  grub_dwc2_oper_write32 (e, GRUB_DWC2_PORT_STAT_CMD,
+			  (grub_dwc2_port_read (e) &
 			   GRUB_DWC2_PORT_WMASK) | bits);
-  grub_dwc2_port_read (e, port);
+  grub_dwc2_port_read (e);
 }
 
+#if 0
 /* Halt if DWC2 HC not halted */
 static grub_usb_err_t
 grub_dwc2_halt (struct grub_dwc2 *e)
@@ -1673,74 +1680,43 @@ grub_dwc2_portstatus (grub_usb_controller_t dev,
   return GRUB_USB_ERR_NONE;
 }
 
+#endif
+
 static grub_usb_speed_t
-grub_dwc2_detect_dev (grub_usb_controller_t dev, int port, int *changed)
+grub_dwc2_detect_dev (grub_usb_controller_t dev, int port __attribute__ ((unused)), int *changed)
 {
   struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
-  grub_uint32_t status, line_state;
+  grub_uint32_t status;
 
-  status = grub_dwc2_port_read (e, port);
+  status = grub_dwc2_port_read (e);
 
   /* Connect Status Change bit - it detects change of connection */
   if (status & GRUB_DWC2_PORT_CONNECT_CH)
     {
       *changed = 1;
       /* Reset bit Connect Status Change */
-      grub_dwc2_port_setbits (e, port, GRUB_DWC2_PORT_CONNECT_CH);
+      grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_CONNECT_CH);
     }
   else
     *changed = 0;
 
   if (!(status & GRUB_DWC2_PORT_CONNECT))
     {				/* We should reset related "reset" flag in not connected state */
-      e->reset &= ~(1 << port);
+      e->reset &= ~(1 << 0);
       return GRUB_USB_SPEED_NONE;
     }
-  /* Detected connected state, so we should return speed.
-   * But we can detect only LOW speed device and only at connection
-   * time when PortEnabled=FALSE. FULL / HIGH speed detection is made
-   * later by DWC2-specific reset procedure.
-   * Another thing - if detected speed is LOW at connection time,
-   * we should change port ownership to companion controller.
-   * So:
-   * 1. If we detect connected and enabled and DWC2-owned port,
-   * we can say it is HIGH speed.
-   * 2. If we detect connected and not DWC2-owned port, we can say
-   * NONE speed, because such devices are not handled by DWC2.
-   * 3. If we detect connected, not enabled but reset port, we can say
-   * NONE speed, because it means FULL device connected to port and
-   * such devices are not handled by DWC2.
-   * 4. If we detect connected, not enabled and not reset port, which
-   * has line state != "K", we will say HIGH - it could be FULL or HIGH
-   * device, we will see it later after end of DWC2-specific reset
-   * procedure.
-   * 5. If we detect connected, not enabled and not reset port, which
-   * has line state == "K", we can say NONE speed, because LOW speed
-   * device is connected and we should change port ownership. */
-  if ((status & GRUB_DWC2_PORT_ENABLED) != 0)	/* Port already enabled, return high speed. */
-    return GRUB_USB_SPEED_HIGH;
-  if ((status & GRUB_DWC2_PORT_OWNER) != 0)	/* DWC2 is not port owner */
-    return GRUB_USB_SPEED_NONE;	/* DWC2 driver is ignoring this port. */
-  if ((e->reset & (1 << port)) != 0)	/* Port reset was done = FULL speed */
-    return GRUB_USB_SPEED_NONE;	/* DWC2 driver is ignoring this port. */
-  else				/* Port connected but not enabled - test port speed. */
+  switch ((status >> 17) & 3)
     {
-      line_state = status & GRUB_DWC2_PORT_LINE_STAT;
-      if (line_state != GRUB_DWC2_PORT_LINE_LOWSP)
-	return GRUB_USB_SPEED_HIGH;
-      /* Detected LOW speed device, we should change
-       * port ownership.
-       * XXX: Fix it!: There should be test if related companion
-       * controler is available ! And what to do if it does not exist ? */
-      grub_dwc2_port_setbits (e, port, GRUB_DWC2_PORT_OWNER);
-      return GRUB_USB_SPEED_NONE;	/* Ignore this port */
-      /* Note: Reset of PORT_OWNER bit is done by DWC2 HW when
-       * device is really disconnected from port.
-       * Don't do PORT_OWNER bit reset by SW when not connected signal
-       * is detected in port register ! */
+    case 0:
+      return GRUB_USB_SPEED_HIGH;
+    case 1:
+      return GRUB_USB_SPEED_FULL;
+    case 2:
+      return GRUB_USB_SPEED_LOW;
+    default:
+      return GRUB_USB_SPEED_NONE;
     }
 }
-#endif
 
 static grub_err_t
 grub_dwc2_restore_hw (void)
@@ -1781,6 +1757,7 @@ grub_dwc2_fini_hw (int noreturn __attribute__ ((unused)))
 
   return GRUB_ERR_NONE;
 #endif
+  // WIP
   return GRUB_ERR_NOT_IMPLEMENTED_YET;
 }
 
