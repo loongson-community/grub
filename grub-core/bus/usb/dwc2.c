@@ -1603,8 +1603,8 @@ grub_dwc2_hubports (grub_usb_controller_t dev __attribute__((unused)))
 #if 0
 
 static grub_usb_err_t
-grub_dwc2_portstatus (grub_usb_controller_t dev,
-		      unsigned int port, unsigned int enable)
+grub_dwc2_reset_port (grub_usb_controller_t dev,
+		      unsigned int port)
 {
   struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
   grub_uint64_t endtime;
@@ -1625,14 +1625,6 @@ grub_dwc2_portstatus (grub_usb_controller_t dev,
   while (grub_dwc2_port_read (e, port) & GRUB_DWC2_PORT_ENABLED)
     if (grub_get_time_ms () > endtime)
       return GRUB_USB_ERR_TIMEOUT;
-
-  if (!enable)			/* We don't need reset port */
-    {
-      grub_dprintf ("dwc2", "portstatus: Disabled.\n");
-      grub_dprintf ("dwc2", "portstatus: end, status=0x%02x\n",
-		    grub_dwc2_port_read (e, port));
-      return GRUB_USB_ERR_NONE;
-    }
 
   grub_dprintf ("dwc2", "portstatus: enable\n");
 
@@ -1768,7 +1760,7 @@ static struct grub_usb_controller_dev usb_controller = {
   .check_transfer = grub_dwc2_check_transfer,
   .cancel_transfer = grub_dwc2_cancel_transfer,
   .hubports = grub_dwc2_hubports,
-  .portstatus = grub_dwc2_portstatus,
+  .reset_port = grub_dwc2_reset_port,
   .detect_dev = grub_dwc2_detect_dev,
   /* estimated max. count of packets for one bulk transfer */
   .max_bulk_tds = 1023 
