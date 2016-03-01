@@ -1579,8 +1579,8 @@ grub_ehci_hubports (grub_usb_controller_t dev)
 }
 
 static grub_usb_err_t
-grub_ehci_portstatus (grub_usb_controller_t dev,
-		      unsigned int port, unsigned int enable)
+grub_ehci_reset_port (grub_usb_controller_t dev,
+		      unsigned int port)
 {
   struct grub_ehci *e = (struct grub_ehci *) dev->data;
   grub_uint64_t endtime;
@@ -1601,14 +1601,6 @@ grub_ehci_portstatus (grub_usb_controller_t dev,
   while (grub_ehci_port_read (e, port) & GRUB_EHCI_PORT_ENABLED)
     if (grub_get_time_ms () > endtime)
       return GRUB_USB_ERR_TIMEOUT;
-
-  if (!enable)			/* We don't need reset port */
-    {
-      grub_dprintf ("ehci", "portstatus: Disabled.\n");
-      grub_dprintf ("ehci", "portstatus: end, status=0x%02x\n",
-		    grub_ehci_port_read (e, port));
-      return GRUB_USB_ERR_NONE;
-    }
 
   grub_dprintf ("ehci", "portstatus: enable\n");
 
@@ -1810,7 +1802,7 @@ static struct grub_usb_controller_dev usb_controller = {
   .check_transfer = grub_ehci_check_transfer,
   .cancel_transfer = grub_ehci_cancel_transfer,
   .hubports = grub_ehci_hubports,
-  .portstatus = grub_ehci_portstatus,
+  .reset_port = grub_ehci_reset_port,
   .detect_dev = grub_ehci_detect_dev,
   /* estimated max. count of TDs for one bulk transfer */
   .max_bulk_tds = GRUB_EHCI_N_TD * 3 / 4 

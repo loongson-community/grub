@@ -1224,8 +1224,8 @@ grub_ohci_cancel_transfer (grub_usb_controller_t dev,
 }
 
 static grub_usb_err_t
-grub_ohci_portstatus (grub_usb_controller_t dev,
-		      unsigned int port, unsigned int enable)
+grub_ohci_rest_port (grub_usb_controller_t dev,
+		     unsigned int port)
 {
    struct grub_ohci *o = (struct grub_ohci *) dev->data;
    grub_uint64_t endtime;
@@ -1233,22 +1233,6 @@ grub_ohci_portstatus (grub_usb_controller_t dev,
 
    grub_dprintf ("ohci", "begin of portstatus=0x%02x\n",
                  grub_ohci_readreg32 (o, GRUB_OHCI_REG_RHUBPORT + port));
-
-   if (!enable) /* We don't need reset port */
-     {
-       /* Disable the port and wait for it. */
-       grub_ohci_writereg32 (o, GRUB_OHCI_REG_RHUBPORT + port,
-                             GRUB_OHCI_CLEAR_PORT_ENABLE);
-       endtime = grub_get_time_ms () + 1000;
-       while ((grub_ohci_readreg32 (o, GRUB_OHCI_REG_RHUBPORT + port)
-               & (1 << 1)))
-         if (grub_get_time_ms () > endtime)
-           return GRUB_USB_ERR_TIMEOUT;
-
-       grub_dprintf ("ohci", "end of portstatus=0x%02x\n",
-         grub_ohci_readreg32 (o, GRUB_OHCI_REG_RHUBPORT + port));
-       return GRUB_USB_ERR_NONE;
-     }
      
    /* OHCI does one reset signal 10ms long but USB spec.
     * requests 50ms for root hub (no need to be continuous).
@@ -1438,7 +1422,7 @@ static struct grub_usb_controller_dev usb_controller =
   .check_transfer = grub_ohci_check_transfer,
   .cancel_transfer = grub_ohci_cancel_transfer,
   .hubports = grub_ohci_hubports,
-  .portstatus = grub_ohci_portstatus,
+  .reset_port = grub_ohci_reset_port,
   .detect_dev = grub_ohci_detect_dev,
   /* estimated max. count of TDs for one bulk transfer */
   .max_bulk_tds = GRUB_OHCI_TDS * 3 / 4

@@ -207,8 +207,8 @@ attach_root_port (struct grub_usb_hub *hub, int portno,
 
   grub_boot_time ("After detect_dev");
 
-  /* Enable the port.  */
-  err = hub->controller->dev->portstatus (hub->controller, portno, 1);
+  /* Reset port.  */
+  err = hub->controller->dev->reset_port (hub->controller, portno);
   if (err)
     return;
   hub->controller->dev->pending_reset = grub_get_time_ms () + 5000;
