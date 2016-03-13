@@ -445,42 +445,46 @@ rsa_pad (gcry_mpi_t *hmpi, grub_uint8_t *hval,
   return ret;
 }
 
-static grub_err_t
-grub_verify_signature_real (char *buf, grub_size_t size,
-			    grub_file_t f, grub_file_t sig,
-			    struct grub_public_key *pkey)
+struct verify_context
 {
-  grub_size_t len;
+  struct signature_v4_header v4;
   grub_uint8_t v;
-  grub_uint8_t h;
-  grub_uint8_t t;
   grub_uint8_t pk;
   const gcry_md_spec_t *hash;
-  struct signature_v4_header v4;
+  void *hash_context;
+  grub_file_t sig;
+};
+
+static grub_err_t
+grub_verify_signature_init_real (struct verify_context *context)
+{
+  grub_size_t len;
+  grub_uint8_t h;
+  grub_uint8_t t;
   grub_err_t err;
-  grub_size_t i;
-  gcry_mpi_t mpis[10];
   grub_uint8_t type = 0;
 
-  err = read_packet_header (sig, &type, &len);
+  context->hash_context = NULL;
+
+  err = read_packet_header (context->sig, &type, &len);
   if (err)
     return err;
 
   if (type != 0x2)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
 
-  if (grub_file_read (sig, &v, sizeof (v)) != sizeof (v))
+  if (grub_file_read (context->sig, &context->v, sizeof (context->v)) != sizeof (context->v))
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
 
-  if (v != 4)
+  if (context->v != 4)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
 
-  if (grub_file_read (sig, &v4, sizeof (v4)) != sizeof (v4))
+  if (grub_file_read (context->sig, &context->v4, sizeof (context->v4)) != sizeof (context->v4))
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
 
-  h = v4.hash;
-  t = v4.type;
-  pk = v4.pkeyalgo;
+  h = context->v4.hash;
+  t = context->v4.type;
+  context->pk = context->v4.pkeyalgo;
   
   if (t != 0)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
@@ -488,186 +492,218 @@ grub_verify_signature_real (char *buf, grub_size_t size,
   if (h >= ARRAY_SIZE (hashes) || hashes[h] == NULL)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, "unknown hash");
 
-  if (pk >= ARRAY_SIZE (pkalgos) || pkalgos[pk].name == NULL)
+  if (context->pk >= ARRAY_SIZE (pkalgos) || pkalgos[context->pk].name == NULL)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
 
-  hash = grub_crypto_lookup_md_by_name (hashes[h]);
-  if (!hash)
+  context->hash = grub_crypto_lookup_md_by_name (hashes[h]);
+  if (!context->hash)
     return grub_error (GRUB_ERR_BAD_SIGNATURE, "hash `%s' not loaded", hashes[h]);
+
+  context->hash_context = grub_zalloc (context->hash->contextsize);
+  if (!context->hash_context)
+    return grub_errno;
 
   grub_dprintf ("crypt", "alive\n");
 
-  {
-    void *context = NULL;
-    unsigned char *hval;
-    grub_ssize_t rem = grub_be_to_cpu16 (v4.hashed_sub);
-    grub_uint32_t headlen = grub_cpu_to_be32 (rem + 6);
-    grub_uint8_t s;
-    grub_uint16_t unhashed_sub;
-    grub_ssize_t r;
-    grub_uint8_t hash_start[2];
-    gcry_mpi_t hmpi;
-    grub_uint64_t keyid = 0;
-    struct grub_public_subkey *sk;
-    grub_uint8_t *readbuf = NULL;
+  context->hash->init (context->hash_context);
 
-    context = grub_zalloc (hash->contextsize);
-    readbuf = grub_zalloc (READBUF_SIZE);
-    if (!context || !readbuf)
-      goto fail;
+  return GRUB_ERR_NONE;
+}
 
-    hash->init (context);
-    if (buf)
-      hash->write (context, buf, size);
-    else 
-      while (1)
-	{
-	  r = grub_file_read (f, readbuf, READBUF_SIZE);
-	  if (r < 0)
-	    goto fail;
-	  if (r == 0)
-	    break;
-	  hash->write (context, readbuf, r);
-	}
+static grub_err_t
+grub_verify_signature_read (struct verify_context *context, const void *buf, grub_size_t sz)
+{
+  context->hash->write (context->hash_context, buf, sz);
+  return GRUB_ERR_NONE;
+}
 
-    hash->write (context, &v, sizeof (v));
-    hash->write (context, &v4, sizeof (v4));
-    while (rem)
-      {
-	r = grub_file_read (sig, readbuf,
-			    rem < READBUF_SIZE ? rem : READBUF_SIZE);
-	if (r < 0)
-	  goto fail;
-	if (r == 0)
-	  break;
-	hash->write (context, readbuf, r);
-	rem -= r;
-      }
-    hash->write (context, &v, sizeof (v));
-    s = 0xff;
-    hash->write (context, &s, sizeof (s));
-    hash->write (context, &headlen, sizeof (headlen));
-    r = grub_file_read (sig, &unhashed_sub, sizeof (unhashed_sub));
-    if (r != sizeof (unhashed_sub))
-      goto fail;
+static grub_err_t
+grub_verify_signature_real (struct grub_public_key *pkey,
+			    struct verify_context *context)
+{
+  grub_size_t i;
+  gcry_mpi_t mpis[10];
+  unsigned char *hval;
+  grub_ssize_t rem = grub_be_to_cpu16 (context->v4.hashed_sub);
+  grub_uint32_t headlen = grub_cpu_to_be32 (rem + 6);
+  grub_uint8_t s;
+  grub_uint16_t unhashed_sub;
+  grub_ssize_t r;
+  grub_uint8_t hash_start[2];
+  gcry_mpi_t hmpi;
+  grub_uint64_t keyid = 0;
+  struct grub_public_subkey *sk;
+  grub_uint8_t *readbuf;
+
+  readbuf = grub_malloc (READBUF_SIZE);
+  if (!readbuf)
+    return grub_errno;
+
+  context->hash->write (context->hash_context, &context->v, sizeof (context->v));
+  context->hash->write (context->hash_context, &context->v4, sizeof (context->v4));
+  while (rem)
     {
-      grub_uint8_t *ptr;
-      grub_uint32_t l;
-      rem = grub_be_to_cpu16 (unhashed_sub);
-      if (rem > READBUF_SIZE)
+      r = grub_file_read (context->sig, readbuf,
+			  rem < READBUF_SIZE ? rem : READBUF_SIZE);
+      if (r < 0)
 	goto fail;
-      r = grub_file_read (sig, readbuf, rem);
-      if (r != rem)
+      if (r == 0)
+	break;
+      context->hash->write (context->hash_context, readbuf, r);
+      rem -= r;
+    }
+  context->hash->write (context->hash_context, &context->v, sizeof (context->v));
+  s = 0xff;
+  context->hash->write (context->hash_context, &s, sizeof (s));
+  context->hash->write (context->hash_context, &headlen, sizeof (headlen));
+  r = grub_file_read (context->sig, &unhashed_sub, sizeof (unhashed_sub));
+  if (r != sizeof (unhashed_sub))
+    goto fail;
+  {
+    grub_uint8_t *ptr;
+    grub_uint32_t l;
+    rem = grub_be_to_cpu16 (unhashed_sub);
+    if (rem > READBUF_SIZE)
+      goto fail;
+    r = grub_file_read (context->sig, readbuf, rem);
+    if (r != rem)
+      goto fail;
+    for (ptr = readbuf; ptr < readbuf + rem; ptr += l)
+      {
+	if (*ptr < 192)
+	  l = *ptr++;
+	else if (*ptr < 255)
+	  {
+	    if (ptr + 1 >= readbuf + rem)
+	      break;
+	    l = (((ptr[0] & ~192) << GRUB_CHAR_BIT) | ptr[1]) + 192;
+	    ptr += 2;
+	  }
+	else
+	  {
+	    if (ptr + 5 >= readbuf + rem)
+	      break;
+	    l = grub_be_to_cpu32 (grub_get_unaligned32 (ptr + 1));
+	    ptr += 5;
+	  }
+	if (*ptr == 0x10 && l >= 8)
+	  keyid = grub_get_unaligned64 (ptr + 1);
+      }
+  }
+
+  context->hash->final (context->hash_context);
+
+  grub_dprintf ("crypt", "alive\n");
+
+  hval = context->hash->read (context->hash_context);
+
+  if (grub_file_read (context->sig, hash_start, sizeof (hash_start)) != sizeof (hash_start))
+    goto fail;
+  if (grub_memcmp (hval, hash_start, sizeof (hash_start)) != 0)
+    goto fail;
+
+  grub_dprintf ("crypt", "@ %x\n", (int)grub_file_tell (context->sig));
+
+  for (i = 0; i < pkalgos[context->pk].nmpisig; i++)
+    {
+      grub_uint16_t l;
+      grub_size_t lb;
+      grub_dprintf ("crypt", "alive\n");
+      if (grub_file_read (context->sig, &l, sizeof (l)) != sizeof (l))
 	goto fail;
-      for (ptr = readbuf; ptr < readbuf + rem; ptr += l)
-	{
-	  if (*ptr < 192)
-	    l = *ptr++;
-	  else if (*ptr < 255)
-	    {
-	      if (ptr + 1 >= readbuf + rem)
-		break;
-	      l = (((ptr[0] & ~192) << GRUB_CHAR_BIT) | ptr[1]) + 192;
-	      ptr += 2;
-	    }
-	  else
-	    {
-	      if (ptr + 5 >= readbuf + rem)
-		break;
-	      l = grub_be_to_cpu32 (grub_get_unaligned32 (ptr + 1));
-	      ptr += 5;
-	    }
-	  if (*ptr == 0x10 && l >= 8)
-	    keyid = grub_get_unaligned64 (ptr + 1);
-	}
+      grub_dprintf ("crypt", "alive\n");
+      lb = (grub_be_to_cpu16 (l) + 7) / 8;
+      grub_dprintf ("crypt", "l = 0x%04x\n", grub_be_to_cpu16 (l));
+      if (lb > READBUF_SIZE - sizeof (grub_uint16_t))
+	goto fail;
+      grub_dprintf ("crypt", "alive\n");
+      if (grub_file_read (context->sig, readbuf + sizeof (grub_uint16_t), lb) != (grub_ssize_t) lb)
+	goto fail;
+      grub_dprintf ("crypt", "alive\n");
+      grub_memcpy (readbuf, &l, sizeof (l));
+      grub_dprintf ("crypt", "alive\n");
+
+      if (gcry_mpi_scan (&mpis[i], GCRYMPI_FMT_PGP,
+			 readbuf, lb + sizeof (grub_uint16_t), 0))
+	goto fail;
+      grub_dprintf ("crypt", "alive\n");
     }
 
-    hash->final (context);
-
-    grub_dprintf ("crypt", "alive\n");
-
-    hval = hash->read (context);
-
-    if (grub_file_read (sig, hash_start, sizeof (hash_start)) != sizeof (hash_start))
+  if (pkey)
+    sk = grub_crypto_pk_locate_subkey (keyid, pkey);
+  else
+    sk = grub_crypto_pk_locate_subkey_in_trustdb (keyid);
+  if (!sk)
+    {
+      /* TRANSLATORS: %08x is 32-bit key id.  */
+      grub_error (GRUB_ERR_BAD_SIGNATURE, N_("public key %08x not found"),
+		  keyid);
       goto fail;
-    if (grub_memcmp (hval, hash_start, sizeof (hash_start)) != 0)
+    }
+
+  if (pkalgos[context->pk].pad (&hmpi, hval, context->hash, sk))
+    goto fail;
+  if (!*pkalgos[context->pk].algo)
+    {
+      grub_dl_load (pkalgos[context->pk].module);
+      grub_errno = GRUB_ERR_NONE;
+    }
+
+  if (!*pkalgos[context->pk].algo)
+    {
+      grub_error (GRUB_ERR_BAD_SIGNATURE, N_("module `%s' isn't loaded"),
+		  pkalgos[context->pk].module);
       goto fail;
+    }
+  if ((*pkalgos[context->pk].algo)->verify (0, hmpi, mpis, sk->mpis, 0, 0))
+    goto fail;
 
-    grub_dprintf ("crypt", "@ %x\n", (int)grub_file_tell (sig));
+  grub_free (context->hash_context);
+  grub_free (readbuf);
 
-    for (i = 0; i < pkalgos[pk].nmpisig; i++)
-      {
-	grub_uint16_t l;
-	grub_size_t lb;
-	grub_dprintf ("crypt", "alive\n");
-	if (grub_file_read (sig, &l, sizeof (l)) != sizeof (l))
-	  goto fail;
-	grub_dprintf ("crypt", "alive\n");
-	lb = (grub_be_to_cpu16 (l) + 7) / 8;
-	grub_dprintf ("crypt", "l = 0x%04x\n", grub_be_to_cpu16 (l));
-	if (lb > READBUF_SIZE - sizeof (grub_uint16_t))
-	  goto fail;
-	grub_dprintf ("crypt", "alive\n");
-	if (grub_file_read (sig, readbuf + sizeof (grub_uint16_t), lb) != (grub_ssize_t) lb)
-	  goto fail;
-	grub_dprintf ("crypt", "alive\n");
-	grub_memcpy (readbuf, &l, sizeof (l));
-	grub_dprintf ("crypt", "alive\n");
+  return GRUB_ERR_NONE;
 
-	if (gcry_mpi_scan (&mpis[i], GCRYMPI_FMT_PGP,
-			   readbuf, lb + sizeof (grub_uint16_t), 0))
-	  goto fail;
-	grub_dprintf ("crypt", "alive\n");
-      }
-
-    if (pkey)
-      sk = grub_crypto_pk_locate_subkey (keyid, pkey);
-    else
-      sk = grub_crypto_pk_locate_subkey_in_trustdb (keyid);
-    if (!sk)
-      {
-	/* TRANSLATORS: %08x is 32-bit key id.  */
-	grub_error (GRUB_ERR_BAD_SIGNATURE, N_("public key %08x not found"),
-		    keyid);
-	goto fail;
-      }
-
-    if (pkalgos[pk].pad (&hmpi, hval, hash, sk))
-      goto fail;
-    if (!*pkalgos[pk].algo)
-      {
-	grub_dl_load (pkalgos[pk].module);
-	grub_errno = GRUB_ERR_NONE;
-      }
-
-    if (!*pkalgos[pk].algo)
-      {
-	grub_error (GRUB_ERR_BAD_SIGNATURE, N_("module `%s' isn't loaded"),
-		    pkalgos[pk].module);
-	goto fail;
-      }
-    if ((*pkalgos[pk].algo)->verify (0, hmpi, mpis, sk->mpis, 0, 0))
-      goto fail;
-
-    grub_free (context);
-    grub_free (readbuf);
-
-    return GRUB_ERR_NONE;
-
-  fail:
-    grub_free (context);
-    grub_free (readbuf);
-    if (!grub_errno)
-      return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
-    return grub_errno;
-  }
+ fail:
+  grub_free (context->hash_context);
+  if (!grub_errno)
+    return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+  grub_free (readbuf);
+  return grub_errno;
 }
 
 grub_err_t
 grub_verify_signature (grub_file_t f, grub_file_t sig,
 		       struct grub_public_key *pkey)
 {
-  return grub_verify_signature_real (0, 0, f, sig, pkey);
+  grub_err_t err;
+  struct verify_context ctxt;
+  grub_uint8_t *readbuf = NULL;
+
+  readbuf = grub_zalloc (READBUF_SIZE);
+  if (!readbuf)
+    return grub_errno;
+
+  ctxt.sig = sig;
+
+  err = grub_verify_signature_init_real (&ctxt);
+  if (err)
+    return err;
+
+  while (1)
+    {
+      grub_ssize_t r;
+      r = grub_file_read (f, readbuf, READBUF_SIZE);
+      if (r < 0)
+	goto fail;
+      if (r == 0)
+	break;
+      grub_verify_signature_read (&ctxt, readbuf, r);
+    }
+
+  grub_verify_signature_real (pkey, &ctxt);
+ fail:
+  grub_free (readbuf);
+  return grub_errno;
 }
 
 static grub_err_t
@@ -815,137 +851,6 @@ grub_cmd_verify_signature (grub_extcmd_context_t ctxt,
 
 static int sec = 0;
 
-static void
-verified_free (grub_verified_t verified)
-{
-  if (verified)
-    {
-      grub_free (verified->buf);
-      grub_free (verified);
-    }
-}
-
-static grub_ssize_t
-verified_read (struct grub_file *file, char *buf, grub_size_t len)
-{
-  grub_verified_t verified = file->data;
-
-  grub_memcpy (buf, (char *) verified->buf + file->offset, len);
-  return len;
-}
-
-static grub_err_t
-verified_close (struct grub_file *file)
-{
-  grub_verified_t verified = file->data;
-
-  grub_file_close (verified->file);
-  verified_free (verified);
-  file->data = 0;
-
-  /* device and name are freed by parent */
-  file->device = 0;
-  file->name = 0;
-
-  return grub_errno;
-}
-
-struct grub_fs verified_fs =
-{
-  .name = "verified_read",
-  .read = verified_read,
-  .close = verified_close
-};
-
-static grub_file_t
-grub_pubkey_open (grub_file_t io, const char *filename)
-{
-  grub_file_t sig;
-  char *fsuf, *ptr;
-  grub_err_t err;
-  grub_file_filter_t curfilt[GRUB_FILE_FILTER_MAX];
-  grub_file_t ret;
-  grub_verified_t verified;
-
-  if (!sec)
-    return io;
-  if (io->device->disk && 
-      (io->device->disk->dev->id == GRUB_DISK_DEVICE_MEMDISK_ID
-       || io->device->disk->dev->id == GRUB_DISK_DEVICE_PROCFS_ID))
-    return io;
-  fsuf = grub_malloc (grub_strlen (filename) + sizeof (".sig"));
-  if (!fsuf)
-    return NULL;
-  ptr = grub_stpcpy (fsuf, filename);
-  grub_memcpy (ptr, ".sig", sizeof (".sig"));
-
-  grub_memcpy (curfilt, grub_file_filters_enabled,
-	       sizeof (curfilt));
-  grub_file_filter_disable_all ();
-  sig = grub_file_open (fsuf);
-  grub_memcpy (grub_file_filters_enabled, curfilt,
-	       sizeof (curfilt));
-  grub_free (fsuf);
-  if (!sig)
-    return NULL;
-
-  ret = grub_malloc (sizeof (*ret));
-  if (!ret)
-    {
-      grub_file_close (sig);
-      return NULL;
-    }
-  *ret = *io;
-
-  ret->fs = &verified_fs;
-  ret->not_easily_seekable = 0;
-  if (ret->size >> (sizeof (grub_size_t) * GRUB_CHAR_BIT - 1))
-    {
-      grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
-		  "big file signature isn't implemented yet");
-      grub_file_close (sig);
-      grub_free (ret);
-      return NULL;
-    }
-  verified = grub_malloc (sizeof (*verified));
-  if (!verified)
-    {
-      grub_file_close (sig);
-      grub_free (ret);
-      return NULL;
-    }
-  verified->buf = grub_malloc (ret->size);
-  if (!verified->buf)
-    {
-      grub_file_close (sig);
-      grub_free (verified);
-      grub_free (ret);
-      return NULL;
-    }
-  if (grub_file_read (io, verified->buf, ret->size) != (grub_ssize_t) ret->size)
-    {
-      if (!grub_errno)
-	grub_error (GRUB_ERR_FILE_READ_ERROR, N_("premature end of file %s"),
-		    filename);
-      grub_file_close (sig);
-      verified_free (verified);
-      grub_free (ret);
-      return NULL;
-    }
-
-  err = grub_verify_signature_real (verified->buf, ret->size, 0, sig, NULL);
-  grub_file_close (sig);
-  if (err)
-    {
-      verified_free (verified);
-      grub_free (ret);
-      return NULL;
-    }
-  verified->file = io;
-  ret->data = verified;
-  return ret;
-}
-
 static char *
 grub_env_write_sec (struct grub_env_var *var __attribute__ ((unused)),
 		    const char *val)
@@ -954,6 +859,75 @@ grub_env_write_sec (struct grub_env_var *var __attribute__ ((unused)),
   return grub_strdup (sec ? "enforce" : "no");
 }
 
+static void *
+init_verify_pk (grub_file_t file __attribute__ ((unused)),
+		const char *filename, int *skip_verify)
+{
+  char *fsuf, *ptr;
+  struct verify_context *ctxt;
+  grub_file_filter_t curfilt[GRUB_FILE_FILTER_MAX];
+
+  if (!sec)
+    {
+      *skip_verify = 1;
+      return NULL;
+    }
+
+  fsuf = grub_malloc (grub_strlen (filename) + sizeof (".sig"));
+  ctxt = grub_malloc (sizeof (*ctxt));
+  if (!fsuf)
+    {
+      grub_free (fsuf);
+      grub_free (ctxt);
+      return NULL;
+    }
+  ptr = grub_stpcpy (fsuf, filename);
+  grub_memcpy (ptr, ".sig", sizeof (".sig"));
+
+  grub_memcpy (curfilt, grub_file_filters_enabled,
+	       sizeof (curfilt));
+  grub_file_filter_disable_all ();
+  ctxt->sig = grub_file_open (fsuf);
+  grub_memcpy (grub_file_filters_enabled, curfilt,
+	       sizeof (curfilt));
+  grub_free (fsuf);
+  if (!ctxt->sig)
+    {
+      grub_free (ctxt);
+      return NULL;
+    }
+
+  grub_verify_signature_init_real (ctxt);
+  return ctxt;
+}
+
+static grub_err_t
+read_verify_pk (void *ctxt, const void *buf, grub_size_t sz)
+{
+  return grub_verify_signature_read (ctxt, buf, sz);
+}
+
+static void
+close_verify_pk (void *ctxt_)
+{
+  struct verify_context *ctxt = ctxt_;
+  grub_file_close (ctxt->sig);
+}
+
+static grub_err_t
+final_verify_pk (void *ctxt)
+{
+  return grub_verify_signature_real (NULL, ctxt);
+}
+
+const struct grub_file_verifier verify_pk =
+  {
+    .init = init_verify_pk,
+    .read = read_verify_pk,
+    .final = final_verify_pk,
+    .close = close_verify_pk,
+  };
+
 static grub_ssize_t 
 pseudo_read (struct grub_file *file, char *buf, grub_size_t len)
 {
@@ -961,14 +935,12 @@ pseudo_read (struct grub_file *file, char *buf, grub_size_t len)
   return len;
 }
 
-
 /* Filesystem descriptor.  */
 struct grub_fs pseudo_fs = 
   {
     .name = "pseudo",
     .read = pseudo_read
-};
-
+  };
 
 static grub_extcmd_t cmd, cmd_trust;
 static grub_command_t cmd_distrust, cmd_list;
@@ -983,8 +955,8 @@ GRUB_MOD_INIT(verify)
     sec = 1;
   else
     sec = 0;
-    
-  grub_file_filter_register (GRUB_FILE_FILTER_PUBKEY, grub_pubkey_open);
+
+  grub_file_verifiers[GRUB_FILE_VERIFIER_PUBKEY] = &verify_pk;
 
   grub_register_variable_hook ("check_signatures", 0, grub_env_write_sec);
   grub_env_export ("check_signatures");
@@ -1034,7 +1006,8 @@ GRUB_MOD_INIT(verify)
 
 GRUB_MOD_FINI(verify)
 {
-  grub_file_filter_unregister (GRUB_FILE_FILTER_PUBKEY);
+  grub_file_verifiers[GRUB_FILE_VERIFIER_PUBKEY] = 0;
+
   grub_unregister_extcmd (cmd);
   grub_unregister_extcmd (cmd_trust);
   grub_unregister_command (cmd_list);

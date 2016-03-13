@@ -82,6 +82,27 @@ typedef grub_file_t (*grub_file_filter_t) (grub_file_t in, const char *filename)
 extern grub_file_filter_t EXPORT_VAR(grub_file_filters_all)[GRUB_FILE_FILTER_MAX];
 extern grub_file_filter_t EXPORT_VAR(grub_file_filters_enabled)[GRUB_FILE_FILTER_MAX];
 
+struct grub_file_verifier
+{
+  void * (*init) (grub_file_t file, const char *filename, int *skip_verify);
+  grub_err_t (*read) (void *ctxt, const void *buf, grub_size_t sz);
+  grub_err_t (*final) (void *ctxt);
+  void (*close) (void *ctxt);
+
+  enum
+    {
+      GRUB_FILE_VERIFIER_FLAG_NEED_WHOLE_FILE = 1
+    } flags;
+};
+
+typedef enum grub_file_verifier_id
+  {
+    GRUB_FILE_VERIFIER_PUBKEY,
+    GRUB_FILE_VERIFIER_MAX
+  } grub_file_verifier_id;
+
+extern const struct grub_file_verifier *grub_file_verifiers[GRUB_FILE_VERIFIER_MAX];
+
 static inline void
 grub_file_filter_register (grub_file_filter_id_t id, grub_file_filter_t filter)
 {
