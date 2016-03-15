@@ -1160,10 +1160,16 @@ struct grub_dwc2_transfer_controller_data
   grub_uint32_t td_last_phys;
 };
 
+#endif
+
 static grub_usb_err_t
 grub_dwc2_setup_transfer (grub_usb_controller_t dev,
 			  grub_usb_transfer_t transfer)
 {
+  (void) dev;
+  (void) transfer;
+  return GRUB_USB_ERR_INTERNAL; //WIP
+#if 0
   struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
   grub_dwc2_td_t td = NULL;
   grub_dwc2_td_t td_prev = NULL;
@@ -1287,8 +1293,10 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
   transfer->controller_data = cdata;
 
   return GRUB_USB_ERR_NONE;
+#endif
 }
 
+#if 0
 /* This function expects QH is not active.
  * Function set Halt bit in QH TD overlay and possibly prints
  * necessary debug information. */
@@ -1407,12 +1415,17 @@ grub_dwc2_parse_success (grub_usb_controller_t dev,
 
   return GRUB_USB_ERR_NONE;
 }
-
+#endif
 
 static grub_usb_err_t
 grub_dwc2_check_transfer (grub_usb_controller_t dev,
 			  grub_usb_transfer_t transfer, grub_size_t * actual)
 {
+  (void) dev;
+  (void) transfer;
+  (void) actual;
+  return GRUB_USB_ERR_INTERNAL; //WIP
+#if 0
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata =
     transfer->controller_data;
@@ -1473,12 +1486,17 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
     }
 
   return GRUB_USB_ERR_WAIT;
+#endif
 }
 
 static grub_usb_err_t
 grub_dwc2_cancel_transfer (grub_usb_controller_t dev,
 			   grub_usb_transfer_t transfer)
 {
+  (void) dev;
+  (void) transfer;
+  return GRUB_USB_ERR_INTERNAL; //WIP
+#if 0
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata =
     transfer->controller_data;
@@ -1590,9 +1608,8 @@ grub_dwc2_cancel_transfer (grub_usb_controller_t dev,
   sync_all_caches (e);
 
   return GRUB_USB_ERR_NONE;
-}
-
 #endif
+}
 
 static int
 grub_dwc2_hubports (grub_usb_controller_t dev __attribute__((unused)))
