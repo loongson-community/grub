@@ -481,25 +481,26 @@ grub_dwc2_reset (struct grub_dwc2 *e)
 
   return GRUB_USB_ERR_NONE;
 }
+#endif
 
 /* PCI iteration function... */
 void
 grub_dwc2_init_device (volatile void *regs)
 {
   struct grub_dwc2 *e;
-  grub_uint32_t fp;
-  int i;
-  grub_uint32_t n_ports;
-  grub_uint8_t caplen;
 
   /* Allocate memory for the controller and fill basic values. */
   e = grub_zalloc (sizeof (*e));
   if (!e)
     return;
-  e->framelist_chunk = NULL;
-  e->td_chunk = NULL;
-  e->qh_chunk = NULL;
-  e->iobase_ehcc = regs;
+  e->iobase = regs;
+
+  grub_dprintf ("dwc2", "DWC2 init %p\n", regs);
+#if 0
+  grub_uint32_t fp;
+  int i;
+  grub_uint32_t n_ports;
+  grub_uint8_t caplen;
 
   grub_dprintf ("dwc2", "DWC2 grub_dwc2_pci_iter: CAPLEN: %02x\n",
 		grub_dwc2_ehcc_read8 (e, GRUB_DWC2_EHCC_CAPLEN));
@@ -750,9 +751,8 @@ fail:
   grub_free (e);
 
   return;
-}
-
 #endif
+}
 
 static int
 grub_dwc2_iterate (grub_usb_controller_iterate_hook_t hook, void *hook_data)
