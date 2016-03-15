@@ -25,7 +25,6 @@
 #include <grub/command.h>
 #include <grub/crypto.h>
 #include <grub/i18n.h>
-#include <grub/gcrypt/gcrypt.h>
 #include <grub/pubkey.h>
 #include <grub/env.h>
 #include <grub/kernel.h>
@@ -33,7 +32,14 @@
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
-struct grub_file_verifier EXPORT_VAR(grub_file_verifiers)[GRUB_FILE_VERIFIER_MAX];
+const struct grub_file_verifier *grub_file_verifiers[GRUB_FILE_VERIFIER_MAX];
+
+struct grub_verified
+{
+  grub_file_t file;
+  void *buf;
+};
+typedef struct grub_verified *grub_verified_t;
 
 static void
 verified_free (grub_verified_t verified)
@@ -71,10 +77,9 @@ static grub_file_t
 grub_verifier_open (grub_file_t io, const char *filename)
 {
   grub_err_t err;
-  grub_file_filter_t curfilt[GRUB_FILE_FILTER_MAX];
   grub_file_t ret = NULL;
   grub_verified_t verified = NULL;
-  void (*ctxt)[GRUB_FILE_FILTER_MAX];
+  void *ctxt[GRUB_FILE_FILTER_MAX];
   int i;
   int has_verif = 0;
 
@@ -112,8 +117,7 @@ grub_verifier_open (grub_file_t io, const char *filename)
   ret = grub_malloc (sizeof (*ret));
   if (!ret)
     {
-      grub_file_close (sig);
-      return NULL;
+      goto fail;
     }
   *ret = *io;
 
@@ -123,21 +127,16 @@ grub_verifier_open (grub_file_t io, const char *filename)
     {
       grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
 		  "big file signature isn't implemented yet");
-      grub_file_close (sig);
-      grub_free (ret);
-      return NULL;
+      goto fail;
     }
   verified = grub_malloc (sizeof (*verified));
   if (!verified)
     {
-      grub_file_close (sig);
-      grub_free (ret);
-      return NULL;
+      goto fail;
     }
   verified->buf = grub_malloc (ret->size);
   if (!verified->buf)
     {
-      grub_file_close (sig);
       goto fail;
     }
   if (grub_file_read (io, verified->buf, ret->size) != (grub_ssize_t) ret->size)
@@ -162,7 +161,7 @@ grub_verifier_open (grub_file_t io, const char *filename)
 	err = grub_file_verifiers[i]->final(ctxt[i]);
 	if (err)
 	  goto fail;
-	grub_file_verifiers[i]->clear(ctxt[i]);
+	grub_file_verifiers[i]->close(ctxt[i]);
 	grub_free (ctxt[i]);
 	ctxt[i] = 0;
       }
@@ -179,7 +178,7 @@ grub_verifier_open (grub_file_t io, const char *filename)
 	grub_free (ctxt[i]);
       }
   if (!grub_errno)
-    return grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
+    grub_error (GRUB_ERR_BAD_SIGNATURE, N_("bad signature"));
   return NULL;
 }
 

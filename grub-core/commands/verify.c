@@ -33,13 +33,6 @@
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
-struct grub_verified
-{
-  grub_file_t file;
-  void *buf;
-};
-typedef struct grub_verified *grub_verified_t;
-
 enum
   {
     OPTION_SKIP_SIG = 0
