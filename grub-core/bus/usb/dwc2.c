@@ -1670,6 +1670,7 @@ grub_dwc2_detect_dev (grub_usb_controller_t dev, int port __attribute__ ((unused
       *changed = 1;
       /* Reset bit Connect Status Change */
       grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_CONNECT_CH);
+      grub_dprintf ("dwc2", "detect_dev=0x%x\n", status);
     }
   else
     *changed = 0;
