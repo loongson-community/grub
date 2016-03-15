@@ -1600,8 +1600,6 @@ grub_dwc2_hubports (grub_usb_controller_t dev __attribute__((unused)))
   return 1;
 }
 
-#if 0
-
 static grub_usb_err_t
 grub_dwc2_reset_port (grub_usb_controller_t dev,
 		      unsigned int port)
@@ -1609,20 +1607,18 @@ grub_dwc2_reset_port (grub_usb_controller_t dev,
   struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
   grub_uint64_t endtime;
 
-  grub_dprintf ("dwc2", "portstatus: DWC2 STATUS: %08x\n",
-		grub_dwc2_oper_read32 (e, GRUB_DWC2_STATUS));
   grub_dprintf ("dwc2",
 		"portstatus: begin, iobase=%p, port=%d, status=0x%02x\n",
-		e->iobase, port, grub_dwc2_port_read (e, port));
+		e->iobase, port, grub_dwc2_port_read (e));
 
   /* In any case we need to disable port:
    * - if enable==false - we should disable port
    * - if enable==true we will do the reset and the specification says
    *   PortEnable should be FALSE in such case */
   /* Disable the port and wait for it. */
-  grub_dwc2_port_resbits (e, port, GRUB_DWC2_PORT_ENABLED);
+  grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_ENABLED);
   endtime = grub_get_time_ms () + 1000;
-  while (grub_dwc2_port_read (e, port) & GRUB_DWC2_PORT_ENABLED)
+  while (grub_dwc2_port_read (e) & GRUB_DWC2_PORT_ENABLED)
     if (grub_get_time_ms () > endtime)
       return GRUB_USB_ERR_TIMEOUT;
 
@@ -1633,46 +1629,32 @@ grub_dwc2_reset_port (grub_usb_controller_t dev,
   /* Now we will do reset - if HIGH speed device connected, it will
    * result in Enabled state, otherwise port remains disabled. */
   /* Set RESET bit for 50ms */
-  grub_dwc2_port_setbits (e, port, GRUB_DWC2_PORT_RESET);
+  grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_RESET);
   grub_millisleep (50);
 
   /* Reset RESET bit and wait for the end of reset */
-  grub_dwc2_port_resbits (e, port, GRUB_DWC2_PORT_RESET);
+  grub_dwc2_port_resbits (e, GRUB_DWC2_PORT_RESET);
   endtime = grub_get_time_ms () + 1000;
-  while (grub_dwc2_port_read (e, port) & GRUB_DWC2_PORT_RESET)
+  while (grub_dwc2_port_read (e) & GRUB_DWC2_PORT_RESET)
     if (grub_get_time_ms () > endtime)
       return GRUB_USB_ERR_TIMEOUT;
+  grub_millisleep (1);
   grub_boot_time ("Port %d reset", port);
   /* Remember "we did the reset" - needed by detect_dev */
   e->reset |= (1 << port);
   /* Test if port enabled, i.e. HIGH speed device connected */
-  if ((grub_dwc2_port_read (e, port) & GRUB_DWC2_PORT_ENABLED) != 0)	/* yes! */
+  if ((grub_dwc2_port_read (e) & GRUB_DWC2_PORT_ENABLED) != 0)	/* yes! */
     {
       grub_dprintf ("dwc2", "portstatus: Enabled!\n");
       /* "Reset recovery time" (USB spec.) */
       grub_millisleep (10);
     }
-  else				/* no... */
-    {
-      /* FULL speed device connected - change port ownership.
-       * It results in disconnected state of this DWC2 port. */
-      grub_dwc2_port_setbits (e, port, GRUB_DWC2_PORT_OWNER);
-      return GRUB_USB_ERR_BADDEVICE;
-    }
-
-  /* XXX: Fix it! There is possible problem - we can say to calling
-   * function that we lost device if it is FULL speed onlu via
-   * return value <> GRUB_ERR_NONE. It (maybe) displays also error
-   * message on screen - but this situation is not error, it is normal
-   * state! */
 
   grub_dprintf ("dwc2", "portstatus: end, status=0x%02x\n",
-		grub_dwc2_port_read (e, port));
+		grub_dwc2_port_read (e));
 
   return GRUB_USB_ERR_NONE;
 }
-
-#endif
 
 static grub_usb_speed_t
 grub_dwc2_detect_dev (grub_usb_controller_t dev, int port __attribute__ ((unused)), int *changed)
