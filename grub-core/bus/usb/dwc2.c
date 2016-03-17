@@ -683,22 +683,12 @@ grub_dwc2_init_device (volatile void *regs)
 			  GRUB_DWC2_CMD_AS_ENABL
 			  | GRUB_DWC2_CMD_PS_ENABL
 			  | grub_dwc2_oper_read32 (e, GRUB_DWC2_COMMAND));
+#endif
+  
+  grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_POWER);
+  grub_dprintf ("dwc2", "port status = 0x%x\n", grub_dwc2_port_read (e));
 
-  /* Now should be possible to power-up and enumerate ports etc. */
-  if ((grub_dwc2_ehcc_read32 (e, GRUB_DWC2_EHCC_SPARAMS)
-       & GRUB_DWC2_SPARAMS_PPC) != 0)
-    {				/* DWC2 has port powering control */
-      /* Power on all ports */
-      n_ports = grub_dwc2_ehcc_read32 (e, GRUB_DWC2_EHCC_SPARAMS)
-	& GRUB_DWC2_SPARAMS_N_PORTS;
-      for (i = 0; i < (int) n_ports; i++)
-	grub_dwc2_oper_write32 (e, GRUB_DWC2_PORT_STAT_CMD + i * 4,
-				GRUB_DWC2_PORT_POWER
-				| grub_dwc2_oper_read32 (e,
-							 GRUB_DWC2_PORT_STAT_CMD
-							 + i * 4));
-    }
-
+#if 0
   /* Ensure all commands are written */
   grub_dwc2_oper_read32 (e, GRUB_DWC2_COMMAND);
 
@@ -709,15 +699,19 @@ grub_dwc2_init_device (volatile void *regs)
 
   /* Ensure command is written */
   grub_dwc2_oper_read32 (e, GRUB_DWC2_COMMAND);
-
+#endif
+  
   /* Link to dwc2 now that initialisation is successful.  */
   e->next = dwc2;
   dwc2 = e;
 
+#if 0
   sync_all_caches (e);
-
+#endif
+  
   grub_dprintf ("dwc2", "DWC2 grub_dwc2_pci_iter: OK at all\n");
 
+#if 0
   grub_dprintf ("dwc2",
 		"DWC2 grub_dwc2_pci_iter: iobase of oper. regs: %08x\n",
 		(grub_addr_t) regs);
