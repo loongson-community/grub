@@ -450,8 +450,10 @@ grub_dwc2_halt (struct grub_dwc2 *e)
 static grub_usb_err_t
 grub_dwc2_init (struct grub_dwc2 *e)
 {
-  (void) e;
   // WIP
+
+  grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_POWER);
+  grub_dprintf ("dwc2", "port status = 0x%x\n", grub_dwc2_port_read (e));
   return GRUB_USB_ERR_NONE;
 }
 
@@ -684,9 +686,8 @@ grub_dwc2_init_device (volatile void *regs)
 			  | GRUB_DWC2_CMD_PS_ENABL
 			  | grub_dwc2_oper_read32 (e, GRUB_DWC2_COMMAND));
 #endif
-  
-  grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_POWER);
-  grub_dprintf ("dwc2", "port status = 0x%x\n", grub_dwc2_port_read (e));
+
+  grub_dwc2_init (e);
 
 #if 0
   /* Ensure all commands are written */
