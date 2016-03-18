@@ -95,8 +95,18 @@ enum
   GRUB_DWC2_CUR_AL_ADDR = 0x18,
   GRUB_DWC2_CONFIG_FLAG = 0x40,
 #endif
-  GRUB_DWC2_PORT_STAT_CMD = 0x440
+  GRUB_DWC2_PORT_STAT_CMD = 0x440,
+  GRUB_DWC2_CHANNEL_REGISTERS = 0x500,
 };
+
+enum
+  {
+    GRUB_DWC2_CHANNEL_EP_CHAR = 0x00,
+    GRUB_DWC2_CHANNEL_INTERRUPT = 0x08,
+    GRUB_DWC2_CHANNEL_SIZE = 0x10,
+    GRUB_DWC2_CHANNEL_DATA = 0x14,
+    GRUB_DWC2_CHANNEL_MAX = 0x20,
+  };
 
 #if 0
 /* Operational register COMMAND bits */
@@ -314,6 +324,7 @@ struct grub_dwc2_qh
 struct grub_dwc2
 {
   volatile grub_uint32_t *iobase;	/* Operational registers */
+  grub_uint16_t busy;
 #if 0
   struct grub_pci_dma_chunk *framelist_chunk;	/* Currently not used */
   volatile grub_uint32_t *framelist_virt;
@@ -390,6 +401,23 @@ grub_dwc2_oper_write32 (struct grub_dwc2 *e, grub_uint32_t addr,
 {
   *((volatile grub_uint32_t *) e->iobase + (addr / sizeof (grub_uint32_t))) =
     grub_cpu_to_le32 (value);
+}
+
+static inline void
+grub_dwc2_channel_write32 (struct grub_dwc2 *e, int channel,
+			   grub_uint32_t addr,
+			   grub_uint32_t value)
+{
+  grub_dwc2_oper_write32 (e, GRUB_DWC2_CHANNEL_REGISTERS
+			  + addr + GRUB_DWC2_CHANNEL_MAX * channel, value);
+}
+
+static inline grub_uint32_t
+grub_dwc2_channel_read32 (struct grub_dwc2 *e, int channel,
+			  grub_uint32_t addr)
+{
+  return grub_dwc2_oper_read32 (e, GRUB_DWC2_CHANNEL_REGISTERS
+				+ addr + GRUB_DWC2_CHANNEL_MAX * channel);
 }
 
 static inline grub_uint32_t
@@ -1146,30 +1174,108 @@ grub_dwc2_transaction (struct grub_dwc2 *e,
   return td;
 }
 
+#endif
+
 struct grub_dwc2_transfer_controller_data
 {
+#if 0
   grub_dwc2_qh_t qh_virt;
   grub_dwc2_td_t td_first_virt;
   grub_dwc2_td_t td_alt_virt;
   grub_dwc2_td_t td_last_virt;
   grub_uint32_t td_last_phys;
+#endif
+  int current_transaction;
+  int transferred;
+  int channel;
 };
 
-#endif
+static grub_usb_err_t
+program_transaction (grub_usb_controller_t dev,
+		     grub_usb_transfer_t transfer)
+{
+  struct grub_dwc2_transfer_controller_data *cdata
+    = transfer->controller_data;
+  struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
+  grub_usb_transaction_t tr
+    = &transfer->transactions[cdata->current_transaction];
+  grub_uint32_t r32;
+  grub_uint32_t ep_char = 0;
+
+  if (tr->size >= (1 << 19) || transfer->max >= (1 << 11))
+    return GRUB_USB_ERR_INTERNAL;
+
+  /* Claer interrupts.  */
+  grub_dwc2_channel_write32 (e, cdata->channel,
+			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
+  
+  grub_dwc2_channel_write32 (e, cdata->channel,
+			     GRUB_DWC2_CHANNEL_DATA, tr->data);
+  // FIXME: support aggregating several packets in one dwc2-side transaction
+  r32 = tr->size | (1 << 19);
+  if (tr->pid == GRUB_USB_TRANSFER_TYPE_SETUP)
+    r32 |= 0x60000000;
+  else
+    r32 |= tr->toggle << 30;
+  grub_dwc2_channel_write32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE, r32);
+
+  ep_char = (transfer->max & 0x7ff) | (transfer->endpoint << 11)
+    | ((transfer->dir == GRUB_USB_TRANSFER_TYPE_IN) << 15)
+    | ((transfer->dev->speed == GRUB_USB_SPEED_LOW) << 17)
+    | (1 << 20) | (transfer->devaddr << 22) | (1 << 31);
+
+  switch (transfer->type)
+    {
+    case GRUB_USB_TRANSACTION_TYPE_CONTROL:
+      break;
+    case GRUB_USB_TRANSACTION_TYPE_BULK:
+      ep_char |= 1 << 19;
+      break;
+    }
+  grub_dwc2_channel_write32 (e, cdata->channel,
+			     GRUB_DWC2_CHANNEL_EP_CHAR, ep_char);
+  return GRUB_USB_ERR_NONE;
+}
+
+static void
+stop_channel (struct grub_dwc2 *e, int channel)
+{
+  grub_dwc2_channel_write32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR,
+			     (1 << 30));
+  // FIXME: adjust this by actually reading status.
+  grub_millisleep (1);
+  e->busy &= ~(1 << channel);
+}
 
 static grub_usb_err_t
 grub_dwc2_setup_transfer (grub_usb_controller_t dev,
 			  grub_usb_transfer_t transfer)
 {
-  (void) dev;
-  (void) transfer;
-  return GRUB_USB_ERR_INTERNAL; //WIP
+  struct grub_dwc2 *e = dev->data;
+  struct grub_dwc2_transfer_controller_data *cdata;
+  grub_usb_err_t err;
+
+  /* Allocate memory for controller transfer data.  */
+  cdata = grub_zalloc (sizeof (*cdata));
+  if (!cdata)
+    return GRUB_USB_ERR_INTERNAL;
+
+  transfer->controller_data = cdata;
+  // FIXME: support more channels.
+  //  if (e->busy & 1)
+  //  return GRUB_USB_ERR_INTERNAL;
+
+  cdata->channel = 0;
+  e->busy |= 1 << cdata->channel;
+
+  err = program_transaction (dev, transfer);
+  if (err)
+    stop_channel (e, cdata->channel);
+  return err;
 #if 0
-  struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
   grub_dwc2_td_t td = NULL;
   grub_dwc2_td_t td_prev = NULL;
   int i;
-  struct grub_dwc2_transfer_controller_data *cdata;
   grub_uint32_t status;
 
   sync_all_caches (e);
@@ -1193,10 +1299,6 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
       return GRUB_USB_ERR_INTERNAL;
     }
 
-  /* Allocate memory for controller transfer data.  */
-  cdata = grub_malloc (sizeof (*cdata));
-  if (!cdata)
-    return GRUB_USB_ERR_INTERNAL;
   cdata->td_first_virt = NULL;
 
   /* Allocate a queue head for the transfer queue.  */
@@ -1416,14 +1518,62 @@ static grub_usb_err_t
 grub_dwc2_check_transfer (grub_usb_controller_t dev,
 			  grub_usb_transfer_t transfer, grub_size_t * actual)
 {
-  (void) dev;
-  (void) transfer;
-  (void) actual;
-  return GRUB_USB_ERR_INTERNAL; //WIP
-#if 0
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata =
     transfer->controller_data;
+  grub_uint32_t intr;
+  grub_usb_err_t err;
+  grub_usb_transaction_t tr
+    = &transfer->transactions[cdata->current_transaction];
+
+  intr = grub_dwc2_channel_read32 (e, cdata->channel,
+				   GRUB_DWC2_CHANNEL_INTERRUPT);
+
+  /* Case 1: wait. */
+  if ((intr & 2) == 0)
+    return GRUB_USB_ERR_WAIT;
+
+  /* Otherwise ack interrupts.  */
+  grub_dwc2_channel_write32 (e, cdata->channel,
+			     GRUB_DWC2_CHANNEL_INTERRUPT, intr);
+
+  /* Case 2: error. */
+  if (!((intr & 1) || (intr & 0x20)))
+    {
+      stop_channel (e, cdata->channel);
+      if (intr & 0x100)
+	return GRUB_USB_ERR_BABBLE;
+      if (intr & 0x08)
+	return GRUB_USB_ERR_STALL;
+      if (intr & 0x80)
+	return GRUB_USB_ERR_DATA;
+      return GRUB_USB_ERR_NAK;
+    }
+  
+  /* Case 3: Success: add bytes to transfered and schedule
+     next transaction if any.  */
+  if (tr->pid != GRUB_USB_TRANSFER_TYPE_SETUP)
+    {
+      cdata->transferred += tr->size
+	- (grub_dwc2_channel_read32 (e, 0, GRUB_DWC2_CHANNEL_SIZE)
+	   & 0x7ffff);
+    }
+  if (cdata->current_transaction < transfer->transcnt)
+    {
+      cdata->current_transaction++;
+      err = program_transaction (dev, transfer);
+      if (err)
+	{
+	  stop_channel (e, cdata->channel);
+	  return err;
+	}
+      return GRUB_USB_ERR_WAIT;
+    }
+
+  e->busy &= ~(1 << cdata->channel);
+  *actual = cdata->transferred;
+  return GRUB_USB_ERR_NONE;
+#if 0
   grub_uint32_t token, token_ftd;
 
   sync_all_caches (e);
@@ -1488,9 +1638,11 @@ static grub_usb_err_t
 grub_dwc2_cancel_transfer (grub_usb_controller_t dev,
 			   grub_usb_transfer_t transfer)
 {
-  (void) dev;
-  (void) transfer;
-  return GRUB_USB_ERR_INTERNAL; //WIP
+  struct grub_dwc2 *e = dev->data;
+  struct grub_dwc2_transfer_controller_data *cdata =
+    transfer->controller_data;
+  stop_channel (e, cdata->channel);
+  return GRUB_USB_ERR_NONE;
 #if 0
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata =
