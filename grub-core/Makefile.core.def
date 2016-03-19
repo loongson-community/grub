@@ -599,7 +599,7 @@ module = {
 };
 
 module = {
-  name = dwc2;
+  name = dwc2_usb;
   common = bus/usb/dwc2.c;
   arm_coreboot = bus/usb/dwc2-fdt.c;
   enable = arm_coreboot;
