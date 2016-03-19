@@ -1199,28 +1199,32 @@ program_transaction (grub_usb_controller_t dev,
   struct grub_dwc2 *e = (struct grub_dwc2 *) dev->data;
   grub_usb_transaction_t tr
     = &transfer->transactions[cdata->current_transaction];
-  grub_uint32_t r32;
+  grub_uint32_t size_reg;
   grub_uint32_t ep_char = 0;
+
+  grub_dprintf ("dwc2", "program transaction\n");
 
   if (tr->size >= (1 << 19) || transfer->max >= (1 << 11))
     return GRUB_USB_ERR_INTERNAL;
 
+  grub_dprintf ("dwc2", "program transaction: sanity checks done\n");
+  
   /* Claer interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
+  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
+		grub_dwc2_channel_read32 (e, cdata->channel,
+					  GRUB_DWC2_CHANNEL_INTERRUPT));
   
-  grub_dwc2_channel_write32 (e, cdata->channel,
-			     GRUB_DWC2_CHANNEL_DATA, tr->data);
   // FIXME: support aggregating several packets in one dwc2-side transaction
-  r32 = tr->size | (1 << 19);
+  size_reg = tr->size | (1 << 19);
   if (tr->pid == GRUB_USB_TRANSFER_TYPE_SETUP)
-    r32 |= 0x60000000;
+    size_reg |= 0x60000000;
   else
-    r32 |= tr->toggle << 30;
-  grub_dwc2_channel_write32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE, r32);
+    size_reg |= tr->toggle << 30;
 
   ep_char = (transfer->max & 0x7ff) | (transfer->endpoint << 11)
-    | ((transfer->dir == GRUB_USB_TRANSFER_TYPE_IN) << 15)
+    | ((tr->pid == GRUB_USB_TRANSFER_TYPE_IN) << 15)
     | ((transfer->dev->speed == GRUB_USB_SPEED_LOW) << 17)
     | (1 << 20) | (transfer->devaddr << 22) | (1 << 31);
 
@@ -1232,14 +1236,29 @@ program_transaction (grub_usb_controller_t dev,
       ep_char |= 1 << 19;
       break;
     }
+  grub_dprintf ("dwc2", "program transaction: data=0x%08x, "
+		"size_reg=0x%08x, ep_char=0x%x\n",
+		tr->data, size_reg, ep_char);
+  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
+		grub_dwc2_channel_read32 (e, cdata->channel,
+					  GRUB_DWC2_CHANNEL_INTERRUPT));
+  grub_dwc2_channel_write32 (e, cdata->channel,
+			     GRUB_DWC2_CHANNEL_DATA, tr->data);
+  grub_dwc2_channel_write32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE,
+			     size_reg);
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_EP_CHAR, ep_char);
+  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
+		grub_dwc2_channel_read32 (e, cdata->channel,
+					  GRUB_DWC2_CHANNEL_INTERRUPT));
+  grub_dprintf ("dwc2", "program transaction: done\n");
   return GRUB_USB_ERR_NONE;
 }
 
 static void
 stop_channel (struct grub_dwc2 *e, int channel)
 {
+  grub_dprintf ("dwc2", "forceful DWC2 channel stop\n");
   grub_dwc2_channel_write32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR,
 			     (1 << 30));
   // FIXME: adjust this by actually reading status.
@@ -1254,6 +1273,8 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata;
   grub_usb_err_t err;
+
+  grub_dprintf ("dwc2", "setup_transfer\n");
 
   /* Allocate memory for controller transfer data.  */
   cdata = grub_zalloc (sizeof (*cdata));
@@ -1528,11 +1549,19 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
 
   intr = grub_dwc2_channel_read32 (e, cdata->channel,
 				   GRUB_DWC2_CHANNEL_INTERRUPT);
+  grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
 
   /* Case 1: wait. */
   if ((intr & 2) == 0)
     return GRUB_USB_ERR_WAIT;
 
+  grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
+  grub_dprintf ("dwc2", "program transaction: size 0x%x\n",
+		grub_dwc2_channel_read32 (e, cdata->channel,
+					  GRUB_DWC2_CHANNEL_SIZE));
+  grub_dprintf ("dwc2", "program transaction: ep_char 0x%x\n",
+		grub_dwc2_channel_read32 (e, cdata->channel,
+					  GRUB_DWC2_CHANNEL_EP_CHAR));
   /* Otherwise ack interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, intr);
@@ -1554,13 +1583,17 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
      next transaction if any.  */
   if (tr->pid != GRUB_USB_TRANSFER_TYPE_SETUP)
     {
-      cdata->transferred += tr->size
+      int trans;
+      trans = tr->size
 	- (grub_dwc2_channel_read32 (e, 0, GRUB_DWC2_CHANNEL_SIZE)
 	   & 0x7ffff);
+      grub_dprintf ("dwc2", "transfered 0x%x\n", trans);
+
+      cdata->transferred += trans;
     }
-  if (cdata->current_transaction < transfer->transcnt)
+  if (++cdata->current_transaction < transfer->transcnt)
     {
-      cdata->current_transaction++;
+      grub_dprintf ("dwc2", "transfer continue: %d\n", cdata->current_transaction);
       err = program_transaction (dev, transfer);
       if (err)
 	{
@@ -1570,6 +1603,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
       return GRUB_USB_ERR_WAIT;
     }
 
+  grub_dprintf ("dwc2", "transfer complete\n");
   e->busy &= ~(1 << cdata->channel);
   *actual = cdata->transferred;
   return GRUB_USB_ERR_NONE;
