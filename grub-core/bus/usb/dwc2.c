@@ -162,7 +162,6 @@ grub_dwc2_init (struct grub_dwc2 *e)
   // WIP
 
   grub_dwc2_port_setbits (e, GRUB_DWC2_PORT_POWER);
-  grub_dprintf ("dwc2", "port status = 0x%x\n", grub_dwc2_port_read (e));
   return GRUB_USB_ERR_NONE;
 }
 
@@ -235,9 +234,6 @@ program_transaction (grub_usb_controller_t dev,
   /* Claer interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
-  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
-		grub_dwc2_channel_read32 (e, cdata->channel,
-					  GRUB_DWC2_CHANNEL_INTERRUPT));
   
   // FIXME: support aggregating several packets in one dwc2-side transaction
   size_reg = tr->size | (1 << 19);
@@ -262,18 +258,12 @@ program_transaction (grub_usb_controller_t dev,
   grub_dprintf ("dwc2", "program transaction: data=0x%08x, "
 		"size_reg=0x%08x, ep_char=0x%x\n",
 		tr->data, size_reg, ep_char);
-  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
-		grub_dwc2_channel_read32 (e, cdata->channel,
-					  GRUB_DWC2_CHANNEL_INTERRUPT));
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_DATA, tr->data);
   grub_dwc2_channel_write32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE,
 			     size_reg);
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_EP_CHAR, ep_char);
-  grub_dprintf ("dwc2", "program transaction: intr 0x%x\n",
-		grub_dwc2_channel_read32 (e, cdata->channel,
-					  GRUB_DWC2_CHANNEL_INTERRUPT));
   grub_dprintf ("dwc2", "program transaction: done\n");
   return GRUB_USB_ERR_NONE;
 }
@@ -339,12 +329,6 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
     return GRUB_USB_ERR_WAIT;
 
   grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
-  grub_dprintf ("dwc2", "program transaction: size 0x%x\n",
-		grub_dwc2_channel_read32 (e, cdata->channel,
-					  GRUB_DWC2_CHANNEL_SIZE));
-  grub_dprintf ("dwc2", "program transaction: ep_char 0x%x\n",
-		grub_dwc2_channel_read32 (e, cdata->channel,
-					  GRUB_DWC2_CHANNEL_EP_CHAR));
   /* Otherwise ack interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, intr);
@@ -417,8 +401,8 @@ grub_dwc2_reset_port (grub_usb_controller_t dev,
   grub_uint64_t endtime;
 
   grub_dprintf ("dwc2",
-		"portstatus: begin, iobase=%p, port=%d, status=0x%02x\n",
-		e->iobase, port, grub_dwc2_port_read (e));
+		"portstatus: begin, iobase=%p, port=%d\n",
+		e->iobase, port);
 
   /* In any case we need to disable port:
    * - if enable==false - we should disable port
@@ -459,8 +443,7 @@ grub_dwc2_reset_port (grub_usb_controller_t dev,
       grub_millisleep (10);
     }
 
-  grub_dprintf ("dwc2", "portstatus: end, status=0x%02x\n",
-		grub_dwc2_port_read (e));
+  grub_dprintf ("dwc2", "portstatus: end\n");
 
   return GRUB_USB_ERR_NONE;
 }
