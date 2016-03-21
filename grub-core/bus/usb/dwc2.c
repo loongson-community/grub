@@ -277,12 +277,34 @@ program_transaction (grub_usb_controller_t dev,
 static void
 stop_channel (struct grub_dwc2 *e, int channel)
 {
+  grub_uint64_t endtime;
+  e->busy &= ~(1 << channel);
+
+  if (!(grub_dwc2_channel_read32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR)
+	& (1 << 31)))
+    {
+      grub_dwc2_channel_write32 (e, channel,
+				 GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
+      grub_dprintf ("dwc2", "channel already stopped\n");
+      return;
+    }
+
   grub_dprintf ("dwc2", "forceful DWC2 channel stop\n");
   grub_dwc2_channel_write32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR,
-			     (1 << 30));
-  // FIXME: adjust this by actually reading status.
-  grub_millisleep (1);
-  e->busy &= ~(1 << channel);
+			     (1 << 30) | (1 << 31));
+  endtime = grub_get_time_ms () + 5;
+  while (grub_dwc2_channel_read32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR)
+	 & (1 << 31))
+    if (grub_get_time_ms () > endtime)
+      {
+	grub_dprintf ("dwc2", "forceful DWC2 channel stop timeout\n");
+	grub_dwc2_channel_write32 (e, channel,
+				   GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
+	return;
+      }
+  grub_dprintf ("dwc2", "forceful DWC2 channel stop successful\n");
+  grub_dwc2_channel_write32 (e, channel,
+			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
 }
 
 static grub_usb_err_t
