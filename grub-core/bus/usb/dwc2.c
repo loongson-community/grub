@@ -237,7 +237,7 @@ program_transaction (grub_usb_controller_t dev,
 
   grub_dprintf ("dwc2", "program transaction: sanity checks done\n");
   
-  /* Claer interrupts.  */
+  /* Clear interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
   
