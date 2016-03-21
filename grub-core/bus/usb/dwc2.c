@@ -348,6 +348,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   grub_usb_err_t err;
   grub_usb_transaction_t tr
     = &transfer->transactions[cdata->current_transaction];
+  grub_uint32_t size_reg;
 
   if (cdata->nak_should_retry)
     {
@@ -365,11 +366,13 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
 
   intr = grub_dwc2_channel_read32 (e, cdata->channel,
 				   GRUB_DWC2_CHANNEL_INTERRUPT);
-  grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
-
   /* Case 1: wait. */
   if ((intr & 2) == 0)
     return GRUB_USB_ERR_WAIT;
+
+  grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
+
+  size_reg = grub_dwc2_channel_read32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE);
 
   grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
   /* Otherwise ack interrupts.  */
@@ -400,15 +403,23 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   
   /* Case 4: Success: add bytes to transfered and schedule
      next transaction if any.  */
-  if (tr->pid != GRUB_USB_TRANSFER_TYPE_SETUP)
+  switch (tr->pid)
     {
-      int trans;
-      trans = tr->size
-	- (grub_dwc2_channel_read32 (e, 0, GRUB_DWC2_CHANNEL_SIZE)
-	   & 0x7ffff);
-      grub_dprintf ("dwc2", "transfered 0x%x\n", trans);
+    case GRUB_USB_TRANSFER_TYPE_SETUP:
+      break;
+    case GRUB_USB_TRANSFER_TYPE_IN:
+      {
+	int trans;
+	trans = tr->size - (size_reg & 0x7ffff);
+	grub_dprintf ("dwc2", "transfered (in) 0x%x\n", trans);
 
-      cdata->transferred += trans;
+	cdata->transferred += trans;
+	break;
+      }
+    case GRUB_USB_TRANSFER_TYPE_OUT:
+      grub_dprintf ("dwc2", "transfered (out) 0x%x\n", tr->size);
+      cdata->transferred += tr->size;
+      break;
     }
   if (++cdata->current_transaction < transfer->transcnt)
     {
