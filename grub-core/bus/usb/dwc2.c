@@ -246,7 +246,7 @@ program_transaction (grub_usb_controller_t dev,
   if (tr->pid == GRUB_USB_TRANSFER_TYPE_SETUP)
     size_reg |= 0x60000000;
   else
-    size_reg |= tr->toggle << 30;
+    size_reg |= (tr->toggle & 1) << 30;
 
   ep_char = (transfer->max & 0x7ff) | (transfer->endpoint << 11)
     | ((tr->pid == GRUB_USB_TRANSFER_TYPE_IN) << 15)
