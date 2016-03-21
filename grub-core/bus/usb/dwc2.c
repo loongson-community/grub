@@ -53,6 +53,9 @@ enum
     GRUB_DWC2_CHANNEL_MAX = 0x20,
   };
 
+#define NAK_RETRY_COUNT 5
+#define NAK_RETRY_DELAY_MS 1
+
 /* Operational register PORT_STAT_CMD bits */
 enum
 {
@@ -210,6 +213,9 @@ struct grub_dwc2_transfer_controller_data
   int current_transaction;
   int transferred;
   int channel;
+  int nak_should_retry;
+  grub_uint64_t nak_retry_at;
+  int nak_retry_cnt;
 };
 
 static grub_usb_err_t
@@ -302,6 +308,7 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
   cdata->channel = 0;
   e->busy |= 1 << cdata->channel;
 
+  cdata->nak_retry_cnt = NAK_RETRY_COUNT;
   err = program_transaction (dev, transfer);
   if (err)
     stop_channel (e, cdata->channel);
@@ -320,6 +327,20 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   grub_usb_transaction_t tr
     = &transfer->transactions[cdata->current_transaction];
 
+  if (cdata->nak_should_retry)
+    {
+      if ((grub_int64_t) (grub_get_time_ms () - cdata->nak_retry_at) < 0)
+	return GRUB_USB_ERR_WAIT;
+      cdata->nak_should_retry = 0;
+      err = program_transaction (dev, transfer);
+      if (err)
+	{
+	  stop_channel (e, cdata->channel);
+	  return err;
+	}
+      return GRUB_USB_ERR_WAIT;
+    }
+
   intr = grub_dwc2_channel_read32 (e, cdata->channel,
 				   GRUB_DWC2_CHANNEL_INTERRUPT);
   grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
@@ -332,8 +353,17 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   /* Otherwise ack interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, intr);
+  /* Case 2: NAK or frame overrrun retry.  */
+  if (!((intr & 1) || (intr & 0x20)) && (intr & 0x210)
+      && cdata->nak_retry_cnt)
+    {
+      cdata->nak_should_retry = 1;
+      cdata->nak_retry_cnt--;
+      cdata->nak_retry_at = grub_get_time_ms () + NAK_RETRY_DELAY_MS;
+      return GRUB_USB_ERR_WAIT;
+    }
 
-  /* Case 2: error. */
+  /* Case 3: error. */
   if (!((intr & 1) || (intr & 0x20)))
     {
       stop_channel (e, cdata->channel);
@@ -346,7 +376,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
       return GRUB_USB_ERR_NAK;
     }
   
-  /* Case 3: Success: add bytes to transfered and schedule
+  /* Case 4: Success: add bytes to transfered and schedule
      next transaction if any.  */
   if (tr->pid != GRUB_USB_TRANSFER_TYPE_SETUP)
     {
@@ -361,6 +391,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   if (++cdata->current_transaction < transfer->transcnt)
     {
       grub_dprintf ("dwc2", "transfer continue: %d\n", cdata->current_transaction);
+      cdata->nak_retry_cnt = NAK_RETRY_COUNT;
       err = program_transaction (dev, transfer);
       if (err)
 	{
