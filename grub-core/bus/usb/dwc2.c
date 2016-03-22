@@ -53,6 +53,7 @@ enum
     GRUB_DWC2_CHANNEL_MAX = 0x20,
   };
 
+#define NUM_CHANNELS 16
 #define NAK_RETRY_COUNT 5
 #define NAK_RETRY_DELAY_MS 1
 
@@ -314,6 +315,7 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata;
   grub_usb_err_t err;
+  int channel;
 
   grub_dprintf ("dwc2", "setup_transfer\n");
 
@@ -323,11 +325,13 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
     return GRUB_USB_ERR_INTERNAL;
 
   transfer->controller_data = cdata;
-  // FIXME: support more channels.
-  //  if (e->busy & 1)
-  //  return GRUB_USB_ERR_INTERNAL;
+  for (channel = 0; channel < NUM_CHANNELS; channel++)
+    if (!(e->busy & (1 << channel)))
+      break;
+  if (channel == NUM_CHANNELS)
+    return GRUB_USB_ERR_INTERNAL;
 
-  cdata->channel = 0;
+  cdata->channel = channel;
   e->busy |= 1 << cdata->channel;
 
   cdata->nak_retry_cnt = NAK_RETRY_COUNT;
