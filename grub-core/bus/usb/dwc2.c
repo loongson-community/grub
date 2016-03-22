@@ -286,11 +286,11 @@ stop_channel (struct grub_dwc2 *e, int channel)
     {
       grub_dwc2_channel_write32 (e, channel,
 				 GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
-      grub_dprintf ("dwc2", "channel already stopped\n");
+      grub_dprintf ("dwc2-crit", "channel already stopped\n");
       return;
     }
 
-  grub_dprintf ("dwc2", "forceful DWC2 channel stop\n");
+  grub_dprintf ("dwc2-crit", "forceful DWC2 channel stop\n");
   grub_dwc2_channel_write32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR,
 			     (1 << 30) | (1 << 31));
   endtime = grub_get_time_ms () + 5;
@@ -298,12 +298,12 @@ stop_channel (struct grub_dwc2 *e, int channel)
 	 & (1 << 31))
     if (grub_get_time_ms () > endtime)
       {
-	grub_dprintf ("dwc2", "forceful DWC2 channel stop timeout\n");
+	grub_dprintf ("dwc2-crit", "forceful DWC2 channel stop timeout\n");
 	grub_dwc2_channel_write32 (e, channel,
 				   GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
 	return;
       }
-  grub_dprintf ("dwc2", "forceful DWC2 channel stop successful\n");
+  grub_dprintf ("dwc2-crit", "forceful DWC2 channel stop successful\n");
   grub_dwc2_channel_write32 (e, channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, ~0);
 }
@@ -600,7 +600,7 @@ grub_dwc2_fini_hw (int noreturn __attribute__ ((unused)))
 	  }
       if (channel_mask)
 	{
-	  grub_dprintf ("dwc2", "forceful DWC2 channel stop\n");
+	  grub_dprintf ("dwc2-crit", "forceful DWC2 channel stop\n");
 	  endtime = grub_get_time_ms () + 5;
 	  while (channel_mask)
 	    {
@@ -612,7 +612,7 @@ grub_dwc2_fini_hw (int noreturn __attribute__ ((unused)))
 		  channel_mask &= ~(1 << channel);
 	      if (grub_get_time_ms () > endtime)
 		{
-		  grub_dprintf ("dwc2",
+		  grub_dprintf ("dwc2-crit",
 				"forceful DWC2 channel stop timeout\n");
 		}
 	    }
