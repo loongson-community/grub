@@ -687,6 +687,7 @@ module = {
   name = cbls;
   common = commands/i386/coreboot/cbls.c;
   enable = x86;
+  enable = arm_coreboot;
 };
 
 module = {

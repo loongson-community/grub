@@ -251,6 +251,7 @@ KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/fdt.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/dma.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/arm/coreboot/kernel.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/fdtbus.h
+KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/coreboot/lbio.h
 endif
 
 if COND_arm_efi
