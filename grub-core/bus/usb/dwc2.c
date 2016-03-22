@@ -314,7 +314,6 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
 {
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata;
-  grub_usb_err_t err;
   int channel;
 
   grub_dprintf ("dwc2", "setup_transfer\n");
@@ -335,10 +334,7 @@ grub_dwc2_setup_transfer (grub_usb_controller_t dev,
   e->busy |= 1 << cdata->channel;
 
   cdata->nak_retry_cnt = NAK_RETRY_COUNT;
-  err = program_transaction (dev, transfer);
-  if (err)
-    stop_channel (e, cdata->channel);
-  return err;
+  return program_transaction (dev, transfer);
 }
 
 static grub_usb_err_t
@@ -361,10 +357,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
       cdata->nak_should_retry = 0;
       err = program_transaction (dev, transfer);
       if (err)
-	{
-	  stop_channel (e, cdata->channel);
-	  return err;
-	}
+	return err;
       return GRUB_USB_ERR_WAIT;
     }
 
@@ -395,7 +388,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   /* Case 3: error. */
   if (!((intr & 1) || (intr & 0x20)))
     {
-      stop_channel (e, cdata->channel);
+      e->busy &= ~(1 << cdata->channel);
       if (intr & 0x100)
 	return GRUB_USB_ERR_BABBLE;
       if (intr & 0x08)
@@ -425,16 +418,16 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
       cdata->transferred += tr->size;
       break;
     }
+
+  transfer->last_trans = cdata->current_transaction;
+
   if (++cdata->current_transaction < transfer->transcnt)
     {
       grub_dprintf ("dwc2", "transfer continue: %d\n", cdata->current_transaction);
       cdata->nak_retry_cnt = NAK_RETRY_COUNT;
       err = program_transaction (dev, transfer);
       if (err)
-	{
-	  stop_channel (e, cdata->channel);
-	  return err;
-	}
+	return err;
       return GRUB_USB_ERR_WAIT;
     }
 
