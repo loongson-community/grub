@@ -572,28 +572,46 @@ grub_dwc2_restore_hw (void)
 static grub_err_t
 grub_dwc2_fini_hw (int noreturn __attribute__ ((unused)))
 {
-#if 0
   struct grub_dwc2 *e;
 
   /* We should disable all DWC2 HW to prevent any DMA access etc. */
   for (e = dwc2; e; e = e->next)
     {
-      /* Disable both lists */
-      grub_dwc2_oper_write32 (e, GRUB_DWC2_COMMAND,
-        ~(GRUB_DWC2_CMD_AS_ENABL | GRUB_DWC2_CMD_PS_ENABL)
-        & grub_dwc2_oper_read32 (e, GRUB_DWC2_COMMAND));
+      int channel;
+      grub_uint16_t channel_mask = 0;
+      grub_uint64_t endtime;
 
-      /* Check if DWC2 is halted and halt it if not */
-      grub_dwc2_halt (e);
-
-      /* Reset DWC2 */
-      grub_dwc2_reset (e);
+      for (channel = 0; channel < NUM_CHANNELS; channel++)
+	if (grub_dwc2_channel_read32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR)
+	    & (1 << 31))
+	  {
+	    channel_mask |= (1 << channel);
+	    grub_dwc2_channel_write32 (e, channel, GRUB_DWC2_CHANNEL_EP_CHAR,
+				       (1 << 30) | (1 << 31));
+	  }
+      if (channel_mask)
+	{
+	  grub_dprintf ("dwc2", "forceful DWC2 channel stop\n");
+	  endtime = grub_get_time_ms () + 5;
+	  while (channel_mask)
+	    {
+	      for (channel = 0; channel < NUM_CHANNELS; channel++)
+		if ((channel_mask & (1 << channel))
+		    && !(grub_dwc2_channel_read32 (e, channel,
+						   GRUB_DWC2_CHANNEL_EP_CHAR)
+			 & (1 << 31)))
+		  channel_mask &= ~(1 << channel);
+	      if (grub_get_time_ms () > endtime)
+		{
+		  grub_dprintf ("dwc2",
+				"forceful DWC2 channel stop timeout\n");
+		}
+	    }
+	}
+      // FIXME: disable DMA.
     }
 
   return GRUB_ERR_NONE;
-#endif
-  // WIP
-  return GRUB_ERR_NOT_IMPLEMENTED_YET;
 }
 
 static struct grub_usb_controller_dev usb_controller = {
