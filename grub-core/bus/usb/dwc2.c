@@ -349,6 +349,7 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   grub_usb_transaction_t tr
     = &transfer->transactions[cdata->current_transaction];
   grub_uint32_t size_reg;
+  int toggle;
 
   if (cdata->nak_should_retry)
     {
@@ -370,8 +371,11 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
 
   size_reg = grub_dwc2_channel_read32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE);
+  toggle = (size_reg >> 30) & 1;
 
-  grub_dprintf ("dwc2", "check transfer: 0x%x\n", intr);
+  if (transfer->type != GRUB_USB_TRANSACTION_TYPE_CONTROL)
+    transfer->dev->toggle[transfer->endpoint] = toggle;
+
   /* Otherwise ack interrupts.  */
   grub_dwc2_channel_write32 (e, cdata->channel,
 			     GRUB_DWC2_CHANNEL_INTERRUPT, intr);
@@ -389,6 +393,10 @@ grub_dwc2_check_transfer (grub_usb_controller_t dev,
   if (!((intr & 1) || (intr & 0x20)))
     {
       e->busy &= ~(1 << cdata->channel);
+      grub_dprintf ("dwc2-crit", "intr: %x toggle: %d, %d\n",
+		    intr, tr->toggle, toggle);
+      if (toggle != tr->toggle)
+	transfer->last_trans = cdata->current_transaction;
       if (intr & 0x100)
 	return GRUB_USB_ERR_BABBLE;
       if (intr & 0x08)
@@ -444,7 +452,15 @@ grub_dwc2_cancel_transfer (grub_usb_controller_t dev,
   struct grub_dwc2 *e = dev->data;
   struct grub_dwc2_transfer_controller_data *cdata =
     transfer->controller_data;
+  grub_uint32_t size_reg;
+  int toggle;
   stop_channel (e, cdata->channel);
+  size_reg = grub_dwc2_channel_read32 (e, cdata->channel, GRUB_DWC2_CHANNEL_SIZE);
+  toggle = (size_reg >> 30) & 1;
+  grub_dprintf ("dwc2-crit", "cancel: toggle=%d\n", toggle);
+  if (transfer->type != GRUB_USB_TRANSACTION_TYPE_CONTROL)
+    transfer->dev->toggle[transfer->endpoint] = toggle;
+
   return GRUB_USB_ERR_NONE;
 }
 

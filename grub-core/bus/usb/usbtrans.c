@@ -302,19 +302,6 @@ grub_usb_bulk_setup_readwrite (grub_usb_device_t dev,
 static void
 grub_usb_bulk_finish_readwrite (grub_usb_transfer_t transfer)
 {
-  grub_usb_device_t dev = transfer->dev;
-  int toggle = dev->toggle[transfer->endpoint];
-
-  /* We must remember proper toggle value even if some transactions
-   * were not processed - correct value should be inversion of last
-   * processed transaction (TD). */
-  if (transfer->last_trans >= 0)
-    toggle = transfer->transactions[transfer->last_trans].toggle ? 0 : 1;
-  else
-    toggle = dev->toggle[transfer->endpoint]; /* Nothing done, take original */
-  grub_dprintf ("usb", "bulk: toggle=%d\n", toggle);
-  dev->toggle[transfer->endpoint] = toggle;
-
   if (transfer->dir == GRUB_USB_TRANSFER_TYPE_IN)
     {
       grub_arch_sync_dma_caches (grub_dma_get_virt (transfer->data_chunk),
