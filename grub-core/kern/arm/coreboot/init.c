@@ -67,12 +67,14 @@ heap_init (grub_uint64_t addr, grub_uint64_t size, grub_memory_type_t type,
     end = GRUB_ULONG_MAX;
 #endif
 
-  if (start_of_ram > begin)
-    start_of_ram = begin;
-
   if (type != GRUB_MEMORY_AVAILABLE)
     return 0;
 
+  if (start_of_ram > begin)
+    start_of_ram = begin;
+
+  if (begin < 0x20000000)
+    begin = 0x20000000;
   if (modend && begin < modend)
     {
       if (begin < (grub_addr_t)_start)
