@@ -86,6 +86,9 @@ FUNCTION(grub_arm_disable_caches_mmu_armv7)
 
 	push	{r4, lr}
 
+	@ clean/invalidate D-cache
+	bl	clean_invalidate_dcache
+
 	@ disable D-cache
 	mrc	p15, 0, r0, c1, c0, 0
 	bic	r0, r0, #(1 << 2)
