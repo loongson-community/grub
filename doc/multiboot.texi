@@ -528,6 +528,66 @@ The physical address to which the boot loader should jump in order to
 start running the operating system.
 @end table
 
+@subsection EFI i386 entry address tag of Multiboot2 header
+
+@example
+@group
+        +-------------------+
+u16     | type = 8          |
+u16     | flags             |
+u32     | size              |
+u32     | entry_addr        |
+        +-------------------+
+@end group
+@end example
+
+All of the address fields in this tag are physical addresses.
+The meaning of each is as follows:
+
+@table @code
+
+@item entry_addr
+The physical address to which the boot loader should jump in order to
+start running EFI i386 compatible operating system code.
+@end table
+
+This tag is taken into account only on EFI i386 platforms
+when Multiboot2 image header contains EFI boot services tag.
+Then entry point specified in ELF header and the entry address
+tag of Multiboot2 header are ignored.
+
+@subsection EFI amd64 entry address tag of Multiboot2 header
+
+@example
+@group
+        +-------------------+
+u16     | type = 9          |
+u16     | flags             |
+u32     | size              |
+u32     | entry_addr        |
+        +-------------------+
+@end group
+@end example
+
+All of the address fields in this tag are physical addresses (paging
+mode is enabled and any memory space defined by the UEFI memory map
+is identity mapped, hence, virtual address equals physical address;
+Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.4, x64 Platforms, boot services). The meaning of each
+is as follows:
+
+@table @code
+
+@item entry_addr
+The physical address to which the boot loader should jump in order to
+start running EFI amd64 compatible operating system code.
+@end table
+
+This tag is taken into account only on EFI amd64 platforms
+when Multiboot2 image header contains EFI boot services tag.
+Then entry point specified in ELF header and the entry address
+tag of Multiboot2 header are ignored.
+
 @node Console header tags
 @subsection Flags tag
 
@@ -707,6 +767,70 @@ The OS image must leave interrupts disabled until it sets up its own
 @end table
 
 On EFI system boot services must be terminated.
+
+@section EFI i386 machine state with boot services enabled
+
+When the boot loader invokes the 32-bit operating system on EFI i386
+platform and EFI boot services tag together with EFI i386 entry address
+tag are present in the image Multiboot2 header, the machine must have the
+following state:
+
+@table @samp
+@item EAX
+Must contain the magic value @samp{0x36d76289}; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+
+@item EBX
+Must contain the 32-bit physical address of the Multiboot2
+information structure provided by the boot loader (@pxref{Boot
+information format}).
+@end table
+
+All other processor registers, flag bits and state are set accordingly
+to Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.2, IA-32 Platforms, boot services.
+
+@section EFI amd64 machine state with boot services enabled
+
+When the boot loader invokes the 64-bit operating system on EFI amd64
+platform and EFI boot services tag together with EFI amd64 entry address
+tag are present in the image Multiboot2 header, the machine must have the
+following state:
+
+@table @samp
+@item EAX
+Must contain the magic value @samp{0x36d76289}; the presence of this
+value indicates to the operating system that it was loaded by a
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
+boot loader that the operating system can also be loaded from).
+
+@item EBX
+Must contain the 64-bit physical address (paging mode is enabled and any
+memory space defined by the UEFI memory map is identity mapped, hence,
+virtual address equals physical address; Unified Extensible Firmware
+Interface Specification, Version 2.6, section 2.3.4, x64 Platforms, boot
+services) of the Multiboot2 information structure provided by the boot
+loader (@pxref{Boot information format}).
+@end table
+
+All other processor registers, flag bits and state are set accordingly
+to Unified Extensible Firmware Interface Specification, Version 2.6,
+section 2.3.4, x64 Platforms, boot services.
+
+The bootloader must not load any part of the kernel, the modules, the Multiboot2
+information structure, etc. higher than 4 GiB - 1. This requirement is put in
+force because most of currently specified tags supports 32-bit addresses only.
+Additionally, some kernels, even if they run on EFI 64-bit platform, still
+execute some parts of its initialization code in 32-bit mode.
+
+Note: If at some point there is a need for full 64-bit mode support in Multiboot2
+protocol then it should be designed very carefully. Especially it should be taken
+into account that 32-bit and 64-bit mode code should coexist in an image without
+any issue. The image should have a chance to inform the bootloader that it supports
+full 64-bit mode. If it is the case then the bootloader should provide 64-bit tags
+if it is desired and possible. Otherwise 32-bit tags should be used.
 
 @node Boot information format
 @section Boot information
