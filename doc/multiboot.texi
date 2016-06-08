@@ -353,6 +353,7 @@ executable header.
 * Console header tags::
 * Module alignment tag::
 * EFI boot services tag::
+* Relocatable header tag::
 
 @end menu
 
@@ -678,6 +679,47 @@ u32     | size = 8          |
 
 This tag indicates that payload supports starting without
 terminating boot services.
+
+@node Relocatable header tag
+@subsection Relocatable header tag
+
+@example
+@group
+        +-------------------+
+u16     | type = 10         |
+u16     | flags             |
+u32     | size = 24         |
+u32     | min_addr          |
+u32     | max_addr          |
+u32     | align             |
+u32     | preference        |
+        +-------------------+
+@end group
+@end example
+
+This tag indicates that image is relocatable.
+
+The meaning of each field is as follows:
+
+@table @code
+@item min_addr
+Lowest possible physical address at which image should be loaded.
+The bootloader cannot load any part of image below this address.
+
+@item max_addr
+Highest possible physical address at which loaded image should end.
+The bootloader cannot load any part of image above this address.
+
+@item align
+Image alignment in memory, e.g. 4096.
+
+@item preference
+It contains load address placement suggestion for boot loader.
+Boot loader should follow it. @samp{0} means none, @samp{1} means
+load image at lowest possible address but not lower than min_addr
+and @samp{2} means load image at highest possible address but not
+higher than max_addr.
+@end table
 
 @node Machine state
 @section MIPS machine state
@@ -1322,6 +1364,20 @@ u64     | pointer           |
 
 This tag contains pointer to EFI amd64 image handle.
 Usually it is boot loader image handle.
+
+@subsection Image load base physical address
+@example
+@group
+        +-------------------+
+u32     | type = 21         |
+u32     | size = 12         |
+u32     | load_base_addr    |
+        +-------------------+
+@end group
+@end example
+
+This tag contains image load base physical address. It is
+provided only if image has relocatable header tag.
 
 @node Examples
 @chapter Examples
