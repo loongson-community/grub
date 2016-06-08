@@ -1398,11 +1398,22 @@ document, but are included for prospective operating system and boot
 loader writers.
 
 @menu
+* C structure members alignment and padding consideration::
 * Notes on PC::                 
 * BIOS device mapping techniques::  
 * Example OS code::             
 * Example boot loader code::    
 @end menu
+
+
+@node C structure members alignment and padding consideration
+@section C structure members alignment and padding consideration
+
+It is preferred that the structures used for communication between the bootloader
+and the OS image conform to chosen ABI for a given architecture. If it is not
+possible then GCC @samp{__attribute__ ((__packed__))} (or anything else which has
+similar meaning for chosen C compiler) have to be added to relevant structures
+definitions to avoid spurious, in this case, padding and alignment.
 
 
 @node Notes on PC
