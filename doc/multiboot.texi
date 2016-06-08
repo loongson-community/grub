@@ -352,6 +352,7 @@ executable header.
 * Address header tag::       
 * Console header tags::
 * Module alignment tag::
+* EFI boot services tag::
 
 @end menu
 
@@ -602,8 +603,8 @@ u32     | size = 8          |
 
 If this tag is present modules must be page aligned.
 
-@node EFI boot services
-@subsection EFI boot services
+@node EFI boot services tag
+@subsection EFI boot services tag
 
 @example
 @group
@@ -616,7 +617,7 @@ u32     | size = 8          |
 @end example
 
 This tag indicates that payload supports starting without
-terminating boot services
+terminating boot services.
 
 @node Machine state
 @section MIPS machine state
