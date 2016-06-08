@@ -941,6 +941,10 @@ possible value for lower memory is 640 kilobytes. The value returned for
 upper memory is maximally the address of the first upper memory hole
 minus 1 megabyte. It is not guaranteed to be this value.
 
+This tag may not be provided by some boot loaders on EFI platforms if EFI boot
+services are enabled and available for the loaded image (EFI boot services
+not terminated tag exists in Multiboot2 information structure).
+
 @subsection BIOS Boot device
 @example
 @group
@@ -1091,6 +1095,10 @@ indicated a reserved area.
 
 The map provided is guaranteed to list all standard @sc{ram} that should
 be available for normal use. This type however includes the regions occupied by kernel, mbi, segments and modules. Kernel must take care not to overwrite these regions.
+
+This tag may not be provided by some boot loaders on EFI platforms if EFI boot
+services are enabled and available for the loaded image (EFI boot services
+not terminated tag exists in Multiboot2 information structure).
 
 @subsection Boot loader name
 @example
@@ -1324,6 +1332,9 @@ u32     | descriptor version|
 
 This tag contains EFI memory map as per EFI specification.
 
+This tag may not be provided by some boot loaders on EFI platforms if EFI boot
+services are enabled and available for the loaded image (EFI boot services
+not terminated tag exists in Multiboot2 information structure).
 
 @subsection EFI boot services not terminated
 @example
