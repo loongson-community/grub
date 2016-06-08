@@ -1295,6 +1295,34 @@ u32     | size = 8          |
 
 This tag indicates ExitBootServices wasn't called
 
+@subsection EFI 32-bit image handle pointer
+@example
+@group
+        +-------------------+
+u32     | type = 19         |
+u32     | size = 12         |
+u32     | pointer           |
+        +-------------------+
+@end group
+@end example
+
+This tag contains pointer to EFI i386 image handle.
+Usually it is boot loader image handle.
+
+@subsection EFI 64-bit image handle pointer
+@example
+@group
+        +-------------------+
+u32     | type = 20         |
+u32     | size = 16         |
+u64     | pointer           |
+        +-------------------+
+@end group
+@end example
+
+This tag contains pointer to EFI amd64 image handle.
+Usually it is boot loader image handle.
+
 @node Examples
 @chapter Examples
 
