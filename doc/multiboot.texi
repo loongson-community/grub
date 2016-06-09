@@ -437,15 +437,19 @@ u32[n]  | mbi_tag_types     |
 @end group
 @end example
 
-@samp{mbi_tag_types} is an array of u32 each one representing an information
-request
-If this tag is present and @samp{optional} is set to @samp{0} information
-conveyed by requested tag types must be present. If bootloader is unable
-to supply this information it must fail with an error
+@samp{mbi_tag_types} is an array of u32's, each one representing an information request.
 
-Note: it doesn't garantee that any tags of type @samp{mbi_tag_types} will
-actually be present. E.g. on a videoless system even if you requested tag
-@samp{8} no tags of type @samp{8} will be present in mbi.
+If this tag is present and @samp{optional} is set to @samp{0}, the bootloader must
+support the requested tag and be able to provide relevant information to the image
+if it is available. If the bootloader does not understand the meaning of the requested
+tag it must fail with an error. However, if it supports a given tag but the information
+conveyed by it is not available the bootloader does not provide the requested tag in
+the Multiboot2 information structure and passes control to the loaded image as usual.
+
+Note: The above means that there is no guarantee that any tags of type @samp{mbi_tag_types}
+will actually be present. E.g. on a videoless system even if you requested tag @samp{8}
+and the bootloader supports it, no tags of type @samp{8} will be present in the Multiboot2
+information structure.
 
 
 @node Address header tag
