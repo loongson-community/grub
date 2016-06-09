@@ -419,7 +419,7 @@ u32     | size              |
 
 @samp{type} is divided into 2 parts. Lower contains an identifier of contents of the rest of the tag.
 @samp{size} contains the size of tag including header fields.
-If bit @samp{0} of @samp{flags} (also known as @samp{optional}) is set if bootloader may ignore this tag if it 
+If bit @samp{0} of @samp{flags} (also known as @samp{optional}) is set, the bootloader may ignore this tag if it
 lacks relevant support.
 Tags are terminated by a tag of type @samp{0} and size @samp{8}.
 
