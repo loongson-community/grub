@@ -61,7 +61,7 @@
 static ULONG *bounce;
 
 char *
-canonicalize_file_name (const char *path)
+grub_canonicalize_file_name (const char *path)
 {
   char *ret;
   BPTR lck;
@@ -180,7 +180,7 @@ grub_util_fd_open (const char *dev, int flg)
   if (dev[0] != '/' || dev[1] != '/' || dev[2] != ':')
     {
       ret->type = GRUB_UTIL_FD_FILE;
-      ret->fd = open (dev, flg, S_IRUSR | S_IWUSR);
+      ret->fd = open (dev, flg, S_IROTH | S_IRGRP | S_IRUSR | S_IWUSR);
       if (ret->fd < 0)
 	{
 	  free (ret);

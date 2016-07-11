@@ -334,12 +334,12 @@ void grub_term_restore_pos (struct grub_term_coordinate *pos);
 
 static inline unsigned grub_term_width (struct grub_term_output *term)
 {
-  return term->getwh(term).x;
+  return term->getwh(term).x ? : 80;
 }
 
 static inline unsigned grub_term_height (struct grub_term_output *term)
 {
-  return term->getwh(term).y;
+  return term->getwh(term).y ? : 24;
 }
 
 static inline struct grub_term_coordinate
@@ -405,7 +405,7 @@ grub_unicode_estimate_width (const struct grub_unicode_glyph *c);
 
 #else
 
-static inline grub_ssize_t
+static inline grub_size_t
 grub_unicode_estimate_width (const struct grub_unicode_glyph *c __attribute__ ((unused)))
 {
   if (grub_unicode_get_comb_type (c->base))

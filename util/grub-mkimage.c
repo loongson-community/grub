@@ -48,7 +48,13 @@
 #include <grub/emu/config.h>
 
 #define _GNU_SOURCE	1
+
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
+
 
 #include "progname.h"
 
@@ -58,13 +64,13 @@ static struct argp_option options[] = {
   {"directory",  'd', N_("DIR"), 0,
    /* TRANSLATORS: platform here isn't identifier. It can be translated.  */
    N_("use images and modules under DIR [default=%s/<platform>]"), 0},
-  {"prefix",  'p', N_("DIR"), 0, N_("set prefix directory [default=%s]"), 0},
+  {"prefix",  'p', N_("DIR"), 0, N_("set prefix directory"), 0},
   {"memdisk",  'm', N_("FILE"), 0,
    /* TRANSLATORS: "memdisk" here isn't an identifier, it can be translated.
     "embed" is a verb (command description).  "*/
    N_("embed FILE as a memdisk image\n"
-      "Implies `-p (memdisk)/boot/grub' but prefix can be overridden by "
-      "later options"), 0},
+      "Implies `-p (memdisk)/boot/grub' and overrides any prefix supplied previously,"
+      " but the prefix itself can be overridden by later options"), 0},
    /* TRANSLATORS: "embed" is a verb (command description).  "*/
   {"config",   'c', N_("FILE"), 0, N_("embed FILE as an early config"), 0},
    /* TRANSLATORS: "embed" is a verb (command description).  "*/
@@ -78,6 +84,8 @@ static struct argp_option options[] = {
   { 0, 0, 0, 0, 0, 0 }
 };
 
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 static char *
 help_filter (int key, const char *text, void *input __attribute__ ((unused)))
 {
@@ -85,8 +93,6 @@ help_filter (int key, const char *text, void *input __attribute__ ((unused)))
     {
     case 'd':
       return xasprintf (text, grub_util_get_pkglibdir ());
-    case 'p':
-      return xasprintf (text, DEFAULT_DIRECTORY);
     case 'O':
       {
 	char *formats = grub_install_get_image_targets_string (), *ret;
@@ -99,6 +105,8 @@ help_filter (int key, const char *text, void *input __attribute__ ((unused)))
       return (char *) text;
     }
 }
+
+#pragma GCC diagnostic error "-Wformat-nonliteral"
 
 struct arguments
 {
@@ -258,6 +266,15 @@ main (int argc, char *argv[])
       exit(1);
     }
 
+  if (!arguments.prefix)
+    {
+      char *program = xstrdup(program_name);
+      printf ("%s\n", _("Prefix not specified (use the -p option)."));
+      argp_help (&argp, stderr, ARGP_HELP_STD_USAGE, program);
+      free (program);
+      exit(1);
+    }
+
   if (arguments.output)
     {
       fp = grub_util_fopen (arguments.output, "wb");
@@ -277,8 +294,7 @@ main (int argc, char *argv[])
       strcpy (ptr, dn);
     }
 
-  grub_install_generate_image (arguments.dir,
-			       arguments.prefix ? : DEFAULT_DIRECTORY, fp,
+  grub_install_generate_image (arguments.dir, arguments.prefix, fp,
 			       arguments.output, arguments.modules,
 			       arguments.memdisk, arguments.pubkeys,
 			       arguments.npubkeys, arguments.config,
@@ -288,8 +304,7 @@ main (int argc, char *argv[])
   grub_util_file_sync  (fp);
   fclose (fp);
 
-  if (arguments.dir)
-    free (arguments.dir);
+  free (arguments.dir);
 
   if (arguments.output)
     free (arguments.output);

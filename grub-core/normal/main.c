@@ -32,6 +32,7 @@
 #include <grub/i18n.h>
 #include <grub/charset.h>
 #include <grub/script_sh.h>
+#include <grub/bufio.h>
 
 GRUB_MOD_LICENSE ("GPLv3+");
 
@@ -104,7 +105,7 @@ read_config_file_getline (char **line, int cont __attribute__ ((unused)),
 static grub_menu_t
 read_config_file (const char *config)
 {
-  grub_file_t file;
+  grub_file_t rawfile, file;
   char *old_file = 0, *old_dir = 0;
   char *config_dir, *ptr = 0;
   const char *ctmp;
@@ -122,9 +123,16 @@ read_config_file (const char *config)
     }
 
   /* Try to open the config file.  */
-  file = grub_file_open (config);
-  if (! file)
+  rawfile = grub_file_open (config);
+  if (! rawfile)
     return 0;
+
+  file = grub_bufio_open (rawfile, 0);
+  if (! file)
+    {
+      grub_file_close (rawfile);
+      return 0;
+    }
 
   ctmp = grub_env_get ("config_file");
   if (ctmp)
@@ -194,14 +202,13 @@ grub_normal_init_page (struct grub_term_output *term,
 {
   grub_ssize_t msg_len;
   int posx;
-  const char *msg = _("GNU GRUB  version %s");
   char *msg_formatted;
   grub_uint32_t *unicode_msg;
   grub_uint32_t *last_position;
  
   grub_term_cls (term);
 
-  msg_formatted = grub_xasprintf (msg, PACKAGE_VERSION);
+  msg_formatted = grub_xasprintf (_("GNU GRUB  version %s"), PACKAGE_VERSION);
   if (!msg_formatted)
     return;
  
@@ -295,7 +302,7 @@ grub_enter_normal_mode (const char *config)
   nested_level++;
   grub_normal_execute (config, 0, 0);
   grub_boot_time ("Entering shell");
-  grub_cmdline_run (0);
+  grub_cmdline_run (0, 1);
   nested_level--;
   if (grub_normal_exit_level)
     grub_normal_exit_level--;
@@ -350,13 +357,13 @@ static grub_err_t
 grub_normal_reader_init (int nested)
 {
   struct grub_term_output *term;
-  const char *msg = _("Minimal BASH-like line editing is supported. For "
-		      "the first word, TAB lists possible command completions. Anywhere "
-		      "else TAB lists possible device or file completions. %s");
   const char *msg_esc = _("ESC at any time exits.");
   char *msg_formatted;
 
-  msg_formatted = grub_xasprintf (msg, nested ? msg_esc : "");
+  msg_formatted = grub_xasprintf (_("Minimal BASH-like line editing is supported. For "
+				    "the first word, TAB lists possible command completions. Anywhere "
+				    "else TAB lists possible device or file completions. %s"),
+				  nested ? msg_esc : "");
   if (!msg_formatted)
     return grub_errno;
 
@@ -417,11 +424,15 @@ grub_normal_read_line (char **line, int cont,
 }
 
 void
-grub_cmdline_run (int nested)
+grub_cmdline_run (int nested, int force_auth)
 {
   grub_err_t err = GRUB_ERR_NONE;
 
-  err = grub_auth_check_authentication (NULL);
+  do
+    {
+      err = grub_auth_check_authentication (NULL);
+    }
+  while (err && force_auth);
 
   if (err)
     {
@@ -434,7 +445,7 @@ grub_cmdline_run (int nested)
 
   while (1)
     {
-      char *line;
+      char *line = NULL;
 
       if (grub_normal_exit_level)
 	break;

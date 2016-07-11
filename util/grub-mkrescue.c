@@ -25,7 +25,11 @@
 #include <grub/emu/exec.h>
 #include <grub/emu/config.h>
 #include <grub/emu/hostdisk.h>
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include <argp.h>
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -40,9 +44,6 @@ static char *label_color;
 static char *label_bgcolor;
 static char *product_name;
 static char *product_version;
-static int xorriso_tail_argc;
-static int xorriso_tail_arg_alloc;
-static char **xorriso_tail_argv;
 static char *output_image;
 static char *xorriso;
 static char *boot_grub;
@@ -112,17 +113,35 @@ static struct argp_option options[] = {
   {0, 0, 0, 0, 0, 0}
 };
 
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 static char *
 help_filter (int key, const char *text, void *input __attribute__ ((unused)))
 {
   switch (key)
     {
+    case ARGP_KEY_HELP_PRE_DOC:
+      /* TRANSLATORS: it generates one single image which is bootable through any method. */
+      return strdup (_("Make GRUB CD-ROM, disk, pendrive and floppy bootable image."));
     case ARGP_KEY_HELP_POST_DOC:
-      return xasprintf (text, "xorriso -as mkisofs -help");
+      {
+	char *p1, *out;
+
+	p1 = xasprintf (_("Generates a bootable CD/USB/floppy image.  Arguments other than options to this program"
+      " are passed to xorriso, and indicate source files, source directories, or any of the "
+      "mkisofs options listed by the output of `%s'."), "xorriso -as mkisofs -help");
+	out = xasprintf ("%s\n\n%s\n\n%s", p1,
+	  _("Option -- switches to native xorriso command mode."),
+	  _("Mail xorriso support requests to <bug-xorriso@gnu.org>."));
+	free (p1);
+	return out;
+      }
     default:
       return grub_install_help_filter (key, text, input);
     }
 }
+
+#pragma GCC diagnostic error "-Wformat-nonliteral"
 
 enum {
   SYS_AREA_AUTO,
@@ -193,16 +212,6 @@ argp_parser (int key, char *arg, struct argp_state *state)
       xorriso = xstrdup (arg);
       return 0;
 
-    case ARGP_KEY_ARG:
-      if (xorriso_tail_arg_alloc <= xorriso_tail_argc)
-	{
-	  xorriso_tail_arg_alloc = 2 * (4 + xorriso_tail_argc);
-	  xorriso_tail_argv = xrealloc (xorriso_tail_argv,
-				   sizeof (xorriso_tail_argv[0])
-				   * xorriso_tail_arg_alloc);
-	}
-      xorriso_tail_argv[xorriso_tail_argc++] = xstrdup (arg);
-      return 0;
     default:
       return ARGP_ERR_UNKNOWN;
     }
@@ -210,12 +219,7 @@ argp_parser (int key, char *arg, struct argp_state *state)
 
 struct argp argp = {
   options, argp_parser, N_("[OPTION] SOURCE..."),
-  /* TRANSLATORS: it generates one single image which is bootable through any method. */
-  N_("Make GRUB CD-ROM, disk, pendrive and floppy bootable image.")"\v"
-  N_("Generates a bootable rescue image with specified source files, source directories, or mkisofs options listed by the output of `%s'.\n\n"
-     "Option -- switches to native xorriso command mode.\n\n"
-     "Mail xorriso support requests to <bug-xorriso@gnu.org>."), 
-  NULL, help_filter, NULL
+  NULL, NULL, help_filter, NULL
 };
 
 static void
@@ -306,6 +310,7 @@ make_image_fwdisk_abs (enum grub_install_plat plat,
   grub_install_make_image_wrap (source_dirs[plat], "()/boot/grub", output,
 				0, load_cfg, mkimage_target, 0);
   grub_install_pop_module ();
+  grub_util_unlink (load_cfg);
 }
 
 static int
@@ -357,12 +362,70 @@ make_image_fwdisk (enum grub_install_plat plat,
   free (out);
 }
 
+static int
+option_is_end (const struct argp_option *opt)
+{
+  return !opt->key && !opt->name && !opt->doc && !opt->group;
+}
+
+
+static int
+args_to_eat (const char *arg)
+{
+  int j;
+
+  if (arg[0] != '-')
+    return 0;
+
+  if (arg[1] == '-')
+    {
+      for (j = 0; !option_is_end(&options[j]); j++)
+	{
+	  size_t len = strlen (options[j].name);
+	  if (strncmp (arg + 2, options[j].name, len) == 0)
+	    {
+	      if (arg[2 + len] == '=')
+		return 1;
+	      if (arg[2 + len] == '\0' && options[j].arg)
+		return 2;
+	      if (arg[2 + len] == '\0')
+		return 1;
+	    }
+	}
+      if (strcmp (arg, "--help") == 0)
+	return 1;
+      if (strcmp (arg, "--usage") == 0)
+	return 1;
+      if (strcmp (arg, "--version") == 0)
+	return 1;
+      return 0;
+    }
+  if (arg[2] && arg[3])
+    return 0;
+  for (j = 0; !option_is_end(&options[j]); j++)
+    {
+      if (options[j].key > 0 && options[j].key < 128 && arg[1] == options[j].key)
+	{
+	  if (options[j].arg)
+	    return 2;
+	  return 1;
+	}
+      if (arg[1] == '?')
+	return 1;
+    }
+  return 0;
+}
+
 int
 main (int argc, char *argv[])
 {
   char *romdir;
   char *sysarea_img = NULL;
   const char *pkgdatadir;
+  int argp_argc;
+  char **argp_argv;
+  int xorriso_tail_argc;
+  char **xorriso_tail_argv;
 
   grub_util_host_init (&argc, &argv);
   grub_util_disable_fd_syncs ();
@@ -374,7 +437,43 @@ main (int argc, char *argv[])
   xorriso = xstrdup ("xorriso");
   label_font = grub_util_path_concat (2, pkgdatadir, "unicode.pf2");
 
-  argp_parse (&argp, argc, argv, 0, 0, 0);
+  argp_argv = xmalloc (sizeof (argp_argv[0]) * argc);
+  xorriso_tail_argv = xmalloc (sizeof (argp_argv[0]) * argc);
+
+  xorriso_tail_argc = 0;
+  /* Program name */
+  argp_argv[0] = argv[0];
+  argp_argc = 1;
+
+  /* argp doesn't allow us to catch unknwon arguments,
+     so catch them before passing to argp
+   */
+  {
+    int i;
+    for (i = 1; i < argc; i++)
+      {
+	if (strcmp (argv[i], "-output") == 0) {
+	  argp_argv[argp_argc++] = (char *) "--output";
+	  i++;
+	  argp_argv[argp_argc++] = argv[i];
+	  continue;
+	}
+	switch (args_to_eat (argv[i]))
+	  {
+	  case 2:
+	    argp_argv[argp_argc++] = argv[i++];
+	    /* Fallthrough  */
+	  case 1:
+	    argp_argv[argp_argc++] = argv[i];
+	    break;
+	  case 0:
+	    xorriso_tail_argv[xorriso_tail_argc++] = argv[i];
+	    break;
+	  }
+      }
+  }
+
+  argp_parse (&argp, argp_argc, argp_argv, 0, 0, 0);
 
   if (!output_image)
     grub_util_error ("%s", _("output file must be specified"));
@@ -428,6 +527,9 @@ main (int argc, char *argv[])
       if (source_dirs[GRUB_INSTALL_PLATFORM_I386_PC]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_IA64_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI])
 	system_area = SYS_AREA_COMMON;
       else if (source_dirs[GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275])
@@ -546,6 +648,7 @@ main (int argc, char *argv[])
 	}
       grub_install_pop_module ();
       grub_install_pop_module ();
+      grub_util_unlink (load_cfg);
     }
 
   /** build multiboot core.img */
@@ -623,7 +726,8 @@ main (int argc, char *argv[])
   if (source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_IA64_EFI]
-      || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI])
+      || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI]
+      || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI])
     {
       char *efidir = grub_util_make_temporary_dir ();
       char *efidir_efi = grub_util_path_concat (2, efidir, "efi");
@@ -632,18 +736,30 @@ main (int argc, char *argv[])
       char *efiimgfat;
       grub_install_mkdir_p (efidir_efi_boot);
 
+      grub_install_push_module ("part_gpt");
+      grub_install_push_module ("part_msdos");
+
       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootia64.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_IA64_EFI, "ia64-efi", imgname);
       free (imgname);
 
+      grub_install_push_module ("part_apple");
       img64 = grub_util_path_concat (2, efidir_efi_boot, "bootx64.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_X86_64_EFI, "x86_64-efi", img64);
+      grub_install_pop_module ();
 
+      grub_install_push_module ("part_apple");
       img32 = grub_util_path_concat (2, efidir_efi_boot, "bootia32.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_I386_EFI, "i386-efi", img32);
+      grub_install_pop_module ();
 
       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootarm.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_ARM_EFI, "arm-efi", imgname);
+      free (imgname);
+
+      imgname = grub_util_path_concat (2, efidir_efi_boot, "bootaa64.efi");
+      make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_ARM64_EFI, "arm64-efi",
+			     imgname);
       free (imgname);
 
       if (source_dirs[GRUB_INSTALL_PLATFORM_I386_EFI])
@@ -671,9 +787,14 @@ main (int argc, char *argv[])
       free (efidir_efi_boot);
 
       efiimgfat = grub_util_path_concat (2, iso9660_dir, "efi.img");
-      grub_util_exec ((const char * []) { "mformat", "-C", "-f", "2880", "-L", "16", "-i",
+      int rv;
+      rv = grub_util_exec ((const char * []) { "mformat", "-C", "-f", "2880", "-L", "16", "-i",
 	    efiimgfat, "::", NULL });
-      grub_util_exec ((const char * []) { "mcopy", "-s", "-i", efiimgfat, efidir_efi, "::/", NULL });
+      if (rv != 0)
+	grub_util_error ("`%s` invocation failed\n", "mformat");
+      rv = grub_util_exec ((const char * []) { "mcopy", "-s", "-i", efiimgfat, efidir_efi, "::/", NULL });
+      if (rv != 0)
+	grub_util_error ("`%s` invocation failed\n", "mformat");
       xorriso_push ("--efi-boot");
       xorriso_push ("efi.img");
       xorriso_push ("-efi-boot-part");
@@ -683,9 +804,13 @@ main (int argc, char *argv[])
       free (efiimgfat);
       free (efidir_efi);
       free (efidir);
+      grub_install_pop_module ();
+      grub_install_pop_module ();
     }
 
+  grub_install_push_module ("part_apple");
   make_image_fwdisk (GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275, "powerpc-ieee1275", "powerpc-ieee1275/core.elf");
+  grub_install_pop_module ();
 
   if (source_dirs[GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275])
     {

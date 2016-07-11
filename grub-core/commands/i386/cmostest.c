@@ -45,7 +45,7 @@ static grub_err_t
 grub_cmd_cmostest (struct grub_command *cmd __attribute__ ((unused)),
 		   int argc, char *argv[])
 {
-  int byte, bit;
+  int byte = 0, bit = 0;
   grub_err_t err;
   grub_uint8_t value;
 
@@ -67,7 +67,7 @@ static grub_err_t
 grub_cmd_cmosclean (struct grub_command *cmd __attribute__ ((unused)),
 		    int argc, char *argv[])
 {
-  int byte, bit;
+  int byte = 0, bit = 0;
   grub_err_t err;
   grub_uint8_t value;
 
@@ -85,7 +85,7 @@ static grub_err_t
 grub_cmd_cmosset (struct grub_command *cmd __attribute__ ((unused)),
 		    int argc, char *argv[])
 {
-  int byte, bit;
+  int byte = 0, bit = 0;
   grub_err_t err;
   grub_uint8_t value;
 
@@ -109,9 +109,10 @@ GRUB_MOD_INIT(cmostest)
 			       N_("Test bit at BYTE:BIT in CMOS."));
   cmd_clean = grub_register_command ("cmosclean", grub_cmd_cmosclean,
 				     N_("BYTE:BIT"),
-				     N_("Clean bit at BYTE:BIT in CMOS."));
+				     N_("Clear bit at BYTE:BIT in CMOS."));
   cmd_set = grub_register_command ("cmosset", grub_cmd_cmosset,
 				   N_("BYTE:BIT"),
+				   /* TRANSLATORS: A bit may be either set (1) or clear (0).  */
 				   N_("Set bit at BYTE:BIT in CMOS."));
 }
 

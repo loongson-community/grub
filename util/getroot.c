@@ -77,10 +77,15 @@
 grub_disk_addr_t
 grub_util_find_partition_start (const char *dev)
 {
+#if GRUB_UTIL_FD_STAT_IS_FUNCTIONAL
+  struct stat st;
   grub_disk_addr_t partition_start;
-  if (grub_util_device_is_mapped (dev)
-      && grub_util_get_dm_node_linear_info (dev, 0, 0, &partition_start))
+
+  if (stat (dev, &st) >= 0
+      && grub_util_device_is_mapped_stat (&st)
+      && grub_util_get_dm_node_linear_info (st.st_rdev, 0, 0, &partition_start))
     return partition_start;
+#endif
 
   return grub_util_find_partition_start_os (dev);
 }
@@ -102,6 +107,7 @@ grub_util_pull_device (const char *os_dev)
     default:
       if (grub_util_pull_device_os (os_dev, ab))
 	return;
+      /* Fallthrough.  */
     case GRUB_DEV_ABSTRACTION_NONE:
       free (grub_util_biosdisk_get_grub_dev (os_dev));
       return;
@@ -363,9 +369,9 @@ grub_util_biosdisk_get_grub_dev (const char *os_dev)
 		char *t;
 		t = dri;
 		if (*q >= 'a' && *q <= 'g')
-		  dri = xasprintf ("%s,%d,%d", t, n, *q - 'a' + 1);
+		  dri = xasprintf ("%s,%ld,%d", t, n, *q - 'a' + 1);
 		else
-		  dri = xasprintf ("%s,%d", t, n);
+		  dri = xasprintf ("%s,%ld", t, n);
 		free (t);
 	      }
 	  }
@@ -376,9 +382,6 @@ grub_util_biosdisk_get_grub_dev (const char *os_dev)
 
     grub_util_info ("%s starts from %" GRUB_HOST_PRIuLONG_LONG,
 		    os_dev, (unsigned long long) ctx.start);
-
-    if (ctx.start == 0 && !is_part)
-      return name;
 
     grub_util_info ("opening the device %s", name);
     disk = grub_disk_open (name);
@@ -400,7 +403,7 @@ grub_util_biosdisk_get_grub_dev (const char *os_dev)
 	       os_dev);
 	    grub_errno = GRUB_ERR_NONE;
 
-	    canon = canonicalize_file_name (os_dev);
+	    canon = grub_canonicalize_file_name (os_dev);
 	    drive = grub_hostdisk_os_dev_to_grub_drive (canon ? : os_dev, 1);
 	    if (canon)
 	      free (canon);
@@ -412,7 +415,10 @@ grub_util_biosdisk_get_grub_dev (const char *os_dev)
 
     name = grub_util_get_ldm (disk, ctx.start);
     if (name)
-      return name;
+      {
+	grub_disk_close (disk);
+	return name;
+      }
 
     ctx.partname = NULL;
 

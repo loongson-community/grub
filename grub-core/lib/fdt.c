@@ -19,6 +19,9 @@
 #include <grub/fdt.h>
 #include <grub/misc.h>
 #include <grub/mm.h>
+#include <grub/dl.h>
+
+GRUB_MOD_LICENSE ("GPLv3+");
 
 #define FDT_SUPPORTED_VERSION	17
 
@@ -164,10 +167,10 @@ static int add_subnode (void *fdt, int parentoffset, const char *name)
 insert:
   grub_memmove (token + entry_size / sizeof(*token), token,
                 (grub_addr_t) end - (grub_addr_t) token);
-  *token = grub_cpu_to_be32(FDT_BEGIN_NODE);
+  *token = grub_cpu_to_be32_compile_time(FDT_BEGIN_NODE);
   token[entry_size / sizeof(*token) - 2] = 0;	/* padding bytes */
   grub_strcpy((char *) (token + 1), name);
-  token[entry_size / sizeof(*token) - 1] = grub_cpu_to_be32(FDT_END_NODE);
+  token[entry_size / sizeof(*token) - 1] = grub_cpu_to_be32_compile_time(FDT_END_NODE);
   grub_fdt_set_size_dt_struct (fdt, struct_size + entry_size);
   return ((grub_addr_t) token - (grub_addr_t) fdt
           - grub_fdt_get_off_dt_struct(fdt));
@@ -265,10 +268,9 @@ static grub_uint32_t *find_prop (void *fdt, unsigned int nodeoffset,
    the size allocated for the FDT; if this function is called before the other
    functions in this file and returns success, the other functions are
    guaranteed not to access memory locations outside the allocated memory. */
-int grub_fdt_check_header (void *fdt, unsigned int size)
+int grub_fdt_check_header_nosize (void *fdt)
 {
   if (((grub_addr_t) fdt & 0x7) || (grub_fdt_get_magic (fdt) != FDT_MAGIC)
-      || (grub_fdt_get_totalsize (fdt) > size)
       || (grub_fdt_get_version (fdt) < FDT_SUPPORTED_VERSION)
       || (grub_fdt_get_last_comp_version (fdt) > FDT_SUPPORTED_VERSION)
       || (grub_fdt_get_off_dt_struct (fdt) & 0x00000003)
@@ -280,6 +282,15 @@ int grub_fdt_check_header (void *fdt, unsigned int size)
       || (grub_fdt_get_off_mem_rsvmap (fdt) & 0x00000007)
       || (grub_fdt_get_off_mem_rsvmap (fdt)
           > grub_fdt_get_totalsize (fdt) - 2 * sizeof(grub_uint64_t)))
+    return -1;
+  return 0;
+}
+
+int grub_fdt_check_header (void *fdt, unsigned int size)
+{
+  if (size < sizeof (grub_fdt_header_t)
+      || (grub_fdt_get_totalsize (fdt) > size)
+      || grub_fdt_check_header_nosize (fdt) == -1)
     return -1;
   return 0;
 }
@@ -369,7 +380,7 @@ int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,
 
       prop_name_present = 1;
 	  for (i = 0; i < prop_len / sizeof(grub_uint32_t); i++)
-        *(prop + 3 + i) = grub_cpu_to_be32 (FDT_NOP);
+        *(prop + 3 + i) = grub_cpu_to_be32_compile_time (FDT_NOP);
       if (len > ALIGN_UP(prop_len, sizeof(grub_uint32_t)))
         {
           /* Length of new property value is greater than the space allocated
@@ -377,7 +388,7 @@ int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,
              nameoff field of the current entry and replace the current entry
              with NOP tokens. */
           nameoff = grub_be_to_cpu32 (*(prop + 2));
-    	  *prop = *(prop + 1) = *(prop + 2) = grub_cpu_to_be32 (FDT_NOP);
+          *prop = *(prop + 1) = *(prop + 2) = grub_cpu_to_be32_compile_time (FDT_NOP);
           prop = NULL;
         }
     }
@@ -411,7 +422,7 @@ int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,
                   struct_end(fdt) - (grub_addr_t) prop);
     grub_fdt_set_size_dt_struct (fdt, grub_fdt_get_size_dt_struct (fdt)
                                  + prop_entry_size(len));
-    *prop = grub_cpu_to_be32 (FDT_PROP);
+    *prop = grub_cpu_to_be32_compile_time (FDT_PROP);
     *(prop + 2) = grub_cpu_to_be32 (nameoff);
   }
   *(prop + 1) = grub_cpu_to_be32 (len);
@@ -421,5 +432,34 @@ int grub_fdt_set_prop (void *fdt, unsigned int nodeoffset, const char *name,
   *(prop + prop_entry_size(len) / sizeof(grub_uint32_t) - 1) = 0;
 
   grub_memcpy (prop + 3, val, len);
+  return 0;
+}
+
+int
+grub_fdt_create_empty_tree (void *fdt, unsigned int size)
+{
+  struct grub_fdt_empty_tree *et;
+
+  if (size < GRUB_FDT_EMPTY_TREE_SZ)
+    return -1;
+
+  grub_memset (fdt, 0, size);
+  et = fdt;
+
+  et->empty_node.tree_end = grub_cpu_to_be32_compile_time (FDT_END);
+  et->empty_node.node_end = grub_cpu_to_be32_compile_time (FDT_END_NODE);
+  et->empty_node.node_start = grub_cpu_to_be32_compile_time (FDT_BEGIN_NODE);
+  ((struct grub_fdt_empty_tree *) fdt)->header.off_mem_rsvmap =
+    grub_cpu_to_be32_compile_time (ALIGN_UP (sizeof (grub_fdt_header_t), 8));
+
+  grub_fdt_set_off_dt_strings (fdt, sizeof (*et));
+  grub_fdt_set_off_dt_struct (fdt,
+			      sizeof (et->header) + sizeof (et->empty_rsvmap));
+  grub_fdt_set_version (fdt, FDT_SUPPORTED_VERSION);
+  grub_fdt_set_last_comp_version (fdt, FDT_SUPPORTED_VERSION);
+  grub_fdt_set_size_dt_struct (fdt, sizeof (et->empty_node));
+  grub_fdt_set_totalsize (fdt, size);
+  grub_fdt_set_magic (fdt, FDT_MAGIC);
+
   return 0;
 }

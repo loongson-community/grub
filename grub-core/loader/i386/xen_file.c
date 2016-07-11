@@ -18,6 +18,7 @@
 
 #include <grub/xen_file.h>
 #include <grub/i386/linux.h>
+#include <grub/misc.h>
 
 grub_elf_t
 grub_xen_file (grub_file_t file)
@@ -37,8 +38,8 @@ grub_xen_file (grub_file_t file)
   if (grub_file_read (file, &lh, sizeof (lh)) != sizeof (lh))
     goto fail;
 
-  if (lh.boot_flag != grub_cpu_to_le16 (0xaa55)
-      || lh.header != grub_cpu_to_le32 (GRUB_LINUX_MAGIC_SIGNATURE)
+  if (lh.boot_flag != grub_cpu_to_le16_compile_time (0xaa55)
+      || lh.header != grub_cpu_to_le32_compile_time (GRUB_LINUX_MAGIC_SIGNATURE)
       || grub_le_to_cpu16 (lh.version) < 0x0208)
     {
       grub_error (GRUB_ERR_BAD_OS, "version too old for xen boot");
@@ -54,11 +55,11 @@ grub_xen_file (grub_file_t file)
   grub_dprintf ("xen", "found bzimage payload 0x%llx-0x%llx\n",
 		(unsigned long long) (lh.setup_sects + 1) * 512
 		+ lh.payload_offset,
-		(unsigned long long) lh.payload_length - 4);
+		(unsigned long long) lh.payload_length);
 
   off_file = grub_file_offset_open (file, (lh.setup_sects + 1) * 512
 				    + lh.payload_offset,
-				    lh.payload_length - 4);
+				    lh.payload_length);
   if (!off_file)
     goto fail;
 

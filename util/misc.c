@@ -74,26 +74,6 @@ grub_util_get_path (const char *dir, const char *file)
   return path;
 }
 
-size_t
-grub_util_get_image_size (const char *path)
-{
-  FILE *f;
-  size_t ret;
-
-  f = grub_util_fopen (path, "rb");
-
-  if (!f)
-    grub_util_error (_("cannot open `%s': %s"), path, strerror (errno));
-
-  fseeko (f, 0, SEEK_END);
-  
-  ret = ftello (f);
-
-  fclose (f);
-
-  return ret;
-}
-
 char *
 grub_util_read_image (const char *path)
 {
@@ -118,28 +98,6 @@ grub_util_read_image (const char *path)
   fclose (fp);
 
   return img;
-}
-
-void
-grub_util_load_image (const char *path, char *buf)
-{
-  FILE *fp;
-  size_t size;
-
-  grub_util_info ("reading %s", path);
-
-  size = grub_util_get_image_size (path);
-
-  fp = grub_util_fopen (path, "rb");
-  if (! fp)
-    grub_util_error (_("cannot open `%s': %s"), path,
-		     strerror (errno));
-
-  if (fread (buf, 1, size, fp) != size)
-    grub_util_error (_("cannot read `%s': %s"), path,
-		     strerror (errno));
-
-  fclose (fp);
 }
 
 void
@@ -262,6 +220,6 @@ grub_register_exported_symbols (void)
 int
 grub_qsort_strcmp (const void *p1, const void *p2)
 {
-  return strcmp(*(char **)p1, *(char **)p2);
+  return strcmp(*(char *const *)p1, *(char *const *)p2);
 }
 

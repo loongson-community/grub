@@ -41,7 +41,11 @@
 #include <string.h>
 
 #include "progname.h"
+#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#pragma GCC diagnostic ignored "-Wmissing-declarations"
 #include "argp.h"
+#pragma GCC diagnostic error "-Wmissing-prototypes"
+#pragma GCC diagnostic error "-Wmissing-declarations"
 
 static grub_err_t
 execute_command (const char *name, int n, char **args)
@@ -566,12 +570,12 @@ argp_parser (int key, char *arg, struct argp_state *state)
 	    return 0;
 	  }
 	real_size = fread (buf, 1, 1024, f);
+	fclose (f);
 	if (real_size < 0)
 	  {
 	    printf (_("%s: error:"), program_name);
 	    printf (_("cannot read `%s': %s"), arg, strerror (errno));
 	    printf ("\n");
-	    fclose (f);
 	    return 0;
 	  }
 	grub_zfs_add_key (buf, real_size, 0);
@@ -647,7 +651,7 @@ argp_parser (int key, char *arg, struct argp_state *state)
     {
       if (args_count == 0)
 	images = xmalloc (num_disks * sizeof (images[0]));
-      images[args_count] = canonicalize_file_name (arg);
+      images[args_count] = grub_canonicalize_file_name (arg);
       args_count++;
       return 0;
     }

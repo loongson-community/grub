@@ -293,9 +293,10 @@ grub_crypto_xor (void *out, const void *in1, const void *in2, grub_size_t size)
     }
   while (size >= sizeof (grub_uint64_t))
     {
+      /* We've already checked that all pointers are aligned.  */
       *(grub_uint64_t *) (void *) outptr
-	= (*(grub_uint64_t *) (void *) in1ptr
-	   ^ *(grub_uint64_t *) (void *) in2ptr);
+	= (*(const grub_uint64_t *) (const void *) in1ptr
+	   ^ *(const grub_uint64_t *) (const void *) in2ptr);
       in1ptr += sizeof (grub_uint64_t);
       in2ptr += sizeof (grub_uint64_t);
       outptr += sizeof (grub_uint64_t);
@@ -320,7 +321,7 @@ grub_crypto_ecb_encrypt (grub_crypto_cipher_handle_t cipher,
 			 void *out, const void *in, grub_size_t size);
 gcry_err_code_t
 grub_crypto_cbc_encrypt (grub_crypto_cipher_handle_t cipher,
-			 void *out, void *in, grub_size_t size,
+			 void *out, const void *in, grub_size_t size,
 			 void *iv_in);
 gcry_err_code_t
 grub_crypto_cbc_decrypt (grub_crypto_cipher_handle_t cipher,
@@ -407,7 +408,7 @@ void _gcry_assert_failed (const char *expr, const char *file, int line,
                           const char *func) __attribute__ ((noreturn));
 
 void _gcry_burn_stack (int bytes);
-void _gcry_log_error( const char *fmt, ... )  __attribute__ ((format (printf, 1, 2)));
+void _gcry_log_error( const char *fmt, ... )  __attribute__ ((format (__printf__, 1, 2)));
 
 
 #ifdef GRUB_UTIL

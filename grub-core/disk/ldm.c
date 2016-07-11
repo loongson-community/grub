@@ -963,7 +963,7 @@ grub_util_ldm_embed (struct grub_disk *disk, unsigned int *nsectors,
 
   if (embed_type != GRUB_EMBED_PCBIOS)
     return grub_error (GRUB_ERR_NOT_IMPLEMENTED_YET,
-		       "LDM curently supports only PC-BIOS embedding");
+		       "LDM currently supports only PC-BIOS embedding");
   if (disk->partition)
     return grub_error (GRUB_ERR_BUG, "disk isn't LDM");
   pv = grub_diskfilter_get_pv_from_disk (disk, &vg);
@@ -1012,7 +1012,7 @@ grub_util_ldm_embed (struct grub_disk *disk, unsigned int *nsectors,
 			      usable for bootloaders (called generically
 			      "embedding zone") and this operation is
 			      called "embedding".  */
-			   N_("your LDM embedding Partition is too small;"
+			   N_("your LDM Embedding Partition is too small;"
 			      " embedding won't be possible"));
       *nsectors = lv->size;
       if (*nsectors > max_nsectors)

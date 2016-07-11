@@ -20,6 +20,7 @@
 #include <config.h>
 
 #include <grub/util/misc.h>
+#include <grub/util/install.h>
 #include <grub/i18n.h>
 #include <grub/term.h>
 #include <grub/font.h>
@@ -32,7 +33,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <argp.h>
 #include <unistd.h>
 #include <errno.h>
 
@@ -157,7 +157,7 @@ grub_util_render_label (const char *label_font,
   ieee1275_palette[cptr].a = 0xff;
 
   char * t;
-  t = canonicalize_file_name (label_font);
+  t = grub_canonicalize_file_name (label_font);
   if (!t)
     {
       grub_util_error (_("cannot open `%s': %s"), label_font,

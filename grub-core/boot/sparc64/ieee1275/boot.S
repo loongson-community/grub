@@ -41,18 +41,18 @@ pic_base:
 	 * After loading in that block we will execute it by jumping to the
 	 * load address plus the size of the prepended A.OUT header (32 bytes).
 	 */
-	. = _start + GRUB_BOOT_MACHINE_BOOT_DEVPATH
+	.org GRUB_BOOT_MACHINE_BOOT_DEVPATH
 boot_path:
-	. = _start + GRUB_BOOT_MACHINE_KERNEL_BYTE
-kernel_byte:		.xword (2 << 9)
+	.org GRUB_BOOT_MACHINE_KERNEL_BYTE
 boot_path_end:
+kernel_byte:		.xword (2 << 9)
 kernel_address:		.word  GRUB_BOOT_MACHINE_KERNEL_ADDR
 #else
 #define boot_path (_start + 512 + SCRATCH_PAD_BOOT_SIZE)
 #define boot_path_end (_start + 1024)
 #include <grub/offsets.h>
 
-	. = _start + 8
+	.org 8
 kernel_byte:		.xword (2 << 9)
 kernel_size:	        .word  512
 kernel_address:		.word  GRUB_BOOT_SPARC64_IEEE1275_IMAGE_ADDRESS
@@ -224,7 +224,7 @@ bootpath_known:
 #else
 	 nop
 #endif
-	. = _start + GRUB_BOOT_MACHINE_CODE_END
+	.org GRUB_BOOT_MACHINE_CODE_END
 
 /* the last 4 bytes in the sector 0 contain the signature */
 	.word	GRUB_BOOT_MACHINE_SIGNATURE

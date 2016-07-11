@@ -24,6 +24,8 @@
 #include <grub/i386/pc/vesa_modes_table.h>
 #include <grub/i18n.h>
 
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+
 struct legacy_command
 {
   const char *name;
@@ -662,6 +664,7 @@ grub_legacy_parse (const char *buf, char **entryname, char **suffix)
 	  {
 	  case TYPE_FILE_NO_CONSUME:
 	    hold_arg = 1;
+	    /* Fallthrough.  */
 	  case TYPE_PARTITION:
 	  case TYPE_FILE:
 	    args[i] = adjust_file (curarg, curarglen);
