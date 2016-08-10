@@ -1959,6 +1959,11 @@ module = {
 };
 
 module = {
+  name = strtoull_test;
+  common = tests/strtoull_test.c;
+};
+
+module = {
   name = setjmp_test;
   common = tests/setjmp_test.c;
 };
