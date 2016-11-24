@@ -2,7 +2,7 @@
 @c %**start of header
 @setfilename multiboot.info
 @include version.texi
-@settitle Multiboot Specification version @value{VERSION}
+@settitle Multiboot2 Specification version @value{VERSION}
 @c Unify all our little indices for now.
 @syncodeindex fn cp
 @syncodeindex vr cp
@@ -47,12 +47,12 @@ versions.
 
 @dircategory Kernel
 @direntry
-* Multiboot Specification: (multiboot).		Multiboot Specification.
+* Multiboot2 Specification: (Multiboot2).		Multiboot2 Specification.
 @end direntry
 
 @titlepage
 @sp 10
-@title The Multiboot Specification version @value{VERSION}
+@title The Multiboot2 Specification version @value{VERSION}
 @author Yoshinori K. Okuji, Bryan Ford, Erich Stefan Boleyn, Kunihiro Ishiguro, Vladimir 'phcoder' Serbinenko
 @page
 @vskip 0pt plus 1filll
@@ -64,9 +64,9 @@ versions.
 
 @ifnottex
 @node Top
-@top Multiboot Specification
+@top Multiboot2 Specification
 
-This file documents Multiboot Specification, the proposal for the boot
+This file documents Multiboot2 Specification, the proposal for the boot
 sequence standard. This edition documents version @value{VERSION}.
 
 @insertcopying
@@ -83,9 +83,9 @@ sequence standard. This edition documents version @value{VERSION}.
 
 
 @node Overview
-@chapter Introduction to Multiboot Specification
+@chapter Introduction to Multiboot2 Specification
 
-This chapter describes some rough information on the Multiboot
+This chapter describes some rough information on the Multiboot2
 Specification. Note that this is not a part of the specification itself.
 
 @menu
@@ -100,7 +100,7 @@ Specification. Note that this is not a part of the specification itself.
 
 
 @node Motivation
-@section The background of Multiboot Specification
+@section The background of Multiboot2 Specification
 
 Every operating system ever created tends to have its own boot loader.
 Installing a new operating system on a machine generally involves
@@ -209,13 +209,13 @@ existence in order to load the OS image --- otherwise the boot loader
 effectively becomes operating system specific again.
 
 This specification adopts a compromise solution to this
-problem. Multiboot-compliant OS images always contain a magic
-@dfn{Multiboot header} (@pxref{OS image format}), which allows the boot
+problem. Multiboot2-compliant OS images always contain a magic
+@dfn{Multiboot2 header} (@pxref{OS image format}), which allows the boot
 loader to load the image without having to understand numerous a.out
 variants or other executable formats. This magic header does not need to
 be at the very beginning of the executable file, so kernel images can
 still conform to the local a.out format variant in addition to being
-Multiboot-compliant.
+Multiboot2-compliant.
 
 
 @node Boot modules
@@ -246,7 +246,7 @@ because some operating systems will be unable to boot without them.
 @item must
 We use the term @dfn{must}, when any boot loader or OS image needs to
 follow a rule --- otherwise, the boot loader or OS image is @emph{not}
-Multiboot-compliant.
+Multiboot2-compliant.
 
 @item should
 We use the term @dfn{should}, when any boot loader or OS image is
@@ -263,7 +263,7 @@ consist of several stages, but that is an implementation detail not
 relevant to this specification. Only the @emph{final} stage of the boot
 loader --- the stage that eventually transfers control to an operating
 system --- must follow the rules specified in this document in order
-to be @dfn{Multiboot-compliant}; earlier boot loader stages may be
+to be @dfn{Multiboot2-compliant}; earlier boot loader stages may be
 designed in whatever way is most convenient.
 
 @item OS image, kernel
@@ -278,10 +278,10 @@ Other auxiliary files that a boot loader loads into memory along with
 an OS image, but does not interpret in any way other than passing their
 locations to the operating system when it is invoked.
 
-@item Multiboot-compliant
+@item Multiboot2-compliant
 A boot loader or an OS image which follows the rules defined as
-@dfn{must} is Multiboot-compliant. When this specification specifies a
-rule as @dfn{should} or @dfn{may}, a Multiboot-complaint boot loader/OS
+@dfn{must} is Multiboot2-compliant. When this specification specifies a
+rule as @dfn{should} or @dfn{may}, a Multiboot2-complaint boot loader/OS
 image doesn't need to follow the rule.
 
 @item u8
@@ -303,7 +303,7 @@ little-endian, u64 is coded in little-endian.
 
 
 @node Specification
-@chapter The exact definitions of Multiboot Specification
+@chapter The exact definitions of Multiboot2 Specification
 
 There are three main aspects of a boot loader/OS image interface:
 
@@ -336,17 +336,17 @@ linked at a non-default load address to avoid loading on top of the
 @sc{pc}'s I/O region or other reserved areas, and of course it should
 not use shared libraries or other fancy features.
 
-An OS image must contain an additional header called @dfn{Multiboot
+An OS image must contain an additional header called @dfn{Multiboot2
 header}, besides the headers of the format used by the OS image. The
-Multiboot header must be contained completely within the first 32768
+Multiboot2 header must be contained completely within the first 32768
 bytes of the OS image, and must be 64-bit aligned. In
 general, it should come @emph{as early as possible}, and may be
 embedded in the beginning of the text segment after the @emph{real}
 executable header.
 
 @menu
-* Header layout::               The layout of Multiboot header
-* Header magic fields::         The magic fields of Multiboot header
+* Header layout::               The layout of Multiboot2 header
+* Header magic fields::         The magic fields of Multiboot2 header
 * Header tags::
 * Information request header tag::
 * Address header tag::       
@@ -357,9 +357,9 @@ executable header.
 
 
 @node Header layout
-@subsection The layout of Multiboot header
+@subsection The layout of Multiboot2 header
 
-The layout of the Multiboot header must be as follows:
+The layout of the Multiboot2 header must be as follows:
 
 @multitable @columnfractions .1 .1 .2 .5
 @item Offset @tab Type  @tab Field Name   @tab Note
@@ -376,7 +376,7 @@ On bi-endian platforms native-endianness means the endiannes OS image starts in.
 
 
 @node Header magic fields
-@subsection The magic fields of Multiboot header
+@subsection The magic fields of Multiboot2 header
 
 @table @samp
 @item magic
@@ -391,7 +391,7 @@ recieve the same ID. @samp{0} means 32-bit (protected) mode of i386.
 @samp{4} means 32-bit MIPS.
 
 @item header_length
-The field @samp{header_length} specifies the Length of multiboot header
+The field @samp{header_length} specifies the Length of Multiboot2 header
 in bytes including magic fields.
 
 
@@ -424,7 +424,7 @@ lacks relevant support.
 Tags are terminated by a tag of type @samp{0} and size @samp{8}.
 
 @node Information request header tag
-@subsection Multiboot information request
+@subsection Multiboot2 information request
 
 @example
 @group
@@ -449,7 +449,7 @@ actually be present. E.g. on a videoless system even if you requested tag
 
 
 @node Address header tag
-@subsection The address tag of Multiboot header
+@subsection The address tag of Multiboot2 header
 
 @example
 @group
@@ -470,7 +470,7 @@ The meaning of each is as follows:
 
 @table @code
 @item header_addr
-Contains the address corresponding to the beginning of the Multiboot
+Contains the address corresponding to the beginning of the Multiboot2
 header --- the physical memory location at which the magic value is
 supposed to be loaded. This field serves to @dfn{synchronize} the
 mapping between OS image offsets and physical memory addresses.
@@ -500,7 +500,7 @@ assumes that no bss segment is present.
 
 @end table
 
-@subsection The entry address tag of Multiboot header
+@subsection The entry address tag of Multiboot2 header
 
 @example
 @group
@@ -542,7 +542,7 @@ at least one of supported consoles must be present and information about it must
 If bit @samp{1} of @samp{console_flags} is set it
 indicates that the OS image has EGA text support.
 
-@subsection The framebuffer tag of Multiboot header
+@subsection The framebuffer tag of Multiboot2 header
 
 @example
 @group
@@ -624,11 +624,11 @@ must have the following state:
 @item R4 (also known as A0)
 Must contain the magic value @samp{0x36d76289}; the presence of this
 value indicates to the operating system that it was loaded by a
-Multiboot-compliant boot loader (e.g. as opposed to another type of
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
 boot loader that the operating system can also be loaded from).
 
 @item R5 (also known as A1)
-Must contain the 32-bit physical address of the Multiboot
+Must contain the 32-bit physical address of the Multiboot2
 information structure provided by the boot loader (@pxref{Boot
 information format}).
 @end table
@@ -651,11 +651,11 @@ must have the following state:
 @item EAX
 Must contain the magic value @samp{0x36d76289}; the presence of this
 value indicates to the operating system that it was loaded by a
-Multiboot-compliant boot loader (e.g. as opposed to another type of
+Multiboot2-compliant boot loader (e.g. as opposed to another type of
 boot loader that the operating system can also be loaded from).
 
 @item EBX
-Must contain the 32-bit physical address of the Multiboot
+Must contain the 32-bit physical address of the Multiboot2
 information structure provided by the boot loader (@pxref{Boot
 information format}).
 
@@ -708,13 +708,13 @@ On EFI system boot services must be terminated.
 @subsection Boot information format
 
 Upon entry to the operating system, the @code{EBX} register contains the
-physical address of a @dfn{Multiboot information} data structure,
+physical address of a @dfn{Multiboot2 information} data structure,
 through which the boot loader communicates vital information to the
 operating system. The operating system can use or ignore any parts of
 the structure as it chooses; all information passed by the boot loader
 is advisory only.
 
-The Multiboot information structure and its related substructures may be
+The Multiboot2 information structure and its related substructures may be
 placed anywhere in memory by the boot loader (with the exception of the
 memory reserved for the kernel and boot modules, of course). It is the
 operating system's responsibility to avoid overwriting this memory until
@@ -1184,14 +1184,14 @@ loader writers.
 @node Notes on PC
 @section Notes on PC
 
-In reference to bit 0 of the @samp{flags} parameter in the Multiboot
+In reference to bit 0 of the @samp{flags} parameter in the Multiboot2
 information structure, if the bootloader in question uses older
 @sc{bios} interfaces, or the newest ones are not available (see
 description about bit 6), then a maximum of either 15 or 63 megabytes of
 memory may be reported. It is @emph{highly} recommended that boot
 loaders perform a thorough memory probe.
 
-In reference to bit 1 of the @samp{flags} parameter in the Multiboot
+In reference to bit 1 of the @samp{flags} parameter in the Multiboot2
 information structure, it is recognized that determination of which
 @sc{bios} drive maps to which device driver in an operating system is
 non-trivial, at best. Many kludges have been made to various operating
@@ -1200,7 +1200,7 @@ many conditions. To encourage the use of general-purpose solutions to
 this problem, there are 2 @sc{bios} device mapping techniques
 (@pxref{BIOS device mapping techniques}). 
 
-In reference to bit 6 of the @samp{flags} parameter in the Multiboot
+In reference to bit 6 of the @samp{flags} parameter in the Multiboot2
 information structure, it is important to note that the data structure
 used there (starting with @samp{BaseAddrLow}) is the data returned by
 the INT 15h, AX=E820h --- Query System Address Map call. See @xref{Query
@@ -1300,18 +1300,18 @@ logically numbered devices on the controller.
 @node Example OS code
 @section Example OS code
 
-In this distribution, the example Multiboot kernel @file{kernel} is
-included. The kernel just prints out the Multiboot information structure
+In this distribution, the example Multiboot2 kernel @file{kernel} is
+included. The kernel just prints out the Multiboot2 information structure
 on the screen, so you can make use of the kernel to test a
-Multiboot-compliant boot loader and for reference to how to implement a
-Multiboot kernel. The source files can be found under the directory
-@file{doc} in the Multiboot source distribution.
+Multiboot2-compliant boot loader and for reference to how to implement a
+Multiboot2 kernel. The source files can be found under the directory
+@file{doc} in the Multiboot2 source distribution.
 
 The kernel @file{kernel} consists of only three files: @file{boot.S},
 @file{kernel.c} and @file{multiboot2.h}. The assembly source
 @file{boot.S} is written in GAS (@pxref{Top, , GNU assembler, as.info,
-The GNU assembler}), and contains the Multiboot information structure to
-comply with the specification. When a Multiboot-compliant boot loader
+The GNU assembler}), and contains the Multiboot2 information structure to
+comply with the specification. When a Multiboot2-compliant boot loader
 loads and execute it, it initialize the stack pointer and @code{EFLAGS},
 and then call the function @code{cmain} defined in @file{kernel.c}. If
 @code{cmain} returns to the callee, then it shows a message to inform
@@ -1320,14 +1320,14 @@ key. The file @file{kernel.c} contains the function @code{cmain},
 which checks if the magic number passed by the boot loader is valid and
 so on, and some functions to print messages on the screen. The file
 @file{multiboot2.h} defines some macros, such as the magic number for the
-Multiboot header, the Multiboot header structure and the Multiboot
+Multiboot2 header, the Multiboot2 header structure and the Multiboot2
 information structure.
 
 @menu
 * multiboot2.h::                 
 * boot.S::                      
 * kernel.c::                    
-* Other Multiboot kernels::     
+* Other Multiboot2 kernels::
 @end menu
 
 
@@ -1361,10 +1361,10 @@ And, in the file @file{kernel.c}:
 @end example
 
 
-@node Other Multiboot kernels
-@subsection Other Multiboot kernels
+@node Other Multiboot2 kernels
+@subsection Other Multiboot2 kernels
 
-Other useful information should be available in Multiboot kernels, such
+Other useful information should be available in Multiboot2 kernels, such
 as GNU Mach and Fiasco @url{http://os.inf.tu-dresden.de/fiasco/}. And,
 it is worth mentioning the OSKit
 @url{http://www.cs.utah.edu/projects/flux/oskit/}, which provides a
@@ -1375,7 +1375,7 @@ library supporting the specification.
 @section Example boot loader code
 
 The GNU GRUB (@pxref{Top, , GRUB, grub.info, The GRUB manual}) project
-is a Multiboot-compliant boot loader, supporting all required and
+is a Multiboot2-compliant boot loader, supporting all required and
 many optional features present in this specification. A public release has
 not been made, but the test release is available from:
 
@@ -1392,14 +1392,14 @@ more information.
 @item 0.7
 @itemize @bullet
 @item
-@dfn{Multiboot Standard} is renamed to @dfn{Multiboot Specification}.
+@dfn{Multiboot2 Standard} is renamed to @dfn{Multiboot2 Specification}.
 
 @item
-Graphics fields are added to Multiboot header.
+Graphics fields are added to Multiboot2 header.
 
 @item
 BIOS drive information, BIOS configuration table, the name of a boot
-loader, APM information, and graphics information are added to Multiboot
+loader, APM information, and graphics information are added to Multiboot2
 information.
 
 @item
@@ -1413,7 +1413,7 @@ The maintainer changes to the GNU GRUB maintainer team
 @email{bug-grub@@gnu.org}, from Bryan Ford and Erich Stefan Boleyn.
 
 @item
-The byte order of the @samp{boot_device} in Multiboot information is
+The byte order of the @samp{boot_device} in Multiboot2 information is
 reversed. This was a mistake.
 
 @item
