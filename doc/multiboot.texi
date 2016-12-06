@@ -299,9 +299,6 @@ little-endian, u32 is coded in little-endian.
 The type of unsigned 64-bit data. Because the target architecture is
 little-endian, u64 is coded in little-endian.
 
-@item u_phys
-The type of unsigned data of the same size as target architecture physical address size.
-
 @item u_virt
 The type of unsigned data of the same size as target architecture virtual address size.
 
@@ -840,8 +837,8 @@ zero-terminated UTF-8 string.
         +-------------------+
 u32     | type = 3          |
 u32     | size              |
-u_phys  | mod_start         |
-u_phys  | mod_end           |
+u32     | mod_start         |
+u32     | mod_end           |
 u8[n]   | string            |   
         +-------------------+
 @end group
@@ -850,8 +847,8 @@ u8[n]   | string            |
 This tag indicates to the kernel what boot module was loaded along with the
 kernel image, and where it can be found.
 
-The @samp{mod_start} and @samp{mod_end} contain the start and end addresses of the boot
-module itself. The @samp{string} field provides an arbitrary string to
+The @samp{mod_start} and @samp{mod_end} contain the start and end physical addresses
+of the boot module itself. The @samp{string} field provides an arbitrary string to
 be associated with that particular boot module; it is a zero-terminated
 UTF-8 string, just like the kernel command line. Typically the
 string might be a command line (e.g. if the operating system treats boot
