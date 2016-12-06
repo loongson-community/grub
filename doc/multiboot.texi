@@ -299,9 +299,6 @@ little-endian, u32 is coded in little-endian.
 The type of unsigned 64-bit data. Because the target architecture is
 little-endian, u64 is coded in little-endian.
 
-@item u_virt
-The type of unsigned data of the same size as target architecture virtual address size.
-
 @end table
 
 
@@ -407,7 +404,7 @@ and @samp{header_length}), must have a 32-bit unsigned sum of zero.
 
 @node Header tags
 @subsection General tag structure
-Tags constitutes a buffer of structures following each other padded on @samp{u_virt} size.
+Tags constitutes a buffer of structures following each other padded on @samp{u32} size.
 Every structure has following format:
 
 @example
@@ -460,10 +457,10 @@ actually be present. E.g. on a videoless system even if you requested tag
 u16     | type = 2          |
 u16     | flags             |
 u32     | size              |
-u_virt  | header_addr       |
-u_virt  | load_addr         |
-u_virt  | load_end_addr     |
-u_virt  | bss_end_addr      |
+u32     | header_addr       |
+u32     | load_addr         |
+u32     | load_end_addr     |
+u32     | bss_end_addr      |
         +-------------------+
 @end group
 @end example
@@ -511,7 +508,7 @@ assumes that no bss segment is present.
 u16     | type = 3          |
 u16     | flags             |
 u32     | size              |
-u_virt  | entry_addr        |
+u32     | entry_addr        |
         +-------------------+
 @end group
 @end example
