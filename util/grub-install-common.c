@@ -665,6 +665,7 @@ static struct
     [GRUB_INSTALL_PLATFORM_IA64_EFI] =         { "ia64",    "efi"       },
     [GRUB_INSTALL_PLATFORM_ARM_EFI] =          { "arm",     "efi"       },
     [GRUB_INSTALL_PLATFORM_ARM64_EFI] =        { "arm64",   "efi"       },
+    [GRUB_INSTALL_PLATFORM_MIPS64EL_EFI] =     { "mips64el","efi"       },
     [GRUB_INSTALL_PLATFORM_ARM_UBOOT] =        { "arm",     "uboot"     },
   }; 
 

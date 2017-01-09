@@ -21,7 +21,7 @@
 #define GRUB_SERIAL_HEADER	1
 
 #include <grub/types.h>
-#if defined(__mips__) || defined (__i386__) || defined (__x86_64__)
+#if (defined(__mips__) && _MIPS_SIM != _ABI64) || defined (__i386__) || defined (__x86_64__)
 #include <grub/cpu/io.h>
 #endif
 #include <grub/usb.h>
@@ -86,7 +86,7 @@ struct grub_serial_port
    */
   union
   {
-#if defined(__mips__) || defined (__i386__) || defined (__x86_64__)
+#if (defined(__mips__) && _MIPS_SIM != _ABI64) || defined (__i386__) || defined (__x86_64__)
     grub_port_t port;
 #endif
     struct
@@ -175,7 +175,7 @@ grub_serial_config_defaults (struct grub_serial_port *port)
   return port->driver->configure (port, &config);
 }
 
-#if defined(__mips__) || defined (__i386__) || defined (__x86_64__)
+#if (defined(__mips__) && _MIPS_SIM != _ABI64) || defined (__i386__) || defined (__x86_64__)
 void grub_ns8250_init (void);
 char *grub_serial_ns8250_add_port (grub_port_t port);
 #endif

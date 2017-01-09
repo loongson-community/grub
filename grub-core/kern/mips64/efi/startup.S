@@ -1,7 +1,6 @@
-/* efi.c - generic EFI support */
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2006,2007,2008,2009,2010  Free Software Foundation, Inc.
+ *  Copyright (C) 2013  Free Software Foundation, Inc.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,23 +16,32 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <grub/efi/api.h>
-#include <grub/efi/efi.h>
-#include <grub/misc.h>
-#include <grub/mm.h>
-#include <grub/kernel.h>
-#include <grub/acpi.h>
-#include <grub/loader.h>
+#include <grub/symbol.h>
 
-void
-grub_halt (void)
-{
-  grub_machine_fini (GRUB_LOADER_FLAG_NORETURN);
-#if !defined(__ia64__) && !defined(__arm__) && !defined(__aarch64__) && !defined(__mips__)
-  grub_acpi_halt ();
-#endif
-  efi_call_4 (grub_efi_system_table->runtime_services->reset_system,
-              GRUB_EFI_RESET_SHUTDOWN, GRUB_EFI_SUCCESS, 0, NULL);
+	.file 	"startup.S"
+	.text
 
-  while (1);
-}
+	.set		push
+	.align		4
+
+FUNCTION(_start)
+	/*
+	 *  EFI_SYSTEM_TABLE and EFI_HANDLE are passed in a1/a0.
+	 */
+	daddiu		$sp, -16
+	sd		$ra, ($sp)
+
+	dla		$a2, grub_efi_image_handle
+	sd		$a0, ($a2)
+	dla		$a2, grub_efi_system_table
+	sd		$a1, ($a2)
+
+	jal		grub_main
+
+1:
+	ld		$ra, ($sp)
+	daddiu		$sp, 16
+	jr		$ra
+
+	.set		pop
+

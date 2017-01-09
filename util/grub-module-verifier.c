@@ -118,6 +118,19 @@ struct grub_module_verifier_arch archs[] = {
       -1
     }
   },
+  { "mips64el", 8, 0, EM_MIPS, GRUB_MODULE_VERIFY_SUPPORTS_REL | GRUB_MODULE_VERIFY_SUPPORTS_RELA, (int[]){
+      R_MIPS_64,
+      R_MIPS_32,
+      R_MIPS_26,
+      R_MIPS_LO16,
+      R_MIPS_HI16,
+      R_MIPS_HIGHER,
+      R_MIPS_HIGHEST,
+      -1
+    }, (int[]){
+      -1
+    }
+  },
 };
 
 struct platform_whitelist {

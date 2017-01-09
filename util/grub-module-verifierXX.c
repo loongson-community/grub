@@ -296,7 +296,14 @@ section_check_relocations (const struct grub_module_verifier_arch *arch, void *e
       if (target_seg_size < grub_target_to_host (rel->r_offset))
 	grub_util_error ("reloc offset is out of the segment");
 
-      grub_uint32_t type = ELF_R_TYPE (grub_target_to_host (rel->r_info));
+      grub_size_t r_info;
+      if (arch->machine == EM_MIPS && arch->voidp_sizeof == 8)
+        r_info = ((grub_uint64_t) rel->r_info << 32) |
+                  (grub_uint32_t) grub_be_to_cpu64 (rel->r_info);
+      else
+        r_info = grub_target_to_host (rel->r_info);
+
+      grub_uint32_t type = ELF_R_TYPE (r_info);
 
       if (arch->machine == EM_SPARCV9)
 	type &= 0xff;
@@ -313,7 +320,7 @@ section_check_relocations (const struct grub_module_verifier_arch *arch, void *e
 	  break;
       if (arch->short_relocations[i] == -1)
 	grub_util_error ("unsupported relocation 0x%x", type);
-      sym = (Elf_Sym *) ((char *) symtab + symtabentsize * ELF_R_SYM (grub_target_to_host (rel->r_info)));
+      sym = (Elf_Sym *) ((char *) symtab + symtabentsize * ELF_R_SYM (r_info));
 
       if (is_symbol_local (sym))
 	continue;
