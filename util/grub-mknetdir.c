@@ -107,7 +107,8 @@ static const struct
     [GRUB_INSTALL_PLATFORM_X86_64_EFI] = { "x86_64-efi", "efinet", ".efi" },
     [GRUB_INSTALL_PLATFORM_IA64_EFI] = { "ia64-efi", "efinet", ".efi" },
     [GRUB_INSTALL_PLATFORM_ARM_EFI] = { "arm-efi", "efinet", ".efi" },
-    [GRUB_INSTALL_PLATFORM_ARM64_EFI] = { "arm64-efi", "efinet", ".efi" }
+    [GRUB_INSTALL_PLATFORM_ARM64_EFI] = { "arm64-efi", "efinet", ".efi" },
+    [GRUB_INSTALL_PLATFORM_MIPS64EL_EFI] = { "mips64el-efi", "efinet", ".efi" }
   };
 
 static void

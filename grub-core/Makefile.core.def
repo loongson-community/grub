@@ -93,6 +93,9 @@ kernel = {
   arm_uboot_ldflags       = '-Wl,-r,-d';
   arm_uboot_stripflags    = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version';
 
+  mips64_efi_ldflags          = '-Wl,-r,-d';
+  mips64_efi_stripflags       = '--strip-unneeded -K start -R .note -R .comment -R .note.gnu.gold-version -R .eh_frame -R .MIPS.abiflags';
+
   i386_pc_startup = kern/i386/pc/startup.S;
   i386_efi_startup = kern/i386/efi/startup.S;
   x86_64_efi_startup = kern/x86_64/efi/startup.S;
@@ -103,6 +106,7 @@ kernel = {
   i386_coreboot_startup = kern/i386/coreboot/startup.S;
   i386_multiboot_startup = kern/i386/coreboot/startup.S;
   mips_startup = kern/mips/startup.S;
+  mips64_efi_startup = kern/mips64/efi/startup.S;
   sparc64_ieee1275_startup = kern/sparc64/ieee1275/crt0.S;
   powerpc_ieee1275_startup = kern/powerpc/ieee1275/startup.S;
   arm_uboot_startup = kern/arm/uboot/startup.S;
@@ -262,6 +266,12 @@ kernel = {
   extra_dist = video/sm712_init.c;
   extra_dist = video/sis315_init.c;
   mips_loongson = commands/keylayouts.c;
+
+  mips64 = kern/mips64/init.c;
+  mips64 = kern/mips64/dl.c;
+  mips64 = kern/mips64/cache.S;
+  mips64 = kern/generic/rtc_get_time_ms.c;
+  mips64_efi = kern/mips64/efi/init.c;
 
   powerpc_ieee1275 = kern/powerpc/cache.S;
   powerpc_ieee1275 = kern/powerpc/dl.c;
@@ -750,6 +760,7 @@ module = {
   enable = sparc64_ieee1275;
   enable = powerpc_ieee1275;
   enable = mips_arc;
+  enable = mips64_efi;
   enable = ia64_efi;
   enable = arm_efi;
   enable = arm64_efi;
@@ -853,6 +864,7 @@ module = {
   mips_arc = lib/mips/arc/reboot.c;
   mips_loongson = lib/mips/loongson/reboot.c;
   mips_qemu_mips = lib/mips/qemu_mips/reboot.c;
+  mips64_efi = lib/efi/reboot.c;
   xen = lib/xen/reboot.c;
   uboot = lib/uboot/reboot.c;
   common = commands/reboot.c;
@@ -1762,6 +1774,7 @@ module = {
   enable = arm_efi;
   enable = arm64_efi;
   enable = mips;
+  enable = mips64_efi;
 };
 
 module = {

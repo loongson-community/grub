@@ -313,7 +313,11 @@ get_default_platform (void)
 #elif defined (__sparc__) || defined (__sparc64__)
    return "sparc64-ieee1275";
 #elif defined (__MIPSEL__)
+#if _MIPS_SIM == _ABI64
+   return "mips64el-efi";
+#else
    return "mipsel-loongson";
+#endif
 #elif defined (__MIPSEB__)
    return "mips-arc";
 #elif defined (__ia64__)
@@ -477,6 +481,7 @@ have_bootdev (enum grub_install_plat pl)
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_I386_IEEE1275:
     case GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275:
     case GRUB_INSTALL_PLATFORM_POWERPC_IEEE1275:
@@ -898,6 +903,7 @@ main (int argc, char *argv[])
     case GRUB_INSTALL_PLATFORM_X86_64_EFI:
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
     case GRUB_INSTALL_PLATFORM_I386_IEEE1275:
     case GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275:
@@ -941,6 +947,7 @@ main (int argc, char *argv[])
     case GRUB_INSTALL_PLATFORM_X86_64_EFI:
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
     case GRUB_INSTALL_PLATFORM_I386_IEEE1275:
     case GRUB_INSTALL_PLATFORM_ARM_UBOOT:
@@ -992,6 +999,7 @@ main (int argc, char *argv[])
     case GRUB_INSTALL_PLATFORM_X86_64_EFI:
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
       is_efi = 1;
       break;
@@ -1105,6 +1113,9 @@ main (int argc, char *argv[])
 	    case GRUB_INSTALL_PLATFORM_ARM64_EFI:
 	      efi_file = "BOOTAA64.EFI";
 	      break;
+	    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+	      efi_file = "BOOTMIPS64EL.EFI";
+	      break;
 	    default:
 	      grub_util_error ("%s", _("You've found a bug"));
 	      break;
@@ -1131,6 +1142,9 @@ main (int argc, char *argv[])
 	      break;
 	    case GRUB_INSTALL_PLATFORM_ARM64_EFI:
 	      efi_file = "grubaa64.efi";
+	      break;
+	    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
+	      efi_file = "grubmips64el.efi";
 	      break;
 	    default:
 	      efi_file = "grub.efi";
@@ -1434,6 +1448,7 @@ main (int argc, char *argv[])
 		  case GRUB_INSTALL_PLATFORM_X86_64_EFI:
 		  case GRUB_INSTALL_PLATFORM_ARM_EFI:
 		  case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+		  case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
 		  case GRUB_INSTALL_PLATFORM_IA64_EFI:
 		    g = grub_util_guess_efi_drive (*curdev);
 		    break;
@@ -1524,6 +1539,7 @@ main (int argc, char *argv[])
     case GRUB_INSTALL_PLATFORM_X86_64_EFI:
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
       core_name = "core.efi";
       snprintf (mkimage_target, sizeof (mkimage_target),
@@ -1625,6 +1641,7 @@ main (int argc, char *argv[])
       break;
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
     case GRUB_INSTALL_PLATFORM_MIPSEL_QEMU_MIPS:
     case GRUB_INSTALL_PLATFORM_MIPS_QEMU_MIPS:
@@ -1854,6 +1871,7 @@ main (int argc, char *argv[])
       /* FALLTHROUGH */
     case GRUB_INSTALL_PLATFORM_ARM_EFI:
     case GRUB_INSTALL_PLATFORM_ARM64_EFI:
+    case GRUB_INSTALL_PLATFORM_MIPS64EL_EFI:
     case GRUB_INSTALL_PLATFORM_IA64_EFI:
       {
 	char *dst = grub_util_path_concat (2, efidir, efi_file);

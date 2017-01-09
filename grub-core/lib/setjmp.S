@@ -5,7 +5,11 @@
 #elif defined(__sparc__)
 #include "./sparc64/setjmp.S"
 #elif defined(__mips__)
+#if _MIPS_SIM == _ABI64
+#include "./mips64/setjmp.S"
+#else
 #include "./mips/setjmp.S"
+#endif
 #elif defined(__powerpc__) || defined(__PPC__)
 #include "./powerpc/setjmp.S"
 #elif defined(__ia64__)

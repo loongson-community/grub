@@ -769,7 +769,11 @@ SUFFIX (relocate_addresses) (Elf_Ehdr *e, Elf_Shdr *sections,
 	    offset = grub_target_to_host (r->r_offset);
 	    target = SUFFIX (get_target_address) (e, target_section,
 						  offset, image_target);
-	    info = grub_target_to_host (r->r_info);
+	    if (image_target->elf_target == EM_MIPS && image_target->voidp_sizeof == 8)
+	      info = ((grub_uint64_t) r->r_info << 32) |
+		      (grub_uint32_t) grub_be_to_cpu64 (r->r_info);
+	    else
+	      info = grub_target_to_host (r->r_info);
 	    sym_addr = SUFFIX (get_symbol_address) (e, symtab_section,
 						    ELF_R_SYM (info), image_target);
 
@@ -1052,6 +1056,66 @@ SUFFIX (relocate_addresses) (Elf_Ehdr *e, Elf_Shdr *sections,
 		   }
 	       break;
 	       }
+	     case EM_MIPS:
+	       {
+		 sym_addr += addend;
+		 switch (ELF_R_TYPE (info))
+		   {
+		   case R_MIPS_NONE:
+		     break;
+		   case R_MIPS_64:
+		     {
+		       *target = grub_host_to_target64 (grub_target_to_host64 (*target) + sym_addr);
+		     }
+		     break;
+		   case R_MIPS_32:
+		     {
+		       grub_uint32_t *t32 = (grub_uint32_t *) target;
+		       *t32 = grub_host_to_target64 (grub_target_to_host32 (*t32) + sym_addr);
+		     }
+		     break;
+		   case R_MIPS_26:
+		     {
+		       grub_uint32_t *t32 = (grub_uint32_t *) target;
+		       grub_addr_t addr = grub_host_to_target64 (sym_addr);
+		       *t32 = ((*t32) & 0xfc000000U) | ((addr >> 2) & 0x3ffffffUL);
+		     }
+		     break;
+		   case R_MIPS_LO16:
+		     {
+		       grub_int16_t *t16 = (grub_int16_t *) target;
+		       grub_addr_t addr = grub_host_to_target64 (sym_addr);
+		       *t16 = (grub_int16_t) addr;
+		     }
+		     break;
+		   case R_MIPS_HI16:
+		     {
+		       grub_int16_t *t16 = (grub_int16_t *) target;
+		       grub_addr_t addr = grub_host_to_target64 (sym_addr);
+		       *t16 = (grub_int16_t) ((addr + 0x8000UL) >> 16);
+		     }
+		     break;
+		   case R_MIPS_HIGHER:
+		     {
+		       grub_int16_t *t16 = (grub_int16_t *) target;
+		       grub_addr_t addr = grub_host_to_target64 (sym_addr);
+		       *t16 = (grub_int16_t) ((addr + 0x80008000UL) >> 32);
+		     }
+		     break;
+		   case R_MIPS_HIGHEST:
+		     {
+		       grub_uint16_t *t16 = (grub_uint16_t *) target;
+		       grub_addr_t addr = grub_host_to_target64 (sym_addr);
+		       *t16 = (grub_uint16_t) ((addr + 0x800080008000UL) >> 48);
+		     }
+		     break;
+		   default:
+		     grub_util_error (_("relocation 0x%x is not implemented yet"),
+				      (unsigned int) ELF_R_TYPE (info));
+		     break;
+		   }
+	       break;
+	       }
 #endif
 #if defined(MKIMAGE_ELF32)
 	     case EM_ARM:
@@ -1177,7 +1241,7 @@ add_fixup_entry (struct fixup_block_list **cblock, grub_uint16_t type,
   /* First, check if it is necessary to write out the current block.  */
   if ((*cblock)->state)
     {
-      if (flush || addr < b->page_rva || b->page_rva + 0x1000 <= addr)
+      if (flush || (type && (addr < b->page_rva || b->page_rva + 0x1000 <= addr)))
 	{
 	  grub_uint32_t size;
 
@@ -1240,7 +1304,8 @@ add_fixup_entry (struct fixup_block_list **cblock, grub_uint16_t type,
 
 	  /* The spec does not mention the requirement of a Page RVA.
 	     Here, align the address with a 4K boundary for safety.  */
-	  b->page_rva = (addr & ~(0x1000 - 1));
+	  if (type)
+	    b->page_rva = (addr & ~(0x1000 - 1));
 	  b->block_size = sizeof (*b);
 	}
 
@@ -1250,7 +1315,7 @@ add_fixup_entry (struct fixup_block_list **cblock, grub_uint16_t type,
 
       /* Add a new entry.  */
       cur_index = ((b->block_size - sizeof (*b)) >> 1);
-      entry = GRUB_PE32_FIXUP_ENTRY (type, addr - b->page_rva);
+      entry = GRUB_PE32_FIXUP_ENTRY (type, type ? (addr - b->page_rva) : addr);
       b->entries[cur_index] = grub_host_to_target16 (entry);
       b->block_size += 2;
     }
@@ -1296,6 +1361,8 @@ static void
 translate_relocation_pe (struct translate_context *ctx,
 			 Elf_Addr addr,
 			 Elf_Addr info,
+			 Elf_Addr sym_addr,
+			 Elf_Addr addend,
 			 const struct grub_install_image_target_desc *image_target)
 {
   /* Necessary to relocate only absolute addresses.  */
@@ -1406,7 +1473,162 @@ translate_relocation_pe (struct translate_context *ctx,
 	  break;
 	}
       break;
+#if defined(MKIMAGE_ELF64)
+    case EM_MIPS:
+      switch (ELF_R_TYPE (info))
+	{
+	case R_MIPS_64:
+	  {
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_DIR64,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	case R_MIPS_32:
+#if 0
+	  {
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_HIGHLOW,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	  }
+#endif
+	  break;
+	case R_MIPS_26:
+	  {
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_MIPS_JMPADDR,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	case R_MIPS_LO16:
+	  {
+	    Elf_Addr target = sym_addr + addend;
+
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_MIPS_LOW,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	    /* Hi */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x8000UL) >> 16),
+				 0, ctx->current_address,
+				 image_target);
+	    /* Higher */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x80008000UL) >> 32),
+				 0, ctx->current_address,
+				 image_target);
+	    /* Highest */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_uint16_t) ((target & 0x800080008000UL) >> 48),
+				 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	case R_MIPS_HI16:
+	  {
+	    Elf_Addr target = sym_addr + addend;
+
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_MIPS_HIGH,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	    /* Lo */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) target,
+				 0, ctx->current_address,
+				 image_target);
+	    /* Higher */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x80008000UL) >> 32),
+				 0, ctx->current_address,
+				 image_target);
+	    /* Highest */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_uint16_t) ((target & 0x800080008000UL) >> 48),
+				 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	case R_MIPS_HIGHER:
+	  {
+	    Elf_Addr target = sym_addr + addend;
+
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_MIPS_HIGHER,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	    /* Lo */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) target,
+				 0, ctx->current_address,
+				 image_target);
+	    /* Hi */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x8000UL) >> 16),
+				 0, ctx->current_address,
+				 image_target);
+	    /* Highest */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_uint16_t) ((target & 0x800080008000UL) >> 48),
+				 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	case R_MIPS_HIGHEST:
+	  {
+	    Elf_Addr target = sym_addr + addend;
+
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst,
+				 GRUB_PE32_REL_BASED_MIPS_HIGHEST,
+				 addr, 0, ctx->current_address,
+				 image_target);
+	    /* Lo */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) target,
+				 0, ctx->current_address,
+				 image_target);
+	    /* Hi */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x8000UL) >> 16),
+				 0, ctx->current_address,
+				 image_target);
+	    /* Higher */
+	    ctx->current_address
+	      = add_fixup_entry (&ctx->lst, 0,
+				 (grub_int16_t) ((target & 0x80008000UL) >> 32),
+				 0, ctx->current_address,
+				 image_target);
+	  }
+	  break;
+	default:
+	  grub_util_error (_("relocation 0x%x is not implemented yet"),
+			   (unsigned int) ELF_R_TYPE (info));
+	  break;
+	}
       break;
+#endif
 #if defined(MKIMAGE_ELF32)
     case EM_ARM:
       switch (ELF_R_TYPE (info))
@@ -1495,10 +1717,12 @@ static void
 translate_relocation (struct translate_context *ctx,
 		      Elf_Addr addr,
 		      Elf_Addr info,
+		      Elf_Addr sym_addr,
+		      Elf_Addr addend,
 		      const struct grub_install_image_target_desc *image_target)
 {
   if (image_target->id == IMAGE_EFI)
-    translate_relocation_pe (ctx, addr, info, image_target);
+    translate_relocation_pe (ctx, addr, info, sym_addr, addend, image_target);
   else
     translate_relocation_raw (ctx, addr, info, image_target);
 }
@@ -1641,11 +1865,16 @@ make_reloc_section (Elf_Ehdr *e, struct grub_mkimage_layout *layout,
     if ((grub_target_to_host32 (s->sh_type) == SHT_REL) ||
         (grub_target_to_host32 (s->sh_type) == SHT_RELA))
       {
-	Elf_Rel *r;
+	Elf_Rela *r;
 	Elf_Word rtab_size, r_size, num_rs;
 	Elf_Off rtab_offset;
+	Elf_Shdr *symtab_section;
 	Elf_Addr section_address;
 	Elf_Word j;
+
+	symtab_section = (Elf_Shdr *) ((char *) sections
+					+ (grub_target_to_host32 (s->sh_link)
+						* section_entsize));
 
 	grub_util_info ("translating the relocation section %s",
 			strtab + grub_le_to_cpu32 (s->sh_name));
@@ -1657,20 +1886,30 @@ make_reloc_section (Elf_Ehdr *e, struct grub_mkimage_layout *layout,
 
 	section_address = section_addresses[grub_le_to_cpu32 (s->sh_info)];
 
-	for (j = 0, r = (Elf_Rel *) ((char *) e + rtab_offset);
+	for (j = 0, r = (Elf_Rela *) ((char *) e + rtab_offset);
 	     j < num_rs;
-	     j++, r = (Elf_Rel *) ((char *) r + r_size))
+	     j++, r = (Elf_Rela *) ((char *) r + r_size))
 	  {
 	    Elf_Addr info;
 	    Elf_Addr offset;
 	    Elf_Addr addr;
+	    Elf_Addr sym_addr;
+	    Elf_Addr addend;
 
 	    offset = grub_target_to_host (r->r_offset);
-	    info = grub_target_to_host (r->r_info);
+	    if (image_target->elf_target == EM_MIPS && image_target->voidp_sizeof == 8)
+	      info = ((grub_uint64_t) r->r_info << 32) |
+		      (grub_uint32_t) grub_be_to_cpu64 (r->r_info);
+	    else
+	      info = grub_target_to_host (r->r_info);
 
+	    sym_addr = SUFFIX (get_symbol_address) (e, symtab_section,
+						    ELF_R_SYM (info), image_target);
+	    addend = (s->sh_type == grub_target_to_host32 (SHT_RELA)) ?
+		grub_target_to_host (r->r_addend) : 0;
 	    addr = section_address + offset;
 
-	    translate_relocation (&ctx, addr, info, image_target);
+	    translate_relocation (&ctx, addr, info, sym_addr, addend, image_target);
 	  }
       }
 

@@ -1,7 +1,6 @@
-/* efi.c - generic EFI support */
 /*
  *  GRUB  --  GRand Unified Bootloader
- *  Copyright (C) 2006,2007,2008,2009,2010  Free Software Foundation, Inc.
+ *  Copyright (C) 2009,2017  Free Software Foundation, Inc.
  *
  *  GRUB is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,23 +16,32 @@
  *  along with GRUB.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <grub/efi/api.h>
-#include <grub/efi/efi.h>
-#include <grub/misc.h>
-#include <grub/mm.h>
 #include <grub/kernel.h>
-#include <grub/acpi.h>
-#include <grub/loader.h>
+#include <grub/env.h>
+#include <grub/time.h>
+#include <grub/cpu/mips.h>
+
+grub_uint32_t grub_arch_cpuclock;
+
+/* FIXME: use interrupt to count high.  */
+grub_uint64_t
+grub_get_rtc (void)
+{
+  static grub_uint32_t high = 0;
+  static grub_uint32_t last = 0;
+  grub_uint32_t low;
+
+  asm volatile ("mfc0 %0, " GRUB_CPU_MIPS_COP0_TIMER_COUNT : "=r" (low));
+  if (low < last)
+    high++;
+  last = low;
+
+  return (((grub_uint64_t) high) << 32) | low;
+}
 
 void
-grub_halt (void)
+grub_timer_init (grub_uint32_t cpuclock)
 {
-  grub_machine_fini (GRUB_LOADER_FLAG_NORETURN);
-#if !defined(__ia64__) && !defined(__arm__) && !defined(__aarch64__) && !defined(__mips__)
-  grub_acpi_halt ();
-#endif
-  efi_call_4 (grub_efi_system_table->runtime_services->reset_system,
-              GRUB_EFI_RESET_SHUTDOWN, GRUB_EFI_SUCCESS, 0, NULL);
-
-  while (1);
+  grub_arch_cpuclock = cpuclock;
+  grub_install_get_time_ms (grub_rtc_get_time_ms);
 }
