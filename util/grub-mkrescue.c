@@ -543,6 +543,7 @@ main (int argc, char *argv[])
 	  || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_RISCV32_EFI]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI]
+	  || source_dirs[GRUB_INSTALL_PLATFORM_MIPS64EL_EFI]
 	  || source_dirs[GRUB_INSTALL_PLATFORM_X86_64_EFI])
 	system_area = SYS_AREA_COMMON;
       else if (source_dirs[GRUB_INSTALL_PLATFORM_SPARC64_IEEE1275])
@@ -742,7 +743,8 @@ main (int argc, char *argv[])
       || source_dirs[GRUB_INSTALL_PLATFORM_ARM_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_ARM64_EFI]
       || source_dirs[GRUB_INSTALL_PLATFORM_RISCV32_EFI]
-      || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI])
+      || source_dirs[GRUB_INSTALL_PLATFORM_RISCV64_EFI]
+      || source_dirs[GRUB_INSTALL_PLATFORM_MIPS64EL_EFI])
     {
       char *efidir = grub_util_make_temporary_dir ();
       char *efidir_efi = grub_util_path_concat (2, efidir, "efi");
@@ -784,6 +786,11 @@ main (int argc, char *argv[])
 
       imgname = grub_util_path_concat (2, efidir_efi_boot, "bootriscv64.efi");
       make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_RISCV64_EFI, "riscv64-efi",
+			     imgname);
+      free (imgname);
+
+      imgname = grub_util_path_concat (2, efidir_efi_boot, "bootmips64el.efi");
+      make_image_fwdisk_abs (GRUB_INSTALL_PLATFORM_MIPS64EL_EFI, "mips64el-efi",
 			     imgname);
       free (imgname);
 

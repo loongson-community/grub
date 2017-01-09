@@ -1730,7 +1730,7 @@ struct grub_efi_rng_protocol
 typedef struct grub_efi_rng_protocol grub_efi_rng_protocol_t;
 
 #if (GRUB_TARGET_SIZEOF_VOID_P == 4) || defined (__ia64__) \
-  || defined (__aarch64__) || defined (__MINGW64__) || defined (__CYGWIN__) \
+  || defined (__aarch64__) || defined(__mips__) || defined (__MINGW64__) || defined (__CYGWIN__) \
   || defined(__riscv)
 
 #define efi_call_0(func)		func()

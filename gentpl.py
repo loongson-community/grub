@@ -29,7 +29,7 @@ import re
 GRUB_PLATFORMS = [ "emu", "i386_pc", "i386_efi", "i386_qemu", "i386_coreboot",
                    "i386_multiboot", "i386_ieee1275", "x86_64_efi",
                    "i386_xen", "x86_64_xen", "i386_xen_pvh",
-                   "mips_loongson", "sparc64_ieee1275",
+                   "mips_loongson", "mips64_efi", "sparc64_ieee1275",
                    "powerpc_ieee1275", "mips_arc", "ia64_efi",
                    "mips_qemu_mips", "arm_uboot", "arm_efi", "arm64_efi",
                    "arm_coreboot", "riscv32_efi", "riscv64_efi" ]
@@ -43,6 +43,7 @@ GROUPS["i386"]     = [ "i386_pc", "i386_efi", "i386_qemu", "i386_coreboot", "i38
 GROUPS["x86_64"]   = [ "x86_64_efi" ]
 GROUPS["x86"]      = GROUPS["i386"] + GROUPS["x86_64"]
 GROUPS["mips"]     = [ "mips_loongson", "mips_qemu_mips", "mips_arc" ]
+GROUPS["mips64"]   = [ "mips64_efi" ]
 GROUPS["sparc64"]  = [ "sparc64_ieee1275" ]
 GROUPS["powerpc"]  = [ "powerpc_ieee1275" ]
 GROUPS["arm"]      = [ "arm_uboot", "arm_efi", "arm_coreboot" ]
@@ -51,7 +52,7 @@ GROUPS["riscv32"]  = [ "riscv32_efi" ]
 GROUPS["riscv64"]  = [ "riscv64_efi" ]
 
 # Groups based on firmware
-GROUPS["efi"]  = [ "i386_efi", "x86_64_efi", "ia64_efi", "arm_efi", "arm64_efi",
+GROUPS["efi"]  = [ "i386_efi", "x86_64_efi", "ia64_efi", "arm_efi", "arm64_efi", "mips64_efi",
 		   "riscv32_efi", "riscv64_efi" ]
 GROUPS["ieee1275"]   = [ "i386_ieee1275", "sparc64_ieee1275", "powerpc_ieee1275" ]
 GROUPS["uboot"] = [ "arm_uboot" ]

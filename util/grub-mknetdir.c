@@ -110,6 +110,7 @@ static const struct
     [GRUB_INSTALL_PLATFORM_ARM64_EFI] = { "arm64-efi", "efinet", ".efi" },
     [GRUB_INSTALL_PLATFORM_RISCV32_EFI] = { "riscv32-efi", "efinet", ".efi" },
     [GRUB_INSTALL_PLATFORM_RISCV64_EFI] = { "riscv64-efi", "efinet", ".efi" },
+    [GRUB_INSTALL_PLATFORM_MIPS64EL_EFI] = { "mips64el-efi", "efinet", ".efi" }
   };
 
 static void
