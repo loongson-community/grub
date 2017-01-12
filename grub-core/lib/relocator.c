@@ -1262,6 +1262,9 @@ grub_relocator_alloc_chunk_addr (struct grub_relocator *rel,
 	      rel->postchunks = chunk->src;
 	    break;
 	  }
+#elif defined(__mips__) && (_MIPS_SIM == _ABI64)
+      if (malloc_in_range (rel, target, max_addr, 8, size, chunk, 1, 0))
+	break;
 #endif
       if (malloc_in_range (rel, target, max_addr, 1, size, chunk, 1, 0))
 	break;

@@ -1539,6 +1539,8 @@ module = {
   efi = lib/efi/relocator.c;
   mips = lib/mips/relocator_asm.S;
   mips = lib/mips/relocator.c;
+  mips64 = lib/mips64/relocator_asm.S;
+  mips64 = lib/mips64/relocator.c;
   powerpc = lib/powerpc/relocator_asm.S;
   powerpc = lib/powerpc/relocator.c;
   xen = lib/xen/relocator.c;
@@ -1551,6 +1553,7 @@ module = {
   extra_dist = kern/powerpc/cache_flush.S;
 
   enable = mips;
+  enable = mips64;
   enable = powerpc;
   enable = x86;
   enable = xen;
