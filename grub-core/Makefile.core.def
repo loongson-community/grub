@@ -272,6 +272,9 @@ kernel = {
   mips64 = kern/mips64/cache.S;
   mips64 = kern/generic/rtc_get_time_ms.c;
   mips64_efi = kern/mips64/efi/init.c;
+  mips64_efi = kern/mips64/efi/loongson.c;
+  mips64_efi = lib/mips64/efi/loongson.c;
+  mips64_efi = lib/mips64/efi/loongson_asm.S;
 
   powerpc_ieee1275 = kern/powerpc/cache.S;
   powerpc_ieee1275 = kern/powerpc/dl.c;
