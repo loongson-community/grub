@@ -578,7 +578,11 @@ grub_efi_mm_init (void)
   /* By default, request a quarter of the available memory.  */
   total_pages = get_total_pages (filtered_memory_map, desc_size,
 				 filtered_memory_map_end);
+#if defined (__mips__) && (_MIPS_SIM == _ABI64)
+  required_pages = (total_pages >> 1);
+#else
   required_pages = (total_pages >> 2);
+#endif
   if (required_pages < BYTES_TO_PAGES (MIN_HEAP_SIZE))
     required_pages = BYTES_TO_PAGES (MIN_HEAP_SIZE);
   else if (required_pages > BYTES_TO_PAGES (MAX_HEAP_SIZE))
