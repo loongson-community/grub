@@ -27,6 +27,7 @@
 #include <grub/misc.h>
 #include <grub/command.h>
 #include <grub/cpu/relocator.h>
+#include <grub/machine/loongson.h>
 #include <grub/memory.h>
 #include <grub/i18n.h>
 #include <grub/lib/cmdline.h>
@@ -49,6 +50,54 @@ static grub_uint8_t *linux_args_addr;
 static grub_off_t rd_addr_arg_off, rd_size_arg_off;
 static int initrd_loaded = 0;
 
+static inline grub_size_t
+page_align (grub_size_t size)
+{
+  return (size + (1 << 12) - 1) & (~((1 << 12) - 1));
+}
+
+/* Find the optimal number of pages for the memory map. Is it better to
+   move this code to efi/mm.c?  */
+static grub_efi_uintn_t
+find_mmap_size (void)
+{
+  static grub_efi_uintn_t mmap_size = 0;
+
+  if (mmap_size != 0)
+    return mmap_size;
+
+  mmap_size = (1 << 12);
+  while (1)
+    {
+      int ret;
+      grub_efi_memory_descriptor_t *mmap;
+      grub_efi_uintn_t desc_size;
+
+      mmap = grub_malloc (mmap_size);
+      if (! mmap)
+	return 0;
+
+      ret = grub_efi_get_memory_map (&mmap_size, mmap, 0, &desc_size, 0);
+      grub_free (mmap);
+
+      if (ret < 0)
+	{
+	  grub_error (GRUB_ERR_IO, "cannot get memory map");
+	  return 0;
+	}
+      else if (ret > 0)
+	break;
+
+      mmap_size += (1 << 12);
+    }
+
+  /* Increase the size a bit for safety, because GRUB allocates more on
+     later, and EFI itself may allocate more.  */
+  mmap_size += (1 << 12);
+
+  return page_align (mmap_size);
+}
+
 static grub_err_t
 grub_linux_boot (void)
 {
@@ -61,6 +110,28 @@ grub_linux_boot (void)
 
   state.gpr[4] = linux_argc;
   state.gpr[5] = (grub_addr_t) linux_args_addr;
+  if (grub_efi_is_loongson ())
+    {
+      grub_efi_uintn_t mmap_size;
+      grub_efi_uintn_t desc_size;
+      grub_efi_memory_descriptor_t *mmap_buf;
+      grub_efi_loongson_boot_params *boot_params;
+      grub_err_t err;
+
+      mmap_size = find_mmap_size ();
+      if (! mmap_size)
+        return grub_errno;
+      mmap_buf = grub_efi_allocate_any_pages (page_align (mmap_size) >> 12);
+      if (! mmap_buf)
+        return grub_error (GRUB_ERR_IO, "cannot allocate memory map");
+      err = grub_efi_finish_boot_services (&mmap_size, mmap_buf, NULL,
+				           &desc_size, NULL);
+      if (err)
+        return err;
+
+      boot_params = grub_efi_loongson_get_boot_params (mmap_buf, mmap_size, desc_size);
+      state.gpr[6] = (grub_uint64_t) boot_params;
+    }
   state.jumpreg = 1;
   grub_relocator64_boot (relocator, state);
 
@@ -249,7 +320,9 @@ grub_cmd_linux (grub_command_t cmd __attribute__ ((unused)),
 
   *linux_argv = 0;
 
-  grub_loader_set (grub_linux_boot, grub_linux_unload, GRUB_LOADER_FLAG_NORETURN);
+  grub_loader_set (grub_linux_boot, grub_linux_unload,
+                   GRUB_LOADER_FLAG_NORETURN |
+                   GRUB_LOADER_FLAG_LOONGSON_BOOT_PARAMS_NOFREE);
   initrd_loaded = 0;
   loaded = 1;
   grub_dl_ref (my_mod);

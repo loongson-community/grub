@@ -220,6 +220,7 @@ if COND_mips64_efi
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/efi.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/efi/disk.h
 KERNEL_HEADER_FILES += $(top_srcdir)/include/grub/acpi.h
+KERNEL_HEADER_FILES += $(top_builddir)/include/grub/machine/loongson.h
 endif
 
 if COND_powerpc_ieee1275
