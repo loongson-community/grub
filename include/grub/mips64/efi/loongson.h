@@ -72,6 +72,7 @@ typedef struct
   grub_uint16_t reserved_cores_mask;
   grub_uint32_t cpu_clock_freq; /* cpu_clock */
   grub_uint32_t nr_cpus;
+  char cpuname[64];
 } GRUB_PACKED
 grub_efi_loongson_cpu_info;
 
@@ -136,7 +137,8 @@ typedef struct
   grub_uint64_t pci_io_start_addr;
   grub_uint64_t pci_io_end_addr;
   grub_uint64_t pci_config_addr;
-  grub_uint32_t dma_mask_bits;
+  grub_uint16_t dma_mask_bits;
+  grub_uint16_t dma_noncoherent;
 } GRUB_PACKED
 grub_efi_loongson_irq_src_routing_table;
 
