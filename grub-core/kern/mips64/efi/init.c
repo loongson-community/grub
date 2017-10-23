@@ -44,6 +44,6 @@ grub_machine_fini (int flags)
     return;
 
   if (grub_efi_is_loongson ())
-    grub_efi_loongson_fini (flags);
+    grub_efi_loongson_fini ();
   grub_efi_fini ();
 }
