@@ -320,9 +320,7 @@ grub_cmd_linux (grub_command_t cmd __attribute__ ((unused)),
 
   *linux_argv = 0;
 
-  grub_loader_set (grub_linux_boot, grub_linux_unload,
-                   GRUB_LOADER_FLAG_NORETURN |
-                   GRUB_LOADER_FLAG_LOONGSON_BOOT_PARAMS_NOFREE);
+  grub_loader_set (grub_linux_boot, grub_linux_unload, 0);
   initrd_loaded = 0;
   loaded = 1;
   grub_dl_ref (my_mod);

@@ -245,7 +245,7 @@ extern void grub_efi_loongson_reset_shutdown (void);
 extern void grub_efi_loongson_reset_suspend (void);
 
 void grub_efi_loongson_init (void);
-void grub_efi_loongson_fini (int flags);
+void grub_efi_loongson_fini (void);
 void grub_efi_loongson_alloc_boot_params (void);
 void grub_efi_loongson_free_boot_params (void);
 grub_efi_loongson_smbios_table * grub_efi_loongson_get_smbios_table (void);

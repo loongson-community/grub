@@ -40,8 +40,7 @@ grub_efi_loongson_init (void)
 }
 
 void
-grub_efi_loongson_fini (int flags)
+grub_efi_loongson_fini (void)
 {
-  if (!(flags & GRUB_LOADER_FLAG_LOONGSON_BOOT_PARAMS_NOFREE))
     grub_efi_loongson_free_boot_params ();
 }
