@@ -40,8 +40,7 @@ static struct
   grub_efi_loongson_interface_info interface_info;
   grub_efi_loongson_special_attribute special_attribute;
   grub_efi_loongson_board_devices board_devices;
-} GRUB_PACKED
-* loongson_boot_params;
+} *loongson_boot_params;
 
 static void
 grub_efi_loongson_init_reset_system (void)
