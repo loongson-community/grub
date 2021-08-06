@@ -1310,15 +1310,10 @@ grub_CHECK_PIC
 # movk's which aren't representable.
 # Since default varies across dictributions use either -fPIC or -fno-PIC
 # explicitly.
-if ( test x$target_cpu = xmips || test x$target_cpu = xmipsel || test x$target_cpu = xarm64 || test x$target_cpu = xmips64el ) && test "x$grub_cv_cc_target_clang" = xyes ; then
+if ( test x$target_cpu = xmips || test x$target_cpu = xmipsel || test x$target_cpu = xarm64 ) && test "x$grub_cv_cc_target_clang" = xyes ; then
    TARGET_CFLAGS="$TARGET_CFLAGS -fPIC"
 elif [ x"$pic_possible" = xyes ]; then
    TARGET_CFLAGS="$TARGET_CFLAGS -fno-PIC"
-fi
-# Don't generate SVR4-style position-independent code for MIPS64.
-if test x$target_cpu = xmips64el ; then
-   TARGET_CFLAGS="$TARGET_CFLAGS -mno-abicalls"
-   TARGET_CCASFLAGS="$TARGET_CCASFLAGS -mno-abicalls"
 fi]
 
 CFLAGS="$TARGET_CFLAGS"
