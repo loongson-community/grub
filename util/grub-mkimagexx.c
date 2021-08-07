@@ -2207,9 +2207,9 @@ make_reloc_section (Elf_Ehdr *e, struct grub_mkimage_layout *layout,
 	    continue;
 	  }
 
-	symtab_section = (Elf_Shdr *) ((char *) sections
-					+ (grub_target_to_host32 (s->sh_link)
-						* section_entsize));
+	symtab_section = (Elf_Shdr *) ((char *) smd->sections
+					+ grub_target_to_host32 (smd->symtab->sh_link)
+						* smd->section_entsize);
 
 	grub_util_info ("translating the relocation section %s",
 			smd->strtab + grub_le_to_cpu32 (s->sh_name));
